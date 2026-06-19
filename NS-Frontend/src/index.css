@@ -1,0 +1,61 @@
+:root {
+  --bg: #05070b;
+  --surface: #0a0f16;
+  --surface-strong: #101720;
+  --text-strong: #f6f8fb;
+  --text-soft: #c7d1de;
+  --text-muted: #8794a5;
+  --accent: #5ef7c8;
+  --accent-blue: #78a8ff;
+  --accent-gold: #f5c86b;
+  --border: rgba(255, 255, 255, 0.11);
+  --shadow-panel: 0 30px 80px rgba(0, 0, 0, 0.38), 0 10px 28px rgba(0, 0, 0, 0.28);
+  --font-sans: Inter, Manrope, "Avenir Next", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  color: var(--text-soft);
+  background: var(--bg);
+  font: 16px/1.5 var(--font-sans);
+  letter-spacing: 0;
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--bg);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100svh;
+  margin: 0;
+  background: var(--bg);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: rgba(94, 247, 200, 0.24);
+  color: var(--text-strong);
+}
+
+#root {
+  min-height: 100svh;
+}
