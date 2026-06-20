@@ -37,16 +37,40 @@ const trustSignals = [
 
 const capabilities = [
   {
-    title: 'Revenue Intelligence',
-    text: 'Unifies CRM, product, and support signals into account-level forecasts leadership can act on.',
+    title: 'AI Development',
+    text: 'Custom AI systems, intelligent chatbots, machine learning solutions, business automation, and AI-powered data analysis built around real business needs.',
   },
   {
-    title: 'Operational Copilots',
-    text: 'Guided agents handle triage, research, summaries, and handoffs while keeping humans in approval paths.',
+    title: 'Software Development',
+    text: 'Custom web applications, SaaS platforms, enterprise software, CRM and ERP systems, API development, and seamless integrations.',
   },
   {
-    title: 'Governed Automation',
-    text: 'Policy gates, lineage, and audit trails keep AI actions observable from pilot to production.',
+    title: 'Web Development',
+    text: 'Professional business websites, e-commerce platforms, landing pages, portfolio websites, and fast Progressive Web Apps.',
+  },
+  {
+    title: 'Mobile App Development',
+    text: 'Android, iOS, React Native, Flutter, and on-demand mobile applications designed for smooth user experiences.',
+  },
+  {
+    title: 'Cloud & DevOps',
+    text: 'Cloud hosting, server deployment, CI/CD pipelines, database management, scalable architecture, and reliable infrastructure setup.',
+  },
+  {
+    title: 'Cybersecurity',
+    text: 'Security audits, penetration testing, data protection, network security, monitoring, and stronger digital defense systems.',
+  },
+  {
+    title: 'Data & Analytics',
+    text: 'Business dashboards, AI-powered analytics, reporting systems, data visualization, and large-scale data processing.',
+  },
+  {
+    title: 'Automation Services',
+    text: 'Business process automation, AI workflow automation, CRM automation, lead generation systems, email automation, and SMS automation.',
+  },
+  {
+    title: 'Digital Marketing',
+    text: 'SEO, performance marketing, social media campaigns, content strategy, conversion optimization, and analytics-driven growth systems.',
   },
 ]
 
@@ -305,11 +329,11 @@ function App() {
 
       <section className="section-block platform-block" id="platform">
         <div className="section-heading">
-          <p className="eyebrow">Platform</p>
-          <h2>From business signal to governed action.</h2>
+          <p className="eyebrow">Capabilities</p>
+          <h2>From intelligent systems to scalable digital operations.</h2>
           <p>
-            Varlexa connects enterprise systems, builds role-aware AI agents, and gives operators
-            the controls needed to scale automation responsibly.
+            Varlexa helps businesses design, build, secure, automate, and scale digital products
+            with practical AI, software engineering, cloud infrastructure, and data intelligence.
           </p>
         </div>
 
