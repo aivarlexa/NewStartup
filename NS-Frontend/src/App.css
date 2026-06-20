@@ -85,8 +85,8 @@
 }
 
 .nav-wordmark {
-  width: clamp(100px, 9vw, 136px);
-  max-height: 44px;
+  width: clamp(140px, 12vw, 184px);
+  max-height: 58px;
 }
 
 .status-brand {

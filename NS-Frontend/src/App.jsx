@@ -251,7 +251,7 @@ function App() {
           <a href="#outcomes">Solutions</a>
           <a href="#security">Projects</a>
           <a href="#cases">Industries</a>
-          <a href="#platform">About</a>
+          <a href="#top">About</a>
           <a href="#chatbot">Insights</a>
         </div>
       </nav>
@@ -271,7 +271,6 @@ function App() {
           </div>
           <div className="hero-video-copy">
             <p className="brand-breadcrumb hero-video-breadcrumb">
-            <BrandWordmark className="breadcrumb-wordmark" alt="VARLEXA AI" />
             <span>/ SYSTEMS ENGINEERING / SECURITY</span>
           </p>
             <h2>AI Solutions & Software Engineering for Modern Business</h2>
@@ -280,7 +279,6 @@ function App() {
 
         <div className="hero-copy">
           <p className="eyebrow brand-breadcrumb">
-            <BrandWordmark className="breadcrumb-wordmark" alt="VARLEXA AI" />
             <span>/ SYSTEMS ENGINEERING / SECURITY</span>
           </p>
           <h1>AI Solutions & Software Engineering for Modern Business</h1>
