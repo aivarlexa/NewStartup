@@ -28,7 +28,7 @@
 
 .topbar {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 28px;
   width: min(1180px, calc(100% - 48px));
@@ -48,15 +48,16 @@
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  padding-left: 0;
   color: var(--text-strong);
   font-weight: 720;
 }
 
 .brand-logo-shell {
   display: inline-grid;
-  width: 38px;
-  height: 34px;
+  width: 46px;
+  height: 40px;
   overflow: hidden;
   place-items: center;
   border: 1px solid rgba(94, 247, 200, 0.38);
@@ -66,15 +67,59 @@
 }
 
 .brand-logo-shell img {
-  width: 34px;
-  height: 26px;
+  width: 41px;
+  height: 31px;
   object-fit: contain;
   filter: drop-shadow(0 4px 12px rgba(120, 168, 255, 0.18));
+}
+.brand-wordmark {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  flex: 0 0 auto;
+  object-fit: contain;
+  background: transparent;
+  opacity: 0.94;
+  filter: drop-shadow(0 0 5px rgba(94, 247, 200, 0.12)) drop-shadow(0 0 7px rgba(126, 88, 255, 0.1));
+}
+
+.nav-wordmark {
+  width: clamp(100px, 9vw, 136px);
+  max-height: 44px;
+}
+
+.status-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-wordmark {
+  width: 40px;
+  max-height: 20px;
+}
+
+.brand-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.breadcrumb-wordmark {
+  width: 54px;
+  max-height: 26px;
+}
+
+.hero-wordmark {
+  width: min(82%, 360px);
+  max-height: 172px;
 }
 
 .nav-links {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 
@@ -110,11 +155,11 @@
   display: grid;
   grid-template-columns: minmax(0, 0.94fr) minmax(420px, 1.06fr);
   align-items: center;
-  gap: 56px;
+  gap: 44px;
   width: 100%;
-  min-height: calc(100svh - 78px);
+  min-height: min(720px, calc(100svh - 78px));
   margin: 0 auto;
-  padding: 86px max(24px, calc((100vw - 1180px) / 2)) 76px;
+  padding: 54px max(24px, calc((100vw - 1180px) / 2)) 48px;
   overflow: hidden;
 }
 
@@ -128,7 +173,7 @@
 }
 
 .eyebrow {
-  margin: 0 0 18px;
+  margin: 0 0 14px;
   color: var(--accent);
   font-size: 13px;
   font-weight: 760;
@@ -143,10 +188,10 @@ p {
 }
 
 h1 {
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   color: var(--text-strong);
-  font-size: 76px;
-  line-height: 0.96;
+  font-size: 64px;
+  line-height: 0.98;
   font-weight: 800;
 }
 
@@ -165,7 +210,6 @@ h3 {
   line-height: 1.2;
   font-weight: 730;
 }
-
 .hero-lede,
 .section-heading p,
 .analytics-copy p,
@@ -176,11 +220,16 @@ h3 {
   line-height: 1.72;
 }
 
+.hero-lede {
+  font-size: 17px;
+  line-height: 1.6;
+}
+
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 34px;
+  margin-top: 24px;
 }
 
 .primary-action,
@@ -188,7 +237,7 @@ h3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
+  min-height: 46px;
   border-radius: 8px;
   padding: 0 18px;
   font-size: 15px;
@@ -231,7 +280,7 @@ h3 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 40px;
+  margin-top: 28px;
   color: var(--text-muted);
   font-size: 13px;
 }
@@ -245,7 +294,7 @@ h3 {
   position: relative;
   z-index: 2;
   display: grid;
-  min-height: 590px;
+  min-height: 500px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
@@ -318,7 +367,7 @@ h3 {
 .visual-stage {
   position: relative;
   display: grid;
-  min-height: 590px;
+  min-height: 500px;
   place-items: center;
   perspective: 1000px;
   background:
@@ -330,10 +379,10 @@ h3 {
 .logo-showcase {
   position: relative;
   z-index: 3;
-  width: min(500px, 84%);
+  width: min(420px, 80%);
   display: grid;
   justify-items: center;
-  gap: 24px;
+  gap: 18px;
   perspective: 1100px;
 }
 
@@ -610,7 +659,7 @@ h3 {
 
 .metric-tabs {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   margin-top: 32px;
 }
 
@@ -798,7 +847,7 @@ h3 {
 
 .security-grid div {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   padding: 24px;
   background: rgba(8, 12, 18, 0.9);
 }
@@ -912,7 +961,7 @@ h3 {
 .chat-form {
   display: grid;
   grid-template-columns: 1fr 46px;
-  gap: 10px;
+  gap: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 18px 20px 20px;
 }
@@ -986,7 +1035,7 @@ h3 {
 
 @media (max-width: 1040px) {
   .topbar {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto 1fr;
   }
 
   .nav-links {
@@ -1001,7 +1050,8 @@ h3 {
   }
 
   .hero-section {
-    padding-top: 60px;
+    padding-top: 46px;
+    padding-bottom: 46px;
   }
 
   .hero-copy {
@@ -1017,8 +1067,12 @@ h3 {
   }
 
   .hero-visual {
-    min-height: 560px;
+    min-height: 460px;
     transform: none;
+  }
+
+  .visual-stage {
+    min-height: 460px;
   }
 
   .hero-visual:hover {
@@ -1065,6 +1119,26 @@ h3 {
     font-size: 15px;
   }
 
+  .nav-wordmark {
+    width: clamp(88px, 24vw, 112px);
+    max-height: 38px;
+  }
+
+  .breadcrumb-wordmark {
+    width: 48px;
+    max-height: 24px;
+  }
+
+  .hero-wordmark {
+    width: min(78%, 260px);
+    max-height: 124px;
+  }
+
+  .status-wordmark {
+    width: 38px;
+    max-height: 19px;
+  }
+
   .nav-cta {
     padding: 9px 10px;
     font-size: 13px;
@@ -1072,14 +1146,14 @@ h3 {
 
   .hero-section {
     width: 100%;
-    min-height: calc(100svh - 70px);
-    gap: 34px;
-    padding: 46px 16px 54px;
+    min-height: auto;
+    gap: 28px;
+    padding: 40px 16px 44px;
   }
 
   h1 {
-    font-size: 48px;
-    line-height: 1;
+    font-size: 42px;
+    line-height: 1.02;
   }
 
   h2 {
@@ -1124,11 +1198,11 @@ h3 {
   }
 
   .visual-stage {
-    min-height: 360px;
+    min-height: 320px;
   }
 
   .logo-showcase {
-    width: min(340px, 88%);
+    width: min(300px, 84%);
   }
 
   .static-logo-name {
@@ -1174,10 +1248,6 @@ h3 {
 }
 
 @media (max-width: 430px) {
-  .brand span:last-child {
-    display: none;
-  }
-
   .hero-actions {
     display: grid;
   }
@@ -1188,7 +1258,8 @@ h3 {
   }
 
   h1 {
-    font-size: 42px;
+    font-size: 36px;
+    line-height: 1.04;
   }
 
   h2 {
@@ -1197,6 +1268,15 @@ h3 {
 
   .static-logo-name {
     font-size: 26px;
+  }
+
+  .visual-stage {
+    min-height: 280px;
+  }
+
+  .breadcrumb-wordmark {
+    width: 44px;
+    max-height: 22px;
   }
 
   .hero-video-copy h2 {
@@ -1227,3 +1307,4 @@ h3 {
     transition-duration: 1ms !important;
   }
 }
+

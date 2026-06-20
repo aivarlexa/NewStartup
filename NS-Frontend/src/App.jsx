@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import varlexaLogo from './assets/varlexa-logo.png'
 import varlexaMark from './assets/varlexa-mark.png'
+import varlexaWordmark from './assets/verlexaai-transparent.png'
 import './App.css'
 
 const platformMetrics = [
@@ -28,10 +29,10 @@ const platformMetrics = [
 ]
 
 const trustSignals = [
-  'SOC 2 aligned controls',
-  'Private cloud deployment',
-  'Zero-retention options',
-  '99.95% service objective',
+  'ENTERPRISE SYSTEMS',
+  'CYBER DEFENSE',
+  'APPLIED INTELLIGENCE',
+  'CLOUD PLATFORMS',
 ]
 
 const capabilities = [
@@ -110,6 +111,12 @@ const promptReplies = [
   },
 ]
 
+
+function BrandWordmark({ className = '', alt = 'VARLEXA AI' }) {
+  const classNames = ['brand-wordmark', className].filter(Boolean).join(' ')
+
+  return <img className={classNames} src={varlexaWordmark} alt={alt} />
+}
 function Chart({ metric }) {
   const points = useMemo(() => {
     const max = Math.max(...metric.data)
@@ -213,20 +220,16 @@ function App() {
     <main className="app-shell">
       <nav className="topbar" aria-label="Primary navigation">
         <a className="brand" href="#top" aria-label="Varlexa AI home">
-          <span className="brand-logo-shell">
-            <img src={varlexaMark} alt="" />
-          </span>
-          <span>Varlexa AI</span>
+          <BrandWordmark className="nav-wordmark" alt="" />
         </a>
         <div className="nav-links">
-          <a href="#platform">Platform</a>
-          <a href="#outcomes">Outcomes</a>
-          <a href="#security">Security</a>
-          <a href="#cases">Case Studies</a>
+          <a href="#platform">Services</a>
+          <a href="#outcomes">Solutions</a>
+          <a href="#security">Projects</a>
+          <a href="#cases">Industries</a>
+          <a href="#platform">About</a>
+          <a href="#chatbot">Insights</a>
         </div>
-        <a className="nav-cta" href="#chatbot">
-          Talk to AI
-        </a>
       </nav>
 
       <section className={`hero-section ${isHeroVideoVisible ? 'is-video-active' : ''}`} id="top" ref={heroRef}>
@@ -236,27 +239,36 @@ function App() {
           </video>
           <div className="hero-video-header">
             <span className="status-dot"></span>
-            Varlexa core sequence
+            <span className="status-brand">
+              <BrandWordmark className="status-wordmark" alt="VARLEXA AI" />
+              <span>CORE</span>
+            </span>
+            <span>ONLINE</span>
           </div>
           <div className="hero-video-copy">
-            <p>Autonomous enterprise intelligence</p>
-            <h2>Varlexa turns live operational signals into executive action.</h2>
+            <p className="brand-breadcrumb hero-video-breadcrumb">
+            <BrandWordmark className="breadcrumb-wordmark" alt="VARLEXA AI" />
+            <span>/ SYSTEMS ENGINEERING / SECURITY</span>
+          </p>
+            <h2>AI Solutions & Software Engineering for Modern Business</h2>
           </div>
         </div>
 
         <div className="hero-copy">
-          <p className="eyebrow">Enterprise AI operating layer</p>
-          <h1>Varlexa AI Core</h1>
+          <p className="eyebrow brand-breadcrumb">
+            <BrandWordmark className="breadcrumb-wordmark" alt="VARLEXA AI" />
+            <span>/ SYSTEMS ENGINEERING / SECURITY</span>
+          </p>
+          <h1>AI Solutions & Software Engineering for Modern Business</h1>
           <p className="hero-lede">
-            Deploy governed copilots, forecasting models, and automation workflows that turn fragmented
-            business data into trusted decisions.
+            Secure AI products, intelligent platforms and cloud systems engineered for organizations that refuse to stand still.
           </p>
           <div className="hero-actions">
             <a className="primary-action" href="#platform">
-              View Platform
+              START A PROJECT
             </a>
             <a className="secondary-action" href="#cases">
-              Read Evidence
+              EXPLORE SYSTEMS
             </a>
           </div>
           <div className="trust-strip" aria-label="Trust signals">
@@ -273,8 +285,7 @@ function App() {
                 <img className="spinning-logo-fig" src={varlexaMark} alt="" />
               </div>
               <div className="static-logo-name" aria-label="Varlexa AI">
-                <span>VARLEXA</span>
-                <span className="wordmark-ai">AI</span>
+                <BrandWordmark className="hero-wordmark" alt="" />
               </div>
             </div>
             <div className="signal-plane plane-one"></div>
@@ -438,9 +449,12 @@ function App() {
           <div className="chat-header">
             <div>
               <span className="status-dot"></span>
-              Varlexa Copilot
+              <span className="status-brand">
+                <BrandWordmark className="status-wordmark" alt="VARLEXA AI" />
+                <span>CORE</span>
+              </span>
             </div>
-            <span>Online</span>
+            <span>ONLINE</span>
           </div>
           <div className="chat-messages" aria-live="polite">
             {messages.map((message, index) => (
@@ -462,7 +476,7 @@ function App() {
           </div>
           <form className="chat-form" onSubmit={handleSubmit}>
             <input
-              aria-label="Message Varlexa Copilot"
+              aria-label="Message VARLEXA AI CORE"
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Ask about rollout, ROI, or security..."
