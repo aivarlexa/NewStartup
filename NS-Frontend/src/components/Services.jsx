@@ -7,6 +7,28 @@ function Services() {
   const sectionRef = useRef(null)
 
   useEffect(() => {
+    const capabilitiesSection = sectionRef.current
+
+    if (!capabilitiesSection) {
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        entry.target.classList.toggle('visible', entry.isIntersecting)
+      },
+      {
+        rootMargin: '0px 0px -20% 0px',
+        threshold: 0,
+      },
+    )
+
+    observer.observe(capabilitiesSection)
+
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
     const serviceRows = Array.from(sectionRef.current?.querySelectorAll('.capability-row') || [])
 
     if (!serviceRows.length) {
@@ -126,10 +148,14 @@ function Services() {
   }, [])
 
   return (
-    <section className="section-block platform-block" id="platform" ref={sectionRef}>
+    <section className="section-block platform-block capabilities-section" id="platform" ref={sectionRef}>
       <div className="section-heading">
         <p className="eyebrow">Capabilities</p>
-        <h2 className="services-heading-rotated">From intelligent systems to scalable digital operations.</h2>
+        <h2 className="capabilities-heading">
+          <span className="line"><span>From intelligent</span></span>
+          <span className="line"><span>systems to scalable</span></span>
+          <span className="line"><span>digital operations.</span></span>
+        </h2>
         <p>
           Varlexa helps businesses design, build, secure, automate, and scale digital products
           with practical AI, software engineering, cloud infrastructure, and data intelligence.
