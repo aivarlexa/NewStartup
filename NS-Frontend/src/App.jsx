@@ -39,41 +39,67 @@ const capabilities = [
   {
     title: 'AI Development',
     text: 'Custom AI systems, intelligent chatbots, machine learning solutions, business automation, and AI-powered data analysis built around real business needs.',
+    tags: ['AI Systems', 'Chatbots', 'ML'],
+    accent: 'ai',
   },
   {
     title: 'Software Development',
     text: 'Custom web applications, SaaS platforms, enterprise software, CRM and ERP systems, API development, and seamless integrations.',
+    tags: ['SaaS', 'Enterprise', 'API'],
+    accent: 'software',
   },
   {
     title: 'Web Development',
     text: 'Professional business websites, e-commerce platforms, landing pages, portfolio websites, and fast Progressive Web Apps.',
+    tags: ['E-commerce', 'PWA', 'Websites'],
+    accent: 'web',
   },
   {
     title: 'Mobile App Development',
     text: 'Android, iOS, React Native, Flutter, and on-demand mobile applications designed for smooth user experiences.',
+    tags: ['Android', 'iOS', 'Flutter'],
+    accent: 'mobile',
   },
   {
     title: 'Cloud & DevOps',
     text: 'Cloud hosting, server deployment, CI/CD pipelines, database management, scalable architecture, and reliable infrastructure setup.',
+    tags: ['Cloud', 'CI/CD', 'Infrastructure'],
+    accent: 'cloud',
   },
   {
     title: 'Cybersecurity',
     text: 'Security audits, penetration testing, data protection, network security, monitoring, and stronger digital defense systems.',
+    tags: ['Audits', 'Pentesting', 'Defense'],
+    accent: 'security',
   },
   {
     title: 'Data & Analytics',
     text: 'Business dashboards, AI-powered analytics, reporting systems, data visualization, and large-scale data processing.',
+    tags: ['Dashboards', 'Analytics', 'Data'],
+    accent: 'ai',
   },
   {
     title: 'Automation Services',
     text: 'Business process automation, AI workflow automation, CRM automation, lead generation systems, email automation, and SMS automation.',
+    tags: ['Workflows', 'CRM', 'Lead Gen'],
+    accent: 'software',
   },
   {
     title: 'Digital Marketing',
     text: 'SEO, performance marketing, social media campaigns, content strategy, conversion optimization, and analytics-driven growth systems.',
+    tags: ['SEO', 'Performance', 'Growth'],
+    accent: 'web',
   },
 ]
 
+const capabilityVisuals = [
+  { label: 'AI Signal', detail: 'Intelligence Layer' },
+  { label: 'System Flow', detail: 'Scalable Engine' },
+  { label: 'Web Pulse', detail: 'Experience Grid' },
+  { label: 'App Motion', detail: 'Mobile Ready' },
+  { label: 'Live Deploy', detail: 'Cloud Network' },
+  { label: 'Threat Scan', detail: 'Defense Active' },
+]
 const caseStudies = [
   {
     company: 'Northstar Bank',
@@ -210,6 +236,125 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    const serviceRows = Array.from(document.querySelectorAll('.capability-row'))
+
+    if (!serviceRows.length) {
+      return undefined
+    }
+
+    const revealQueue = []
+    const timeouts = new Set()
+    let isAnimating = false
+
+    function removeFromQueue(row) {
+      const queuedIndex = revealQueue.indexOf(row)
+
+      if (queuedIndex >= 0) {
+        revealQueue.splice(queuedIndex, 1)
+      }
+
+      row.dataset.queued = 'false'
+    }
+
+    function resetRow(row) {
+      const serviceCard = row.querySelector('.service-card, .capability-card')
+
+      serviceCard?.classList.remove('visible')
+      row.classList.remove('is-visible', 'visible', 'revealed')
+      row.dataset.queued = 'false'
+      row.dataset.inView = 'false'
+      removeFromQueue(row)
+    }
+
+    function revealNextRow() {
+      if (isAnimating || revealQueue.length === 0) {
+        return
+      }
+
+      isAnimating = true
+      const row = revealQueue.shift()
+      row.dataset.queued = 'false'
+
+      const revealTimeoutId = window.setTimeout(() => {
+        timeouts.delete(revealTimeoutId)
+
+        if (row.dataset.inView === 'true') {
+          const serviceCard = row.querySelector('.service-card, .capability-card')
+
+          serviceCard?.classList.add('visible')
+          row.classList.remove('is-visible')
+          void row.offsetWidth
+          row.classList.add('is-visible', 'visible', 'revealed')
+        }
+
+        const queueTimeoutId = window.setTimeout(() => {
+          timeouts.delete(queueTimeoutId)
+          isAnimating = false
+          revealNextRow()
+        }, 360)
+
+        timeouts.add(queueTimeoutId)
+      }, 70)
+
+      timeouts.add(revealTimeoutId)
+    }
+
+    function queueRow(row) {
+      if (row.dataset.queued === 'true') {
+        return
+      }
+
+      row.dataset.queued = 'true'
+      revealQueue.push(row)
+      revealQueue.sort((firstRow, secondRow) => {
+        const firstTop = firstRow.getBoundingClientRect().top
+        const secondTop = secondRow.getBoundingClientRect().top
+
+        return firstTop - secondTop
+      })
+      revealNextRow()
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries
+          .filter((entry) => !entry.isIntersecting)
+          .forEach((entry) => {
+            resetRow(entry.target)
+          })
+
+        entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((firstEntry, secondEntry) => firstEntry.boundingClientRect.top - secondEntry.boundingClientRect.top)
+          .forEach((entry) => {
+            const row = entry.target
+
+            row.dataset.inView = 'true'
+            queueRow(row)
+          })
+
+        revealNextRow()
+      },
+      {
+        root: null,
+        rootMargin: '0px 0px -10% 0px',
+        threshold: 0.35,
+      },
+    )
+
+    serviceRows.forEach((row) => {
+      row.dataset.queued = 'false'
+      row.dataset.inView = 'false'
+      observer.observe(row)
+    })
+
+    return () => {
+      observer.disconnect()
+      timeouts.forEach((timeoutId) => window.clearTimeout(timeoutId))
+    }
+  }, [])
+
   function getReply(value) {
     const normalized = value.toLowerCase()
     const matchedReply = promptReplies.find((item) => normalized.includes(item.match))
@@ -273,7 +418,7 @@ function App() {
             <p className="brand-breadcrumb hero-video-breadcrumb">
             <span>/ SYSTEMS ENGINEERING / SECURITY</span>
           </p>
-            <h2>AI Solutions & Software Engineering for Modern Business</h2>
+            <h2>Intelligence Beyond Imagination Innovation Beyond Expectations</h2>
           </div>
         </div>
 
@@ -281,7 +426,11 @@ function App() {
           <p className="eyebrow brand-breadcrumb">
             <span>/ SYSTEMS ENGINEERING / SECURITY</span>
           </p>
-          <h1>AI Solutions & Software Engineering for Modern Business</h1>
+          <h1 className="hero-title">
+            <span>AI Solutions &amp;</span>
+            <span>Software Engineering</span>
+            <span>for Modern Business</span>
+          </h1>
           <p className="hero-lede">
             Secure AI products, intelligent platforms and cloud systems engineered for organizations that refuse to stand still.
           </p>
@@ -336,13 +485,75 @@ function App() {
         </div>
 
         <div className="capability-grid">
-          {capabilities.map((capability, index) => (
-            <article className="capability-card" key={capability.title}>
-              <span className="card-index">0{index + 1}</span>
-              <h3>{capability.title}</h3>
-              <p>{capability.text}</p>
-            </article>
-          ))}
+          {capabilities.map((capability, index) => {
+            const visual = capabilityVisuals[index % capabilityVisuals.length]
+            const isCardLeft = index % 2 === 0
+
+            return (
+              <div
+                className={`capability-row ${isCardLeft ? 'card-left' : 'card-right'}`}
+                data-accent={capability.accent}
+                key={capability.title}
+              >
+                {isCardLeft && (
+                  <article className="capability-card">
+                    <div className="capability-title-block">
+                      <span className="card-index">0{index + 1}</span>
+                      <h3>{capability.title}</h3>
+                    </div>
+                    <p>{capability.text}</p>
+                    <div className="capability-action-block">
+                      <a className="capability-arrow" href="#chatbot" aria-label={`Discuss ${capability.title}`}>
+                        ↗
+                      </a>
+                      <div className="capability-tags" aria-label={`${capability.title} categories`}>
+                        {capability.tags.map((tag) => (
+                          <span key={`${capability.title}-${tag}`}>{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </article>
+                )}
+
+                <div className="capability-visual" aria-hidden="true">
+                  <div className="visual-connector"></div>
+                  <span className="visual-node"></span>
+                  <div className="visual-mini-panel">
+                    <div className="visual-mini-header">
+                      <span className="visual-dot"></span>
+                      <strong>{visual.label}</strong>
+                    </div>
+                    <div className="visual-bars">
+                      {[0, 1, 2, 3, 4].map((bar) => (
+                        <span key={bar}></span>
+                      ))}
+                    </div>
+                    <span className="visual-mini-detail">{visual.detail}</span>
+                  </div>
+                </div>
+
+                {!isCardLeft && (
+                  <article className="capability-card">
+                    <div className="capability-title-block">
+                      <span className="card-index">0{index + 1}</span>
+                      <h3>{capability.title}</h3>
+                    </div>
+                    <p>{capability.text}</p>
+                    <div className="capability-action-block">
+                      <a className="capability-arrow" href="#chatbot" aria-label={`Discuss ${capability.title}`}>
+                        ↗
+                      </a>
+                      <div className="capability-tags" aria-label={`${capability.title} categories`}>
+                        {capability.tags.map((tag) => (
+                          <span key={`${capability.title}-${tag}`}>{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </article>
+                )}
+              </div>
+            )
+          })}
         </div>
       </section>
 
