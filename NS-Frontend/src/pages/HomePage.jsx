@@ -1,0 +1,113 @@
+import { useState } from 'react'
+import BrandWordmark from '../components/BrandWordmark'
+import Hero from '../components/Hero'
+import Services from '../components/Services'
+import { initialMessages, promptReplies } from '../data/siteData'
+
+function HomePage() {
+  const [messages, setMessages] = useState(initialMessages)
+  const [input, setInput] = useState('')
+
+  function getReply(value) {
+    const normalized = value.toLowerCase()
+    const matchedReply = promptReplies.find((item) => normalized.includes(item.match))
+
+    return (
+      matchedReply?.reply ||
+      'I would frame this around measurable business impact: baseline the workflow, define human approvals, then compare cycle time, quality, and cost over 30 days.'
+    )
+  }
+
+  function sendMessage(value) {
+    const trimmedValue = value.trim()
+
+    if (!trimmedValue) {
+      return
+    }
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      { role: 'user', text: trimmedValue },
+      { role: 'assistant', text: getReply(trimmedValue) },
+    ])
+    setInput('')
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault()
+    sendMessage(input)
+  }
+
+  return (
+    <>
+      <Hero />
+
+      <section className="logo-band" aria-label="Customer segments">
+        <span>Global banks</span>
+        <span>Cloud platforms</span>
+        <span>Healthcare networks</span>
+        <span>Industrial operations</span>
+        <span>Private equity</span>
+      </section>
+
+      <Services />
+
+      <section className="section-block chatbot-block" id="chatbot">
+        <div className="chat-copy">
+          <p className="eyebrow">AI chatbot</p>
+          <h2>Ask the enterprise copilot.</h2>
+          <p>
+            The conversational layer helps teams turn strategy questions into practical rollout plans,
+            stakeholder briefs, and operating metrics.
+          </p>
+        </div>
+
+        <div className="chatbot">
+          <div className="chat-header">
+            <div>
+              <span className="status-dot"></span>
+              <span className="status-brand">
+                <BrandWordmark className="status-wordmark" alt="VARLEXA AI" />
+                <span>CORE</span>
+              </span>
+            </div>
+            <span>ONLINE</span>
+          </div>
+          <div className="chat-messages" aria-live="polite">
+            {messages.map((message, index) => (
+              <div className={`message ${message.role}`} key={`${message.role}-${index}`}>
+                {message.text}
+              </div>
+            ))}
+          </div>
+          <div className="prompt-row" aria-label="Suggested prompts">
+            <button type="button" onClick={() => sendMessage('Scope a first pilot')}>
+              Scope pilot
+            </button>
+            <button type="button" onClick={() => sendMessage('Summarize security posture')}>
+              Security posture
+            </button>
+            <button type="button" onClick={() => sendMessage('Choose best case study')}>
+              Best case study
+            </button>
+          </div>
+          <form className="chat-form" onSubmit={handleSubmit}>
+            <input
+              aria-label="Message VARLEXA AI CORE"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Ask about rollout, ROI, or security..."
+            />
+            <button type="submit" aria-label="Send message">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12H19M13 6L19 12L13 18" />
+              </svg>
+            </button>
+          </form>
+        </div>
+      </section>
+    </>
+  )
+}
+
+export default HomePage
