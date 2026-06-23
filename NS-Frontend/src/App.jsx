@@ -1,32 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import varlexaLogo from './assets/varlexa-logo.png'
 import varlexaMark from './assets/varlexa-mark.png'
 import varlexaWordmark from './assets/verlexaai-transparent.png'
 import './App.css'
 
-const platformMetrics = [
-  {
-    id: 'revenue',
-    label: 'Revenue Lift',
-    value: '+31%',
-    detail: 'Qualified pipeline influenced across enterprise accounts',
-    data: [24, 30, 34, 42, 49, 55, 62, 71],
-  },
-  {
-    id: 'risk',
-    label: 'Risk Exposure',
-    value: '-42%',
-    detail: 'Manual review hours removed from regulated workflows',
-    data: [74, 66, 61, 54, 45, 39, 33, 28],
-  },
-  {
-    id: 'velocity',
-    label: 'Decision Velocity',
-    value: '3.8x',
-    detail: 'Faster signal-to-action time for operations teams',
-    data: [18, 25, 36, 42, 53, 61, 69, 76],
-  },
-]
 
 const trustSignals = [
   'ENTERPRISE SYSTEMS',
@@ -100,33 +77,7 @@ const capabilityVisuals = [
   { label: 'Live Deploy', detail: 'Cloud Network' },
   { label: 'Threat Scan', detail: 'Defense Active' },
 ]
-const caseStudies = [
-  {
-    company: 'Northstar Bank',
-    industry: 'Financial services',
-    result: '$18M protected',
-    text: 'Reduced exception review backlogs and surfaced high-risk transactions before settlement windows closed.',
-  },
-  {
-    company: 'Aster Cloud',
-    industry: 'B2B SaaS',
-    result: '27% expansion lift',
-    text: 'Prioritized enterprise accounts with buying intent, usage gaps, and support health in one view.',
-  },
-  {
-    company: 'Vale Health',
-    industry: 'Healthcare operations',
-    result: '44% faster routing',
-    text: 'Automated intake classification while preserving policy checks and clinical escalation rules.',
-  },
-]
 
-const workflowSteps = [
-  'Connect governed data',
-  'Model business signals',
-  'Deploy role-based copilots',
-  'Measure outcomes continuously',
-]
 
 const initialMessages = [
   {
@@ -167,50 +118,623 @@ function BrandWordmark({ className = '', alt = 'VARLEXA AI' }) {
 
   return <img className={classNames} src={varlexaWordmark} alt={alt} />
 }
-function Chart({ metric }) {
-  const points = useMemo(() => {
-    const max = Math.max(...metric.data)
-    const min = Math.min(...metric.data)
-    const range = max - min || 1
 
-    return metric.data
-      .map((value, index) => {
-        const x = (index / (metric.data.length - 1)) * 100
-        const y = 92 - ((value - min) / range) * 68
-        return `${x},${y}`
-      })
-      .join(' ')
-  }, [metric])
+const footerNavLinks = [
+  { label: 'Services', href: '/#platform' },
+  { label: 'Solutions', href: '/#top' },
+  { label: 'Projects', href: '/#chatbot' },
+  { label: 'Industries', href: '/#top' },
+  { label: 'About', href: '/about' },
+  { label: 'Insights', href: '/#chatbot' },
+]
+
+const socialLinks = [
+  {
+    name: 'LinkedIn',
+    href: 'https://www.linkedin.com/',
+    icon: 'linkedin',
+    description: 'Company updates, product thinking, and enterprise AI notes.',
+  },
+  {
+    name: 'GitHub',
+    href: 'https://github.com/',
+    icon: 'github',
+    description: 'Engineering experiments, open tooling, and implementation references.',
+  },
+  {
+    name: 'Instagram',
+    href: 'https://www.instagram.com/',
+    icon: 'instagram',
+    description: 'Brand moments, launches, and behind-the-scenes product visuals.',
+  },
+  {
+    name: 'X / Twitter',
+    href: 'https://x.com/',
+    icon: 'x',
+    description: 'Short updates on AI systems, cloud delivery, and security practices.',
+  },
+  {
+    name: 'WhatsApp',
+    href: 'https://wa.me/910000000000',
+    icon: 'whatsapp',
+    description: 'Quick business conversations and project discovery requests.',
+  },
+]
+
+
+const aboutInfoCards = [
+  {
+    title: 'AI-FIRST THINKING',
+    text: 'We design practical AI systems that improve operations, decision-making, and customer experiences.',
+  },
+  {
+    title: 'ENGINEERING EXCELLENCE',
+    text: 'We build secure, scalable applications, platforms, APIs, and cloud systems.',
+  },
+  {
+    title: 'LONG-TERM PARTNERSHIP',
+    text: 'We focus on systems that continue creating value as your organization grows.',
+  },
+]
+
+const aboutValues = [
+  {
+    number: '01',
+    title: 'Clarity over complexity',
+    text: 'We simplify technical decisions and build systems teams can confidently operate.',
+  },
+  {
+    number: '02',
+    title: 'Security by design',
+    text: 'Security, privacy, governance, and reliability are built into every layer.',
+  },
+  {
+    number: '03',
+    title: 'Outcomes that matter',
+    text: 'We focus on measurable improvements, not technology for its own sake.',
+  },
+  {
+    number: '04',
+    title: 'Built to evolve',
+    text: 'Our systems are designed to adapt as products, teams, and markets change.',
+  },
+]
+
+const aboutCapabilityChips = [
+  'Artificial Intelligence',
+  'Custom Software',
+  'Cloud & DevOps',
+  'Cybersecurity',
+  'Automation Systems',
+  'Web Platforms',
+  'Mobile Applications',
+  'Data Intelligence',
+]
+const privacySections = [
+  {
+    title: 'Introduction',
+    text: 'Varlexa AI respects privacy and handles information with care. This policy explains how we collect, use, and protect information when you interact with our website, forms, and digital services.',
+  },
+  {
+    title: 'Information We Collect',
+    text: 'We may collect contact details, company information, project requirements, messages you submit, and basic technical data such as browser type, device information, and site usage patterns.',
+  },
+  {
+    title: 'How We Use Information',
+    text: 'We use information to respond to inquiries, prepare project conversations, improve our website, maintain service quality, and communicate relevant updates when appropriate.',
+  },
+  {
+    title: 'Cookies and Analytics',
+    text: 'Our website may use cookies or analytics tools to understand performance, traffic patterns, and user experience. You can control cookies through your browser settings.',
+  },
+  {
+    title: 'Data Security',
+    text: 'We apply reasonable technical and organizational safeguards to protect information from unauthorized access, misuse, alteration, or disclosure.',
+  },
+  {
+    title: 'Third-Party Services',
+    text: 'We may rely on trusted third-party platforms for communication, analytics, hosting, or operational workflows. These providers process information according to their own privacy practices.',
+  },
+  {
+    title: 'Your Rights',
+    text: 'You may request access, correction, or deletion of your personal information, subject to applicable legal and operational requirements.',
+  },
+  {
+    title: 'Contact Information',
+    text: 'For privacy questions or requests, contact us at hello@varlexa.ai or reach us from Solapur, Maharashtra, India.',
+  },
+  {
+    title: 'Policy Updates',
+    text: 'We may update this policy as our services evolve. Updates will be posted on this page with the latest applicable information.',
+  },
+]
+
+function SocialIcon({ icon }) {
+  if (icon === 'linkedin') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7.2 9.4V20M7.2 5.2V5.3M11.2 20V9.4M11.2 13.8C11.2 11.1 12.9 9.2 15.5 9.2C18.1 9.2 19.4 11 19.4 13.8V20" />
+      </svg>
+    )
+  }
+
+  if (icon === 'github') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 19.4C4.8 20.6 4.8 17.3 3.2 16.8M14.8 21V17.7C14.8 16.8 14.9 16.4 14.3 15.8C17.1 15.5 20 14.4 20 9.8C20 8.6 19.6 7.5 18.8 6.6C18.9 6.3 19.3 5 18.7 3.7C18.7 3.7 17.7 3.4 15.4 5C14.4 4.7 13.2 4.6 12.1 4.6C11 4.6 9.8 4.7 8.8 5C6.5 3.4 5.5 3.7 5.5 3.7C4.9 5 5.3 6.3 5.4 6.6C4.6 7.5 4.2 8.6 4.2 9.8C4.2 14.4 7.1 15.5 9.9 15.8C9.3 16.3 9.1 16.9 9.1 17.8V21" />
+      </svg>
+    )
+  }
+
+  if (icon === 'instagram') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4" y="4" width="16" height="16" rx="5" />
+        <path d="M9 12A3 3 0 1 0 15 12A3 3 0 1 0 9 12M16.8 7.2H16.9" />
+      </svg>
+    )
+  }
+
+  if (icon === 'whatsapp') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 20L6.2 16.5C5.5 15.3 5.1 13.9 5.1 12.5C5.1 8.2 8.5 4.8 12.7 4.8C16.9 4.8 20.3 8.2 20.3 12.5C20.3 16.7 16.9 20.1 12.7 20.1C11.3 20.1 10 19.7 8.9 19.1L5 20Z" />
+        <path d="M9.4 9.1C9.6 12.6 12.4 15.2 15.6 15.8L16.5 14.1L14.8 13.2L13.8 14.1C12.5 13.5 11.5 12.5 10.9 11.3L11.8 10.3L10.9 8.6L9.4 9.1Z" />
+      </svg>
+    )
+  }
 
   return (
-    <svg className="metric-chart" viewBox="0 0 100 100" aria-label={`${metric.label} trend`}>
-      <defs>
-        <linearGradient id="chartLine" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#5ef7c8" />
-          <stop offset="55%" stopColor="#78a8ff" />
-          <stop offset="100%" stopColor="#f5c86b" />
-        </linearGradient>
-      </defs>
-      <path className="chart-grid" d="M0 25H100M0 50H100M0 75H100" />
-      <polyline className="chart-line" points={points} />
-      {metric.data.map((value, index) => {
-        const x = (index / (metric.data.length - 1)) * 100
-        const max = Math.max(...metric.data)
-        const min = Math.min(...metric.data)
-        const y = 92 - ((value - min) / (max - min || 1)) * 68
-
-        return <circle className="chart-point" cx={x} cy={y} r="1.8" key={`${metric.id}-${value}`} />
-      })}
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 5L19 19M19 5L5 19" />
     </svg>
   )
 }
 
+function SiteFooter({ onNavigate }) {
+  const footerRef = useRef(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const footerElement = footerRef.current
+
+    if (!footerElement) {
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+        }
+      },
+      { threshold: 0.2 },
+    )
+
+    observer.observe(footerElement)
+
+    return () => observer.disconnect()
+  }, [])
+
+  function goToPage(event, path) {
+    event.preventDefault()
+    onNavigate(path)
+  }
+
+  return (
+    <footer className={`site-footer ${isVisible ? 'is-visible' : ''}`} ref={footerRef}>
+      <div className="footer-inner">
+        <div className="footer-brand footer-reveal">
+          <a href="/#top" aria-label="Varlexa AI home">
+            <BrandWordmark className="footer-wordmark" alt="VARLEXA AI" />
+          </a>
+          <span className="footer-glow-line"></span>
+          <p>AI solutions, software engineering, cloud systems, and secure digital infrastructure for modern businesses.</p>
+        </div>
+
+        <nav className="footer-nav footer-reveal" aria-label="Footer navigation">
+          <h3>Navigate</h3>
+          <div>
+            {footerNavLinks.map((link) => (
+              <a
+                href={link.href}
+                key={link.label}
+                onClick={link.href === '/about' ? (event) => goToPage(event, '/about') : undefined}
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        </nav>
+
+        <div className="footer-contact footer-reveal">
+          <h3>Contact</h3>
+          <a href="mailto:hello@varlexa.ai">hello@varlexa.ai</a>
+          <a href="tel:+910000000000">+91 00000 00000</a>
+          <span>Solapur, Maharashtra, India</span>
+          <a className="footer-action" href="/contact" onClick={(event) => goToPage(event, '/contact')}>Contact Us</a>
+        </div>
+
+        <div className="footer-social footer-reveal">
+          <h3>Social Network</h3>
+          <div className="social-icons" aria-label="Social links">
+            {socialLinks.map((social) => (
+              <a href={social.href} key={social.name} target="_blank" rel="noreferrer" aria-label={social.name}>
+                <SocialIcon icon={social.icon} />
+              </a>
+            ))}
+          </div>
+          <a className="footer-page-link" href="/social" onClick={(event) => goToPage(event, '/social')}>Social Network</a>
+        </div>
+      </div>
+
+      <div className="footer-bottom">
+        <span>© 2026 Varlexa AI. All rights reserved.</span>
+        <div>
+          <a href="/privacy-policy" onClick={(event) => goToPage(event, '/privacy-policy')}>Privacy Policy</a>
+          <a href="/#top">Terms &amp; Conditions</a>
+          <a href="/#top">Cookie Policy</a>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+
+function AboutPage({ onNavigate }) {
+  const pageRef = useRef(null)
+
+  useEffect(() => {
+    const revealItems = Array.from(pageRef.current?.querySelectorAll('.about-reveal') || [])
+
+    if (!revealItems.length) {
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.18, rootMargin: '0px 0px -10% 0px' },
+    )
+
+    revealItems.forEach((item) => observer.observe(item))
+
+    return () => observer.disconnect()
+  }, [])
+
+  function goTo(event, target) {
+    if (target === 'services') {
+      return
+    }
+
+    event.preventDefault()
+    onNavigate('/contact')
+  }
+
+  return (
+    <section className="about-page" ref={pageRef}>
+      <div className="about-hero">
+        <div className="about-hero-copy about-reveal">
+          <p className="eyebrow">About Varlexa AI</p>
+          <h1>Engineering intelligent systems for real business impact.</h1>
+          <p>
+            Varlexa AI helps businesses design, build, secure, and scale intelligent digital systems. We combine AI development,
+            software engineering, cloud infrastructure, automation, and cybersecurity into practical solutions that create measurable outcomes.
+          </p>
+          <div className="about-actions">
+            <a className="primary-action" href="/#platform" onClick={(event) => goTo(event, 'services')}>EXPLORE SERVICES</a>
+            <a className="secondary-action" href="/contact" onClick={(event) => goTo(event, 'contact')}>CONTACT US</a>
+          </div>
+        </div>
+
+        <div className="about-visual about-reveal" aria-hidden="true">
+          <div className="network-node node-one"></div>
+          <div className="network-node node-two"></div>
+          <div className="network-node node-three"></div>
+          <div className="network-node node-four"></div>
+          <span className="network-line line-one"></span>
+          <span className="network-line line-two"></span>
+          <span className="network-line line-three"></span>
+          <div className="floating-data-card card-alpha">
+            <span>AI SIGNAL</span>
+            <strong>94%</strong>
+          </div>
+          <div className="floating-data-card card-beta">
+            <span>SECURE FLOW</span>
+            <strong>LIVE</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="about-intro about-section">
+        <div className="about-reveal">
+          <h2>Built for ambitious teams.</h2>
+          <p>
+            We work with startups, growing businesses, and enterprise teams that need reliable technology systems designed for long-term scale.
+            Our approach combines strategic thinking, engineering discipline, and practical execution.
+          </p>
+        </div>
+        <div className="about-info-grid">
+          {aboutInfoCards.map((card, index) => (
+            <article className="about-info-card about-reveal" style={{ transitionDelay: `${index * 90}ms` }} key={card.title}>
+              <span></span>
+              <h3>{card.title}</h3>
+              <p>{card.text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+
+
+      <div className="about-values about-section">
+        <div className="section-heading compact about-reveal">
+          <p className="eyebrow">How we work</p>
+          <h2>Principles behind every system we build.</h2>
+        </div>
+        <div className="about-value-grid">
+          {aboutValues.map((value, index) => (
+            <article className="about-value-card about-reveal" style={{ transitionDelay: `${index * 80}ms` }} key={value.title}>
+              <span>{value.number}</span>
+              <h3>{value.title}</h3>
+              <p>{value.text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="about-capabilities about-section about-reveal">
+        <h2>Capabilities that connect strategy to execution.</h2>
+        <div>
+          {aboutCapabilityChips.map((capability) => (
+            <span key={capability}>{capability}</span>
+          ))}
+        </div>
+      </div>
+
+      <div className="about-cta about-section about-reveal">
+        <p className="eyebrow">Ready to build?</p>
+        <h2>Let’s create systems that move your business forward.</h2>
+        <p>
+          Whether you are exploring AI, modernizing software, strengthening security, or scaling infrastructure, Varlexa AI is ready to help.
+        </p>
+        <div className="about-actions">
+          <a className="primary-action" href="/contact" onClick={(event) => goTo(event, 'contact')}>START A PROJECT</a>
+          <a className="secondary-action" href="/#platform" onClick={(event) => goTo(event, 'services')}>VIEW SERVICES</a>
+        </div>
+      </div>
+    </section>
+  )
+}
+function ContactPage() {
+  const serviceDropdownRef = useRef(null)
+  const [formValues, setFormValues] = useState({
+    fullName: '',
+    email: '',
+    company: '',
+    service: '',
+    message: '',
+  })
+  const [errors, setErrors] = useState({})
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false)
+
+  useEffect(() => {
+    function closeServiceDropdown(event) {
+      if (serviceDropdownRef.current && !serviceDropdownRef.current.contains(event.target)) {
+        setIsServiceDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', closeServiceDropdown)
+
+    return () => document.removeEventListener('mousedown', closeServiceDropdown)
+  }, [])
+
+  function updateField(event) {
+    const { name, value } = event.target
+    setFormValues((currentValues) => ({ ...currentValues, [name]: value }))
+    setErrors((currentErrors) => ({ ...currentErrors, [name]: '' }))
+  }
+
+  function validateForm() {
+    const nextErrors = {}
+
+    if (!formValues.fullName.trim()) {
+      nextErrors.fullName = 'Full name is required.'
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(formValues.email.trim())) {
+      nextErrors.email = 'Enter a valid email address.'
+    }
+
+    if (!formValues.service.trim()) {
+      nextErrors.service = 'Choose a service need.'
+    }
+
+    if (formValues.message.trim().length < 12) {
+      nextErrors.message = 'Message should be at least 12 characters.'
+    }
+
+    return nextErrors
+  }
+
+  function selectService(serviceTitle) {
+    setFormValues((currentValues) => ({ ...currentValues, service: serviceTitle }))
+    setErrors((currentErrors) => ({ ...currentErrors, service: '' }))
+    setIsServiceDropdownOpen(false)
+  }
+
+  function submitContact(event) {
+    event.preventDefault()
+    const nextErrors = validateForm()
+
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors)
+      setIsSubmitted(false)
+      return
+    }
+
+    setIsSubmitted(true)
+    setFormValues({ fullName: '', email: '', company: '', service: '', message: '' })
+  }
+
+  return (
+    <section className="page-shell contact-page">
+      <div className="page-heading">
+        <p className="eyebrow">Connect with us</p>
+        <h1>Start a conversation.</h1>
+        <p>Tell us what you want to build, secure, automate, or scale. We will respond with a practical next step.</p>
+      </div>
+
+      <div className="contact-layout">
+        <form className="contact-form" onSubmit={submitContact} noValidate>
+          <label>
+            <span>Full Name</span>
+            <input name="fullName" value={formValues.fullName} onChange={updateField} />
+            {errors.fullName && <small>{errors.fullName}</small>}
+          </label>
+          <label>
+            <span>Email Address</span>
+            <input name="email" type="email" value={formValues.email} onChange={updateField} />
+            {errors.email && <small>{errors.email}</small>}
+          </label>
+          <label>
+            <span>Company Name</span>
+            <input name="company" value={formValues.company} onChange={updateField} />
+          </label>
+          <label className="service-field field">
+            <span>Service Needed</span>
+            <div className={`dropdown ${isServiceDropdownOpen ? 'open' : ''}`} ref={serviceDropdownRef}>
+              <button
+                className="dropdown-trigger"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={isServiceDropdownOpen}
+                onClick={() => setIsServiceDropdownOpen((isOpen) => !isOpen)}
+              >
+                <span>{formValues.service || 'Select service'}</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M7 10L12 15L17 10" />
+                </svg>
+              </button>
+              {isServiceDropdownOpen && (
+                <div className="dropdown-menu" role="listbox" aria-label="Service Needed">
+                  {capabilities.map((capability) => (
+                    <button
+                      className={`dropdown-option ${formValues.service === capability.title ? 'selected' : ''}`}
+                      type="button"
+                      role="option"
+                      aria-selected={formValues.service === capability.title}
+                      key={capability.title}
+                      onClick={() => selectService(capability.title)}
+                    >
+                      <span className="dropdown-dot"></span>
+                      <span>{capability.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {errors.service && <small>{errors.service}</small>}
+          </label>
+          <label className="message-field">
+            <span>Message</span>
+            <textarea name="message" value={formValues.message} onChange={updateField} rows="6"></textarea>
+            {errors.message && <small>{errors.message}</small>}
+          </label>
+          <button className="primary-action" type="submit">Send Message</button>
+          {isSubmitted && <p className="form-success">Message received. We will get back to you shortly.</p>}
+        </form>
+
+        <aside className="contact-details">
+          <h2>Contact details</h2>
+          <a href="mailto:hello@varlexa.ai">hello@varlexa.ai</a>
+          <a href="tel:+910000000000">+91 00000 00000</a>
+          <span>Solapur, Maharashtra, India</span>
+          <div className="social-icons" aria-label="Contact social links">
+            {socialLinks.map((social) => (
+              <a href={social.href} key={social.name} target="_blank" rel="noreferrer" aria-label={social.name}>
+                <SocialIcon icon={social.icon} />
+              </a>
+            ))}
+          </div>
+        </aside>
+      </div>
+    </section>
+  )
+}
+
+function SocialPage() {
+  return (
+    <section className="page-shell social-page">
+      <div className="page-heading">
+        <p className="eyebrow">Social Network</p>
+        <h1>Connect with Varlexa AI.</h1>
+        <p>Follow the channels where we share build notes, launch updates, and practical thinking on secure AI systems.</p>
+      </div>
+
+      <div className="social-card-grid">
+        {socialLinks.map((social) => (
+          <article className="social-card" key={social.name}>
+            <span className="social-card-icon"><SocialIcon icon={social.icon} /></span>
+            <h2>{social.name}</h2>
+            <p>{social.description}</p>
+            <a className="secondary-action" href={social.href} target="_blank" rel="noreferrer">Visit Profile</a>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function PrivacyPolicyPage() {
+  return (
+    <section className="page-shell policy-page">
+      <div className="page-heading">
+        <p className="eyebrow">Privacy Policy</p>
+        <h1>Privacy built for modern digital systems.</h1>
+        <p>This policy describes how Varlexa AI handles information collected through this website and related business conversations.</p>
+      </div>
+
+      <div className="policy-panel">
+        {privacySections.map((section) => (
+          <article key={section.title}>
+            <h2>{section.title}</h2>
+            <p>{section.text}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
 function App() {
   const heroRef = useRef(null)
-  const [activeMetric, setActiveMetric] = useState(platformMetrics[0])
   const [messages, setMessages] = useState(initialMessages)
   const [input, setInput] = useState('')
   const [isHeroVideoVisible, setIsHeroVideoVisible] = useState(false)
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname)
+
+  useEffect(() => {
+    function updateRoute() {
+      setCurrentPath(window.location.pathname)
+    }
+
+    window.addEventListener('popstate', updateRoute)
+
+    return () => window.removeEventListener('popstate', updateRoute)
+  }, [])
+
+  function navigateTo(path) {
+    window.history.pushState({}, '', path)
+    setCurrentPath(path)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   useEffect(() => {
     function updateHeroVideo() {
@@ -396,11 +920,21 @@ function App() {
           <a href="#outcomes">Solutions</a>
           <a href="#security">Projects</a>
           <a href="#cases">Industries</a>
-          <a href="#top">About</a>
+          <a className={currentPath === '/about' ? 'is-active' : ''} href="/about" onClick={(event) => { event.preventDefault(); navigateTo('/about') }}>About</a>
           <a href="#chatbot">Insights</a>
         </div>
       </nav>
 
+      {currentPath === '/contact' ? (
+        <ContactPage />
+      ) : currentPath === '/social' ? (
+        <SocialPage />
+      ) : currentPath === '/privacy-policy' ? (
+        <PrivacyPolicyPage />
+      ) : currentPath === '/about' ? (
+        <AboutPage onNavigate={navigateTo} />
+      ) : (
+        <>
       <section className={`hero-section ${isHeroVideoVisible ? 'is-video-active' : ''}`} id="top" ref={heroRef}>
         <div className="hero-video-layer" aria-hidden={!isHeroVideoVisible}>
           <video className="hero-video-media" autoPlay muted loop playsInline poster={varlexaLogo}>
@@ -477,7 +1011,7 @@ function App() {
       <section className="section-block platform-block" id="platform">
         <div className="section-heading">
           <p className="eyebrow">Capabilities</p>
-          <h2>From intelligent systems to scalable digital operations.</h2>
+          <h2 className="services-heading-rotated">From intelligent systems to scalable digital operations.</h2>
           <p>
             Varlexa helps businesses design, build, secure, automate, and scale digital products
             with practical AI, software engineering, cloud infrastructure, and data intelligence.
@@ -557,116 +1091,9 @@ function App() {
         </div>
       </section>
 
-      <section className="section-block analytics-block" id="outcomes">
-        <div className="analytics-copy">
-          <p className="eyebrow">Interactive intelligence</p>
-          <h2>Executive metrics that stay connected to the work.</h2>
-          <p>
-            Every recommendation links back to source data, model confidence, and the operational
-            outcome it is designed to improve.
-          </p>
-          <div className="metric-tabs" role="tablist" aria-label="Business metrics">
-            {platformMetrics.map((metric) => (
-              <button
-                className={metric.id === activeMetric.id ? 'metric-tab is-active' : 'metric-tab'}
-                key={metric.id}
-                onClick={() => setActiveMetric(metric)}
-                role="tab"
-                type="button"
-                aria-selected={metric.id === activeMetric.id}
-              >
-                <span>{metric.label}</span>
-                <strong>{metric.value}</strong>
-              </button>
-            ))}
-          </div>
-        </div>
 
-        <div className="analytics-surface">
-          <div className="surface-header">
-            <span>{activeMetric.label}</span>
-            <strong>{activeMetric.value}</strong>
-          </div>
-          <Chart metric={activeMetric} />
-          <p>{activeMetric.detail}</p>
-          <div className="data-table" aria-label="Operational signals">
-            <div>
-              <span>Coverage</span>
-              <strong>87%</strong>
-            </div>
-            <div>
-              <span>Confidence</span>
-              <strong>94%</strong>
-            </div>
-            <div>
-              <span>Cycle gain</span>
-              <strong>16 days</strong>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="section-block workflow-block">
-        <div className="section-heading compact">
-          <p className="eyebrow">Operating model</p>
-          <h2>Designed for enterprise rollout.</h2>
-        </div>
-        <div className="workflow-track">
-          {workflowSteps.map((step, index) => (
-            <div className="workflow-step" key={step}>
-              <span>{index + 1}</span>
-              <p>{step}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
-      <section className="section-block security-block" id="security">
-        <div className="security-copy">
-          <p className="eyebrow">Trust architecture</p>
-          <h2>Controls that make AI accountable.</h2>
-          <p>
-            Governance is built into the workflow layer: approval chains, access boundaries, model
-            evaluations, and traceable decisions are visible to the teams that own risk.
-          </p>
-        </div>
-        <div className="security-grid">
-          <div>
-            <span>01</span>
-            <strong>Policy-aware agents</strong>
-            <p>Actions are constrained by business rules, user role, and model confidence.</p>
-          </div>
-          <div>
-            <span>02</span>
-            <strong>Complete audit trails</strong>
-            <p>Every answer records source context, reasoning path, and approval history.</p>
-          </div>
-          <div>
-            <span>03</span>
-            <strong>Deployment flexibility</strong>
-            <p>Run in managed cloud, private cloud, or isolated enterprise environments.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="section-block case-block" id="cases">
-        <div className="section-heading">
-          <p className="eyebrow">Case studies</p>
-          <h2>Measurable results in regulated, high-stakes operations.</h2>
-        </div>
-        <div className="case-grid">
-          {caseStudies.map((study) => (
-            <article className="case-card" key={study.company}>
-              <div>
-                <span>{study.industry}</span>
-                <h3>{study.company}</h3>
-              </div>
-              <strong>{study.result}</strong>
-              <p>{study.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
 
       <section className="section-block chatbot-block" id="chatbot">
         <div className="chat-copy">
@@ -722,6 +1149,9 @@ function App() {
           </form>
         </div>
       </section>
+        </>
+      )}
+      <SiteFooter onNavigate={navigateTo} />
     </main>
   )
 }
