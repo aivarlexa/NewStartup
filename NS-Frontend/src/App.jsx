@@ -24,6 +24,7 @@ import './App.css'
 function App() {
   const location = useLocation()
   const isDashboardRoute = location.pathname.startsWith('/developer-dashboard')
+  const isDeveloperLoginRoute = location.pathname === '/developer-login'
 
   useEffect(() => {
     if (location.hash) {
@@ -44,7 +45,7 @@ function App() {
   return (
     <AuthProvider>
       <main className="app-shell">
-        {!isDashboardRoute && <Navbar />}
+        {!isDashboardRoute && !isDeveloperLoginRoute && <Navbar />}
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/contact" element={<ContactPage />} />
