@@ -16,6 +16,9 @@ import TeamChatPage from './pages/dashboard/TeamChatPage'
 import HomePage from './pages/HomePage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import SocialPage from './pages/SocialPage'
+import { AuthProvider } from './context/AuthContext';
+import DeveloperLoginPage from './pages/DeveloperLoginPage';
+import ProtectedRoutes from './components/ProtectedRoutes';
 import './App.css'
 
 function App() {
@@ -39,27 +42,32 @@ function App() {
   }, [location.pathname, location.hash])
 
   return (
-    <main className="app-shell">
-      {!isDashboardRoute && <Navbar />}
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/social" element={<SocialPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/developer-dashboard" element={<DashboardLayout />}>
-          <Route index element={<DashboardOverview />} />
-          <Route path="projects" element={<ProjectsPage />} />
-          <Route path="project/:id" element={<ProjectDetailsPage />} />
-          <Route path="team-chat" element={<TeamChatPage />} />
-          <Route path="client-chat" element={<ClientChatPage />} />
-          <Route path="meetings" element={<MeetingsPage />} />
-          <Route path="ai-assistant" element={<AIAssistantPage />} />
-          <Route path="profile" element={<ProfilePage />} />
-        </Route>
-      </Routes>
-      {!isDashboardRoute && <Footer />}
-    </main>
+    <AuthProvider>
+      <main className="app-shell">
+        {!isDashboardRoute && <Navbar />}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/social" element={<SocialPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/developer-login" element={<DeveloperLoginPage />} />
+          <Route element={<ProtectedRoutes />}>
+            <Route path="/developer-dashboard" element={<DashboardLayout />}>
+              <Route index element={<DashboardOverview />} />
+              <Route path="projects" element={<ProjectsPage />} />
+              <Route path="project/:id" element={<ProjectDetailsPage />} />
+              <Route path="team-chat" element={<TeamChatPage />} />
+              <Route path="client-chat" element={<ClientChatPage />} />
+              <Route path="meetings" element={<MeetingsPage />} />
+              <Route path="ai-assistant" element={<AIAssistantPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+            </Route>
+          </Route>
+        </Routes>
+        {!isDashboardRoute && <Footer />}
+      </main>
+    </AuthProvider>
   )
 }
 

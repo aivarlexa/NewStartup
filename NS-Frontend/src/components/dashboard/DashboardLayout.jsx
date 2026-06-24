@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useContext, useState, useEffect } from 'react';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   Bell,
   Bot,
@@ -13,10 +13,10 @@ import {
   ShieldCheck,
   User,
   X,
-} from 'lucide-react'
-import BrandWordmark from '../BrandWordmark'
-import { dashboardNotifications } from '../../data/dashboardData'
-import './Dashboard.css'
+} from 'lucide-react';
+import BrandWordmark from '../BrandWordmark';
+import './Dashboard.css';
+import AuthContext from '../../context/AuthContext';
 
 const dashboardNav = [
   { label: 'Overview', to: '/developer-dashboard', icon: LayoutDashboard, end: true },
@@ -28,52 +28,37 @@ const dashboardNav = [
   { label: 'Profile', to: '/developer-dashboard/profile', icon: User },
 ]
 
-function DashboardLogin({ onUnlock }) {
-  return (
-    <section className="dashboard-auth">
-      <div className="dashboard-auth-card">
-        <BrandWordmark className="dashboard-auth-logo" alt="VARLEXA AI" />
-        <span className="dashboard-kicker">Protected Workspace</span>
-        <h1>Developer Dashboard</h1>
-        <p>Frontend protected area for project work, team collaboration, client communication, meetings, and AI developer assistance.</p>
-        <button type="button" onClick={onUnlock}>Enter Developer Workspace</button>
-        <Link to="/">Return to Website</Link>
-      </div>
-    </section>
-  )
-}
-
 function DashboardLayout() {
-  const navigate = useNavigate()
-  const [isUnlocked, setIsUnlocked] = useState(() => sessionStorage.getItem('varlexa-developer-dashboard') === 'true')
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [unreadNotifications, setUnreadNotifications] = useState(dashboardNotifications.length)
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    document.body.classList.add('dashboard-mode')
+    document.body.classList.add('dashboard-mode');
 
-    return () => document.body.classList.remove('dashboard-mode')
-  }, [])
+    // Fetch notifications from the backend
+    fetch('http://localhost:5000/api/notifications')
+      .then(res => res.json())
+      .then(data => {
+        setNotifications(data);
+        setUnreadCount(data.length);
+      })
+      .catch(err => console.error("Failed to fetch notifications:", err));
 
-  function unlockDashboard() {
-    sessionStorage.setItem('varlexa-developer-dashboard', 'true')
-    setIsUnlocked(true)
-  }
+    return () => document.body.classList.remove('dashboard-mode');
+  }, []); // Empty dependency array ensures this runs once on mount
 
-  function logoutDashboard() {
-    sessionStorage.removeItem('varlexa-developer-dashboard')
-    setIsUnlocked(false)
-    navigate('/')
+  function handleLogout() {
+    logout();
+    navigate('/developer-login');
   }
 
   function openNotifications() {
-    setShowNotifications((isOpen) => !isOpen)
-    setUnreadNotifications(0)
-  }
-
-  if (!isUnlocked) {
-    return <DashboardLogin onUnlock={unlockDashboard} />
+    setShowNotifications((isOpen) => !isOpen);
+    setUnreadCount(0);
   }
 
   return (
@@ -116,7 +101,7 @@ function DashboardLayout() {
             <Bell size={18} />
             <span>Notifications</span>
           </button>
-          <button className="dashboard-nav-link dashboard-logout" type="button" onClick={logoutDashboard}>
+          <button className="dashboard-nav-link dashboard-logout" type="button" onClick={handleLogout}>
             <LogOut size={18} />
             <span>Logout</span>
           </button>
@@ -135,11 +120,11 @@ function DashboardLayout() {
           <div className="dashboard-header-actions">
             <button className="dashboard-notification-button" type="button" onClick={openNotifications} aria-label="Open notifications">
               <Bell size={18} />
-              {unreadNotifications > 0 && <span>{unreadNotifications}</span>}
+              {unreadCount > 0 && <span>{unreadCount}</span>}
             </button>
             <Link className="dashboard-profile-pill" to="/developer-dashboard/profile">
               <ShieldCheck size={17} />
-              <span>Developer</span>
+              <span>{user?.name || 'Developer'}</span>
             </Link>
           </div>
 
@@ -147,10 +132,10 @@ function DashboardLayout() {
             <div className="dashboard-notification-panel">
               <div>
                 <strong>Notifications</strong>
-                <span>{unreadNotifications > 0 ? `${unreadNotifications} unread` : 'All caught up'}</span>
+                <span>{notifications.length > 0 ? `${unreadCount} unread` : 'All caught up'}</span>
               </div>
-              {dashboardNotifications.map((notification) => (
-                <p key={notification}>{notification}</p>
+              {notifications.map((notification, index) => (
+                <p key={index}>{notification}</p>
               ))}
             </div>
           )}
@@ -165,4 +150,3 @@ function DashboardLayout() {
 }
 
 export default DashboardLayout
-
