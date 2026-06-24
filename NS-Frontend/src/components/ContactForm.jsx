@@ -45,19 +45,50 @@ function ContactForm() {
     return nextErrors
   }
 
-  function submitContact(event) {
-    event.preventDefault()
-    const nextErrors = validateForm()
+  async function submitContact(event) {
+  event.preventDefault();
 
-    if (Object.keys(nextErrors).length) {
-      setErrors(nextErrors)
-      setIsSubmitted(false)
-      return
+  const nextErrors = validateForm();
+
+  if (Object.keys(nextErrors).length) {
+    setErrors(nextErrors);
+    setIsSubmitted(false);
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "http://localhost:3000/api/contact",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formValues),
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.success) {
+      setIsSubmitted(true);
+
+      setFormValues({
+        fullName: "",
+        email: "",
+        company: "",
+        service: "",
+        message: "",
+      });
+    } else {
+      alert(data.message);
     }
 
-    setIsSubmitted(true)
-    setFormValues({ fullName: '', email: '', company: '', service: '', message: '' })
+  } catch (error) {
+    console.error(error);
+    alert("Something went wrong");
   }
+}
 
   return (
     <form className="contact-form" onSubmit={submitContact} noValidate>
