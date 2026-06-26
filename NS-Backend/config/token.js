@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-const gentoken = (userId) => {
+const generateToken = (userId) => {
   try {
     return jwt.sign(
       { userId },
@@ -13,4 +13,4 @@ const gentoken = (userId) => {
   }
 };
 
-module.exports = gentoken;
+module.exports = generateToken;
