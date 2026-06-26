@@ -5130,3 +5130,523 @@ h3 {
   border-color: rgba(14, 165, 233, 0.46) !important;
   box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12), 0 8px 18px rgba(15, 23, 42, 0.06) !important;
 }
+
+
+
+/* Contact service dropdown full-list fix */
+.contact-form .service-field,
+.contact-form .dropdown.open {
+  z-index: 20;
+}
+
+.contact-form .dropdown-menu {
+  max-height: none;
+  overflow: visible;
+  gap: 2px;
+  padding: 8px;
+}
+
+.contact-form .dropdown-option {
+  min-height: 38px;
+  border-bottom-color: rgba(148, 163, 184, 0.12);
+  color: #334155;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.contact-form .dropdown-option span:last-child {
+  color: inherit;
+  opacity: 1;
+}
+
+.contact-form .dropdown-dot {
+  width: 7px;
+  height: 7px;
+  background: rgba(8, 145, 178, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(8, 145, 178, 0.16);
+}
+
+.contact-form .dropdown-option:hover .dropdown-dot,
+.contact-form .dropdown-option.selected .dropdown-dot {
+  background: #0891b2;
+  box-shadow: 0 0 10px rgba(8, 145, 178, 0.34);
+}
+
+@media (max-width: 720px) {
+  .contact-form .dropdown-menu {
+    max-height: 70svh;
+    overflow-y: auto;
+  }
+}
+
+/* Contact service dropdown contained full-list layout */
+@media (min-width: 721px) {
+  .contact-form .dropdown-menu {
+    width: min(520px, calc(200% + 20px));
+    right: 0;
+    left: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .contact-form .dropdown-option {
+    min-height: 36px;
+    border-bottom: 0;
+    border-radius: 10px;
+    padding: 0 10px;
+    font-size: 12px;
+    line-height: 1.15;
+    white-space: normal;
+  }
+
+  .contact-form .dropdown-option span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (min-width: 1041px) and (max-height: 820px) {
+  .contact-form .dropdown-menu {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: min(660px, calc(200% + 20px));
+  }
+
+  .contact-form .dropdown-option {
+    min-height: 34px;
+    font-size: 11.5px;
+  }
+}
+
+@media (max-width: 720px) {
+  .contact-form .dropdown-menu {
+    width: 100%;
+    max-height: min(360px, 62svh);
+    overflow-y: auto;
+  }
+}
+
+/* Contact colorful light restore */
+.contact-page {
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 10% 14%, rgba(186, 230, 253, 0.48), transparent 31%),
+    radial-gradient(circle at 88% 14%, rgba(221, 214, 254, 0.42), transparent 32%),
+    radial-gradient(circle at 52% 108%, rgba(254, 215, 170, 0.22), transparent 35%),
+    linear-gradient(180deg, rgba(22, 49, 82, 0.78), rgba(34, 38, 84, 0.72) 43%, rgba(14, 28, 58, 0.68));
+}
+
+.contact-page::before {
+  background:
+    radial-gradient(circle at 10% 14%, rgba(186, 230, 253, 0.48), transparent 31%),
+    radial-gradient(circle at 88% 14%, rgba(221, 214, 254, 0.42), transparent 32%),
+    radial-gradient(circle at 52% 108%, rgba(254, 215, 170, 0.22), transparent 35%),
+    linear-gradient(180deg, rgba(22, 49, 82, 0.78), rgba(34, 38, 84, 0.72) 43%, rgba(14, 28, 58, 0.68));
+  mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%), linear-gradient(180deg, transparent 0, #000 11%, #000 94%, transparent 100%);
+  mask-composite: intersect;
+}
+
+.contact-page::after {
+  opacity: 0.82;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.8) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(34, 211, 238, 0.72) 0 1px, transparent 1.7px),
+    radial-gradient(circle, rgba(196, 181, 253, 0.66) 0 1px, transparent 1.8px);
+}
+
+.contact-space::before,
+.contact-space::after,
+.contact-wave {
+  opacity: 0.44;
+}
+
+.contact-orbit {
+  opacity: 0.56;
+  border-color: rgba(125, 211, 252, 0.18);
+  box-shadow: inset 0 0 28px rgba(139, 92, 246, 0.08), 0 0 30px rgba(34, 211, 238, 0.08);
+}
+
+.contact-node,
+.heading-spark {
+  opacity: 0.8;
+  background: #67e8f9;
+  box-shadow: 0 0 22px rgba(34, 211, 238, 0.72), 0 0 48px rgba(168, 85, 247, 0.32);
+}
+
+.contact-heading .eyebrow {
+  color: #dff7ff;
+}
+
+.contact-heading p:not(.eyebrow) {
+  color: rgba(248, 250, 252, 0.96);
+}
+
+.contact-heading h1 {
+  color: #ffffff;
+  text-shadow: 0 0 22px rgba(255, 255, 255, 0.18), 0 0 34px rgba(125, 211, 252, 0.16);
+}
+
+.contact-heading h1 span {
+  background: linear-gradient(95deg, #bae6fd, #bfdbfe, #ddd6fe, #f5d0fe, #fed7aa, #bae6fd);
+  background-size: 280% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.contact-heading-line,
+.contact-detail-wave {
+  background: linear-gradient(90deg, #67e8f9, #a5b4fc, #f0abfc, #fdba74, transparent);
+  box-shadow: 0 0 18px rgba(125, 211, 252, 0.42), 0 0 30px rgba(240, 171, 252, 0.18);
+}
+
+.contact-form,
+.contact-details {
+  border-color: rgba(224, 242, 254, 0.56);
+  background:
+    linear-gradient(180deg, rgba(82, 112, 157, 0.78), rgba(63, 71, 138, 0.7)) padding-box,
+    linear-gradient(135deg, rgba(186, 230, 253, 0.92), rgba(196, 181, 253, 0.7), rgba(245, 208, 254, 0.62), rgba(254, 215, 170, 0.48)) border-box;
+  box-shadow:
+    0 22px 56px rgba(0, 0, 0, 0.24),
+    0 0 42px rgba(186, 230, 253, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 0 40px rgba(255, 255, 255, 0.09);
+}
+
+.contact-form::before,
+.contact-details::before {
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.13), transparent 28%, rgba(245, 208, 254, 0.18) 72%, rgba(254, 215, 170, 0.1));
+  opacity: 0.86;
+}
+
+.contact-form span.field-label,
+.service-field span.field-label,
+.contact-details h2 {
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(186, 230, 253, 0.16);
+}
+
+.field-label svg,
+.privacy-note svg {
+  color: #dff7ff;
+  filter: drop-shadow(0 0 9px rgba(186, 230, 253, 0.72));
+}
+
+.contact-form input,
+.contact-form textarea,
+.contact-form .dropdown-trigger {
+  border-color: rgba(241, 245, 249, 0.36);
+  background:
+    linear-gradient(180deg, rgba(40, 60, 102, 0.72), rgba(24, 32, 70, 0.68)),
+    rgba(30, 41, 79, 0.72);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 0 18px rgba(186, 230, 253, 0.06);
+}
+
+.contact-form .dropdown-trigger span {
+  color: #ffffff;
+}
+
+.contact-form input:hover,
+.contact-form textarea:hover,
+.contact-form .dropdown-trigger:hover {
+  border-color: rgba(224, 242, 254, 0.68);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 0 20px rgba(186, 230, 253, 0.12);
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus,
+.contact-form .dropdown.open .dropdown-trigger {
+  border-color: rgba(147, 197, 253, 0.9);
+  box-shadow:
+    0 0 0 3px rgba(125, 211, 252, 0.13),
+    0 0 24px rgba(240, 171, 252, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.contact-form .dropdown-menu {
+  border-color: rgba(224, 242, 254, 0.45);
+  background: rgba(55, 65, 125, 0.96);
+  box-shadow: 0 24px 52px rgba(17, 24, 39, 0.34), 0 0 28px rgba(186, 230, 253, 0.14);
+}
+
+.contact-form .dropdown-option,
+.contact-form .dropdown-option span:last-child {
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.contact-form .dropdown-option:hover,
+.contact-form .dropdown-option.selected {
+  color: #ffffff;
+  background: linear-gradient(90deg, rgba(125, 211, 252, 0.16), rgba(240, 171, 252, 0.14));
+}
+
+.contact-submit {
+  background: linear-gradient(100deg, #7dd3fc, #a5b4fc, #f0abfc, #fda4af, #fcd34d, #7dd3fc);
+  background-size: 240% 100%;
+  color: #ffffff;
+  box-shadow: 0 16px 36px rgba(186, 230, 253, 0.26), 0 0 30px rgba(245, 208, 254, 0.2);
+}
+
+.contact-submit:hover {
+  box-shadow: 0 18px 44px rgba(186, 230, 253, 0.34), 0 0 38px rgba(245, 208, 254, 0.27);
+}
+
+.privacy-note,
+.contact-detail-item a,
+.contact-detail-item > span:last-child {
+  color: #ffffff;
+}
+
+.contact-detail-icon {
+  color: var(--detail-accent, #bae6fd) !important;
+  background: rgba(58, 73, 129, 0.76) !important;
+  border-color: color-mix(in srgb, var(--detail-accent, #bae6fd), transparent 48%);
+  box-shadow: 0 0 22px var(--detail-glow, rgba(186, 230, 253, 0.26)), inset 0 0 17px rgba(255, 255, 255, 0.12) !important;
+}
+
+.detail-email {
+  --detail-accent: #e9d5ff;
+  --detail-glow: rgba(216, 180, 254, 0.28);
+}
+
+.detail-phone {
+  --detail-accent: #bae6fd;
+  --detail-glow: rgba(125, 211, 252, 0.3);
+}
+
+.detail-location {
+  --detail-accent: #fed7aa;
+  --detail-glow: rgba(253, 186, 116, 0.3);
+}
+
+.contact-social-divider {
+  background: linear-gradient(90deg, transparent, rgba(248, 250, 252, 0.34), transparent);
+}
+
+.contact-details .social-icons a,
+.contact-details .social-icons a:first-child {
+  border-color: rgba(224, 242, 254, 0.42) !important;
+  background: rgba(58, 73, 129, 0.68) !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 18px rgba(15, 23, 42, 0.12) !important;
+}
+
+.contact-details .social-icons a:hover {
+  border-color: rgba(255, 255, 255, 0.9) !important;
+  color: #ffffff !important;
+  background: rgba(99, 102, 241, 0.38) !important;
+  box-shadow: 0 0 24px rgba(125, 211, 252, 0.26), 0 0 32px rgba(240, 171, 252, 0.16) !important;
+}
+
+/* Contact dark premium restore */
+.contact-page {
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(34, 211, 238, 0.18), transparent 28%),
+    radial-gradient(circle at 86% 14%, rgba(168, 85, 247, 0.16), transparent 30%),
+    radial-gradient(circle at 50% 105%, rgba(236, 72, 153, 0.08), transparent 34%),
+    linear-gradient(180deg, #030712 0%, #050816 48%, #02040a 100%);
+}
+
+.contact-page::before {
+  background:
+    radial-gradient(circle at 13% 8%, rgba(34, 211, 238, 0.28), transparent 30%),
+    radial-gradient(circle at 86% 9%, rgba(168, 85, 247, 0.24), transparent 28%),
+    radial-gradient(circle at 50% 104%, rgba(236, 72, 153, 0.11), transparent 32%),
+    linear-gradient(180deg, #030712 0%, #050816 48%, #02040a 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 7%, #000 93%, transparent 100%), linear-gradient(180deg, transparent 0, #000 11%, #000 94%, transparent 100%);
+  mask-composite: intersect;
+}
+
+.contact-page::after {
+  opacity: 0.68;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.8) 0 1px, transparent 1.5px),
+    radial-gradient(circle, rgba(34, 211, 238, 0.72) 0 1px, transparent 1.7px),
+    radial-gradient(circle, rgba(196, 181, 253, 0.66) 0 1px, transparent 1.8px);
+}
+
+.contact-space::before,
+.contact-space::after,
+.contact-wave {
+  opacity: 0.5;
+}
+
+.contact-orbit {
+  opacity: 0.58;
+  border-color: rgba(125, 211, 252, 0.14);
+  box-shadow: inset 0 0 28px rgba(139, 92, 246, 0.08), 0 0 30px rgba(34, 211, 238, 0.08);
+}
+
+.contact-node,
+.heading-spark {
+  opacity: 0.85;
+  background: #67e8f9;
+  box-shadow: 0 0 22px rgba(34, 211, 238, 0.72), 0 0 48px rgba(168, 85, 247, 0.32);
+}
+
+.contact-heading .eyebrow {
+  color: #67e8f9;
+}
+
+.contact-heading h1 {
+  color: #ffffff;
+  text-shadow: 0 0 28px rgba(34, 211, 238, 0.08);
+}
+
+.contact-heading h1 span {
+  background: linear-gradient(95deg, #22d3ee, #3b82f6, #8b5cf6, #ec4899, #fb923c, #22d3ee);
+  background-size: 280% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.contact-heading p:not(.eyebrow) {
+  color: rgba(226, 232, 240, 0.86);
+}
+
+.contact-heading-line,
+.contact-detail-wave {
+  background: linear-gradient(90deg, #22d3ee, #3b82f6, #a855f7, #ec4899, transparent);
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.42), 0 0 30px rgba(236, 72, 153, 0.16);
+}
+
+.contact-form,
+.contact-details {
+  border-color: rgba(125, 211, 252, 0.26);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(2, 6, 23, 0.74)) padding-box,
+    linear-gradient(135deg, rgba(34, 211, 238, 0.7), rgba(59, 130, 246, 0.42), rgba(168, 85, 247, 0.58), rgba(236, 72, 153, 0.42)) border-box;
+  box-shadow:
+    0 24px 72px rgba(0, 0, 0, 0.46),
+    0 0 48px rgba(34, 211, 238, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 40px rgba(59, 130, 246, 0.08);
+}
+
+.contact-form::before,
+.contact-details::before {
+  background: linear-gradient(120deg, rgba(34, 211, 238, 0.12), transparent 30%, rgba(236, 72, 153, 0.1) 72%, transparent);
+  opacity: 0.72;
+}
+
+.contact-form span.field-label,
+.service-field span.field-label,
+.contact-details h2 {
+  color: rgba(248, 250, 252, 0.9);
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.12);
+}
+
+.field-label svg,
+.privacy-note svg {
+  color: #67e8f9;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.5));
+}
+
+.contact-form input,
+.contact-form textarea,
+.contact-form .dropdown-trigger {
+  border-color: rgba(148, 163, 184, 0.18);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.7), rgba(2, 6, 23, 0.64)),
+    rgba(8, 13, 26, 0.78);
+  color: #f8fafc;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 0 0 rgba(34, 211, 238, 0);
+}
+
+.contact-form .dropdown-trigger span {
+  color: #f8fafc;
+}
+
+.contact-form input:hover,
+.contact-form textarea:hover,
+.contact-form .dropdown-trigger:hover {
+  border-color: rgba(34, 211, 238, 0.42);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus,
+.contact-form .dropdown.open .dropdown-trigger {
+  border-color: rgba(103, 232, 249, 0.9);
+  box-shadow:
+    0 0 0 3px rgba(34, 211, 238, 0.11),
+    0 0 28px rgba(168, 85, 247, 0.17),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.contact-form .dropdown-menu {
+  border-color: rgba(103, 232, 249, 0.34);
+  background: rgba(5, 10, 24, 0.98);
+  box-shadow: 0 26px 58px rgba(0, 0, 0, 0.62), 0 0 34px rgba(34, 211, 238, 0.13);
+}
+
+.contact-form .dropdown-option,
+.contact-form .dropdown-option span:last-child {
+  color: rgba(226, 232, 240, 0.94);
+}
+
+.contact-form .dropdown-option:hover,
+.contact-form .dropdown-option.selected {
+  color: #ffffff;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.18), rgba(168, 85, 247, 0.12));
+}
+
+.contact-submit {
+  color: #ffffff;
+  background: linear-gradient(100deg, #22d3ee, #2563eb, #8b5cf6, #ec4899, #fb923c, #22d3ee);
+  background-size: 260% 100%;
+  box-shadow: 0 18px 44px rgba(34, 211, 238, 0.2), 0 0 34px rgba(236, 72, 153, 0.16);
+}
+
+.contact-submit:hover {
+  box-shadow: 0 22px 56px rgba(34, 211, 238, 0.28), 0 0 46px rgba(236, 72, 153, 0.22);
+}
+
+.privacy-note,
+.contact-detail-item a,
+.contact-detail-item > span:last-child {
+  color: rgba(248, 250, 252, 0.92);
+}
+
+.contact-detail-icon {
+  color: var(--detail-accent, #67e8f9) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: color-mix(in srgb, var(--detail-accent, #67e8f9), transparent 48%);
+  box-shadow: 0 0 22px var(--detail-glow, rgba(34, 211, 238, 0.24)), inset 0 0 16px rgba(255, 255, 255, 0.08) !important;
+}
+
+.detail-email {
+  --detail-accent: #c084fc;
+  --detail-glow: rgba(192, 132, 252, 0.24);
+}
+
+.detail-phone {
+  --detail-accent: #67e8f9;
+  --detail-glow: rgba(34, 211, 238, 0.24);
+}
+
+.detail-location {
+  --detail-accent: #f59e0b;
+  --detail-glow: rgba(245, 158, 11, 0.24);
+}
+
+.contact-social-divider {
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.28), transparent);
+}
+
+.contact-details .social-icons a,
+.contact-details .social-icons a:first-child {
+  border-color: rgba(125, 211, 252, 0.26) !important;
+  background: rgba(15, 23, 42, 0.62) !important;
+  color: rgba(226, 232, 240, 0.9) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 18px rgba(0, 0, 0, 0.12) !important;
+}
+
+.contact-details .social-icons a:hover {
+  border-color: rgba(34, 211, 238, 0.78) !important;
+  color: #67e8f9 !important;
+  background: rgba(34, 211, 238, 0.09) !important;
+  box-shadow: 0 0 26px rgba(34, 211, 238, 0.22), 0 0 36px rgba(236, 72, 153, 0.12) !important;
+}
