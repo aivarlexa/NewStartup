@@ -9,7 +9,7 @@ function ServiceCard({ capability, index }) {
       </div>
       <p>{capability.text}</p>
       <div className="capability-action-block">
-        <Link className="capability-arrow" to="/#chatbot" aria-label={`Discuss ${capability.title}`}>
+        <Link className="capability-arrow" to="/about" aria-label={`Learn more about ${capability.title}`}>
           ↗
         </Link>
         <div className="capability-tags" aria-label={`${capability.title} categories`}>
@@ -23,3 +23,4 @@ function ServiceCard({ capability, index }) {
 }
 
 export default ServiceCard
+

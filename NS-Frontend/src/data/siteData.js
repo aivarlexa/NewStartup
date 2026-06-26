@@ -1,10 +1,3 @@
-export const trustSignals = [
-  'ENTERPRISE SYSTEMS',
-  'CYBER DEFENSE',
-  'APPLIED INTELLIGENCE',
-  'CLOUD PLATFORMS',
-]
-
 export const capabilities = [
   {
     title: 'AI Development',

@@ -11,14 +11,18 @@ function Navbar() {
       </Link>
       <div className="nav-links">
         <Link to="/#platform">Services</Link>
-        <Link to="/#outcomes">Solutions</Link>
-        <Link to="/#security">Projects</Link>
-        <Link to="/#cases">Industries</Link>
         <Link className={location.pathname === '/about' ? 'is-active' : ''} to="/about">About</Link>
         <Link to="/#chatbot">Insights</Link>
+        <Link
+          className={`nav-cta ${location.pathname === '/developer-login' ? 'is-active' : ''}`}
+          to="/developer-login"
+        >
+          Developer Login
+        </Link>
       </div>
     </nav>
   )
 }
 
 export default Navbar
+

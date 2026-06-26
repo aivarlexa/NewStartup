@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import varlexaLogo from '../assets/varlexa-logo.png'
 import varlexaMark from '../assets/varlexa-mark.png'
-import { trustSignals } from '../data/siteData'
 import BrandWordmark from './BrandWordmark'
 
 function Hero() {
@@ -51,7 +50,7 @@ function Hero() {
           <p className="brand-breadcrumb hero-video-breadcrumb">
             <span>/ SYSTEMS ENGINEERING / SECURITY</span>
           </p>
-          <h2>Intelligence Beyond Imagination Innovation Beyond Expectations</h2>
+          <h2>Verlexa AI Intelligence Beyond Imagination Innovation Beyond Expectations</h2>
         </div>
       </div>
 
@@ -74,11 +73,6 @@ function Hero() {
           <Link className="secondary-action" to="/#cases">
             EXPLORE SYSTEMS
           </Link>
-        </div>
-        <div className="trust-strip" aria-label="Trust signals">
-          {trustSignals.map((signal) => (
-            <span key={signal}>{signal}</span>
-          ))}
         </div>
       </div>
 
