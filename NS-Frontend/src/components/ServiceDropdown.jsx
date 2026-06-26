@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Layers } from 'lucide-react'
 import { capabilities } from '../data/siteData'
 
 function ServiceDropdown({ value, error, onChange }) {
@@ -24,7 +25,7 @@ function ServiceDropdown({ value, error, onChange }) {
 
   return (
     <label className="service-field field">
-      <span>Service Needed</span>
+      <span className="field-label"><Layers aria-hidden="true" />Service Needed</span>
       <div className={`dropdown ${isServiceDropdownOpen ? 'open' : ''}`} ref={serviceDropdownRef}>
         <button
           className="dropdown-trigger"

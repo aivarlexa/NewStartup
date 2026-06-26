@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Building2, Mail, MessageSquare, Send, ShieldCheck, User } from 'lucide-react'
 import ServiceDropdown from './ServiceDropdown'
 
 function ContactForm() {
@@ -93,26 +94,30 @@ function ContactForm() {
   return (
     <form className="contact-form" onSubmit={submitContact} noValidate>
       <label>
-        <span>Full Name</span>
+        <span className="field-label"><User aria-hidden="true" />Full Name</span>
         <input name="fullName" value={formValues.fullName} onChange={updateField} />
         {errors.fullName && <small>{errors.fullName}</small>}
       </label>
       <label>
-        <span>Email Address</span>
+        <span className="field-label"><Mail aria-hidden="true" />Email Address</span>
         <input name="email" type="email" value={formValues.email} onChange={updateField} />
         {errors.email && <small>{errors.email}</small>}
       </label>
       <label>
-        <span>Company Name</span>
+        <span className="field-label"><Building2 aria-hidden="true" />Company Name</span>
         <input name="company" value={formValues.company} onChange={updateField} />
       </label>
       <ServiceDropdown value={formValues.service} error={errors.service} onChange={updateService} />
       <label className="message-field">
-        <span>Message</span>
+        <span className="field-label"><MessageSquare aria-hidden="true" />Message</span>
         <textarea name="message" value={formValues.message} onChange={updateField} rows="6"></textarea>
         {errors.message && <small>{errors.message}</small>}
       </label>
-      <button className="primary-action" type="submit">Send Message</button>
+      <button className="primary-action contact-submit" type="submit">
+        <span>Send Message</span>
+        <Send aria-hidden="true" />
+      </button>
+      <p className="privacy-note"><ShieldCheck aria-hidden="true" />We respect your privacy. Your information is safe with us.</p>
       {isSubmitted && <p className="form-success">Message received. We will get back to you shortly.</p>}
     </form>
   )
