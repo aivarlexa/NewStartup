@@ -149,6 +149,10 @@
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-strong);
 }
+.mobile-nav-toggle,
+.mobile-nav-panel {
+  display: none;
+}
 
 .hero-section {
   position: relative;
@@ -2175,6 +2179,90 @@ h3 {
 
   .nav-links {
     display: none;
+  }
+  .topbar {
+    position: relative;
+    z-index: 40;
+  }
+
+  .mobile-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: end;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-strong);
+    cursor: pointer;
+    transition:
+      background-color 180ms ease,
+      color 180ms ease,
+      transform 180ms ease;
+  }
+
+  .mobile-nav-toggle:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+  }
+
+  .mobile-nav-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 60;
+    display: grid;
+    gap: 6px;
+    max-width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(5, 7, 11, 0.96);
+    box-shadow: 0 22px 54px rgba(0, 0, 0, 0.36);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px);
+    transition:
+      opacity 180ms ease,
+      transform 180ms ease;
+  }
+
+  .mobile-nav-panel.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .mobile-nav-panel a {
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 650;
+    text-decoration: none;
+    transition:
+      background-color 180ms ease,
+      color 180ms ease;
+  }
+
+  .mobile-nav-panel a:hover,
+  .mobile-nav-panel a.is-active {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-strong);
+  }
+
+  .mobile-nav-panel .mobile-nav-cta {
+    justify-content: center;
+    margin-top: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-strong);
   }
 
   .hero-section,
@@ -5650,5 +5738,6 @@ h3 {
   background: rgba(34, 211, 238, 0.09) !important;
   box-shadow: 0 0 26px rgba(34, 211, 238, 0.22), 0 0 36px rgba(236, 72, 153, 0.12) !important;
 }
+
 
 

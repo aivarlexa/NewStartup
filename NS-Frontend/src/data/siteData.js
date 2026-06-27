@@ -99,9 +99,6 @@ export const promptReplies = [
 
 export const footerNavLinks = [
   { label: 'Services', href: '/#platform' },
-  { label: 'Solutions', href: '/#top' },
-  { label: 'Projects', href: '/#chatbot' },
-  { label: 'Industries', href: '/#top' },
   { label: 'About', href: '/about' },
   { label: 'Insights', href: '/#chatbot' },
 ]
@@ -226,3 +223,4 @@ export const privacySections = [
     text: 'We may update this policy as our services evolve. Updates will be posted on this page with the latest applicable information.',
   },
 ]
+
