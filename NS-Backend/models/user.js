@@ -17,7 +17,17 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: true,
+      default: "",
+    },
+
+    google: {
+      type: Boolean,
+      default: false,
+    },
+
+    avatar: {
+      type: String,
+      default: "",
     },
 
     role: {
@@ -30,7 +40,7 @@ const userSchema = new mongoose.Schema(
         "Developer",
         "Other",
       ],
-      required: true,
+      default: "Client",
     },
   },
   {
