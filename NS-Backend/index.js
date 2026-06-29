@@ -5,6 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const contactRoutes = require("./routes/contactRoutes");
 const authRoutes = require("./routes/authRoutes");
+const insightsRoutes = require("./routes/insightsRoutes");
 
 
 
@@ -34,6 +35,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/contact", contactRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/insights", insightsRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on ${port}`);

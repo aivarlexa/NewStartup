@@ -149,6 +149,10 @@
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-strong);
 }
+.mobile-nav-toggle,
+.mobile-nav-panel {
+  display: none;
+}
 
 .hero-section {
   position: relative;
@@ -165,6 +169,7 @@
 
 .hero-copy {
   position: relative;
+  top: -28px;
   z-index: 2;
   max-width: 650px;
   transition:
@@ -715,7 +720,7 @@ h3 {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) 130px;
+  grid-template-columns: 150px 3px minmax(0, 1fr) 130px;
   align-items: center;
   gap: 18px;
   width: 100%;
@@ -741,6 +746,10 @@ h3 {
     box-shadow 260ms ease,
     background-color 260ms ease,
     filter 260ms ease;
+}
+
+.capability-card.is-contact-card {
+  cursor: pointer;
 }
 
 .capability-card::before {
@@ -778,13 +787,13 @@ h3 {
     transform 680ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.capability-title-block::before {
-  content: '';
-  position: absolute;
-  top: 20px;
-  bottom: 20px;
-  left: 0;
+.capability-divider {
+  display: block;
   width: 3px;
+  height: 104px;
+  min-height: 62px;
+  align-self: center;
+  justify-self: center;
   border-radius: 999px;
   background: var(--service-accent);
   box-shadow: 0 0 18px rgba(var(--service-accent-rgb), 0.52);
@@ -793,12 +802,6 @@ h3 {
   transform-origin: center;
   transition: opacity 240ms ease, transform 320ms ease;
 }
-
-.capability-row.card-right .capability-title-block::before {
-  right: 0;
-  left: auto;
-}
-
 .capability-row.is-visible .capability-card {
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
@@ -833,7 +836,7 @@ h3 {
   transform: translateX(12%) skewX(-8deg) scale(1.08);
 }
 
-.capability-card:hover .capability-title-block::before {
+.capability-card:hover .capability-divider {
   opacity: 1;
   transform: scaleY(1);
 }
@@ -857,21 +860,8 @@ h3 {
 }
 
 .capability-card h3::after {
-  content: '';
-  display: block;
-  width: 42px;
-  height: 1px;
-  margin-top: 12px;
-  background: linear-gradient(90deg, rgba(var(--service-accent-rgb), 0.9), transparent);
-  opacity: 0.88;
-  transition: width 220ms ease, opacity 180ms ease;
+  content: none;
 }
-
-.capability-card:hover h3::after {
-  width: 68px;
-  opacity: 1;
-}
-
 .card-index {
   color: var(--accent-gold);
   font-size: 12px;
@@ -2176,6 +2166,90 @@ h3 {
   .nav-links {
     display: none;
   }
+  .topbar {
+    position: relative;
+    z-index: 40;
+  }
+
+  .mobile-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: end;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-strong);
+    cursor: pointer;
+    transition:
+      background-color 180ms ease,
+      color 180ms ease,
+      transform 180ms ease;
+  }
+
+  .mobile-nav-toggle:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+  }
+
+  .mobile-nav-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 60;
+    display: grid;
+    gap: 6px;
+    max-width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(5, 7, 11, 0.96);
+    box-shadow: 0 22px 54px rgba(0, 0, 0, 0.36);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px);
+    transition:
+      opacity 180ms ease,
+      transform 180ms ease;
+  }
+
+  .mobile-nav-panel.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .mobile-nav-panel a {
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 650;
+    text-decoration: none;
+    transition:
+      background-color 180ms ease,
+      color 180ms ease;
+  }
+
+  .mobile-nav-panel a:hover,
+  .mobile-nav-panel a.is-active {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-strong);
+  }
+
+  .mobile-nav-panel .mobile-nav-cta {
+    justify-content: center;
+    margin-top: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-strong);
+  }
 
   .hero-section,
   .chatbot-block {
@@ -2188,6 +2262,7 @@ h3 {
   }
 
   .hero-copy {
+    top: -18px;
     max-width: 760px;
   }
 
@@ -2227,7 +2302,7 @@ h3 {
   }
 
   .capability-card {
-    grid-template-columns: minmax(118px, 0.72fr) minmax(0, 1fr) 96px;
+    grid-template-columns: minmax(118px, 0.72fr) 3px minmax(0, 1fr) 96px;
     gap: 14px;
     padding: 20px;
   }
@@ -2412,9 +2487,9 @@ h3 {
   }
 
   .capability-card {
-    grid-template-columns: 1fr;
-    align-items: start;
-    gap: 18px;
+    grid-template-columns: minmax(82px, 0.72fr) 3px minmax(0, 1fr) minmax(72px, 0.58fr);
+    align-items: center;
+    gap: 10px;
     width: 100%;
     height: auto;
     min-height: 0;
@@ -2425,15 +2500,19 @@ h3 {
     max-width: none;
   }
 
+  .capability-divider {
+    height: 86px;
+  }
+
   .capability-action-block {
     grid-column: auto;
     grid-template-columns: 1fr;
-    justify-items: start;
+    justify-items: end;
   }
 
   .capability-tags {
-    justify-content: flex-start;
-    max-width: none;
+    justify-content: flex-end;
+    max-width: 96px;
   }
 
   .logo-band span {
@@ -5650,5 +5729,6 @@ h3 {
   background: rgba(34, 211, 238, 0.09) !important;
   box-shadow: 0 0 26px rgba(34, 211, 238, 0.22), 0 0 36px rgba(236, 72, 153, 0.12) !important;
 }
+
 
 

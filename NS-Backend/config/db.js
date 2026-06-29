@@ -1,14 +1,17 @@
 const mongoose = require("mongoose");
-require("dotenv").config();
 
 const connectDB = async () => {
+  if (!process.env.MONGODB_URI) {
+    console.warn("MONGODB_URI is not set. Skipping MongoDB connection.");
+    return;
+  }
+
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-    });
-    console.log("MongoDB Connected");
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
+
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(error.message);
+    console.error(`Error: ${error.message}`);
     process.exit(1);
   }
 };

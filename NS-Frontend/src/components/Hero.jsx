@@ -48,7 +48,7 @@ function Hero() {
         </div>
         <div className="hero-video-copy">
           <p className="brand-breadcrumb hero-video-breadcrumb">
-            <span>/ SYSTEMS ENGINEERING / SECURITY</span>
+        
           </p>
           <h2>Verlexa AI Intelligence Beyond Imagination Innovation Beyond Expectations</h2>
         </div>
@@ -56,7 +56,7 @@ function Hero() {
 
       <div className="hero-copy">
         <p className="eyebrow brand-breadcrumb">
-          <span>/ SYSTEMS ENGINEERING / SECURITY</span>
+      
         </p>
         <h1 className="hero-title">
           <span>AI Solutions &amp;</span>
@@ -69,9 +69,6 @@ function Hero() {
         <div className="hero-actions">
           <Link className="primary-action" to="/#platform">
             START A PROJECT
-          </Link>
-          <Link className="secondary-action" to="/#cases">
-            EXPLORE SYSTEMS
           </Link>
         </div>
       </div>
