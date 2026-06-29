@@ -4,6 +4,7 @@ dotenv.config();
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const contactRoutes = require("./routes/contactRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 
 
@@ -31,6 +32,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/contact", contactRoutes);
+app.use("/api/auth", authRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on ${port}`);
