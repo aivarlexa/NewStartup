@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import { GoogleLogin } from "@react-oauth/google";
 import {
+  ArrowLeft,
   Mail,
   Lock,
   ShieldCheck,
@@ -50,6 +51,15 @@ function DeveloperLoginPage() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
+  function handleBack() {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/');
+  }
 
   const validateForm = () => {
     const newErrors = {};
@@ -234,6 +244,10 @@ function DeveloperLoginPage() {
     <div className="login-page">
       <div className="login-background-grid"></div>
       <div className="login-aurora"></div>
+      <button className="login-back-button" type="button" onClick={handleBack}>
+        <ArrowLeft size={18} />
+        <span>Back</span>
+      </button>
 
       <div className={`login-stage ${authMode === 'signup' ? 'signup-mode' : ''}`}>
         <div className="diagonal-wipe" aria-hidden="true"></div>
@@ -424,3 +438,5 @@ function DeveloperLoginPage() {
 }
 
 export default DeveloperLoginPage;
+
+

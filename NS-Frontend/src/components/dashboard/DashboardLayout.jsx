@@ -1,6 +1,7 @@
 import { useContext, useState, useEffect } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
+  ArrowLeft,
   Bell,
   Bot,
   Briefcase,
@@ -31,6 +32,7 @@ const dashboardNav = [
 function DashboardLayout() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -50,6 +52,17 @@ function DashboardLayout() {
 
     return () => document.body.classList.remove('dashboard-mode');
   }, []); // Empty dependency array ensures this runs once on mount
+
+  const canGoBack = location.pathname !== '/developer-dashboard';
+
+  function handleBack() {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/developer-dashboard');
+  }
 
   function handleLogout() {
     logout();
@@ -110,9 +123,17 @@ function DashboardLayout() {
 
       <div className="dashboard-main-shell">
         <header className="dashboard-header">
-          <button className="dashboard-icon-button mobile-menu" type="button" onClick={() => setIsSidebarOpen(true)} aria-label="Open dashboard menu">
-            <Menu size={20} />
-          </button>
+          <div className="dashboard-header-left">
+            <button className="dashboard-icon-button mobile-menu" type="button" onClick={() => setIsSidebarOpen(true)} aria-label="Open dashboard menu">
+              <Menu size={20} />
+            </button>
+            {canGoBack && (
+              <button className="dashboard-back-button" type="button" onClick={handleBack}>
+                <ArrowLeft size={18} />
+                <span>Back</span>
+              </button>
+            )}
+          </div>
           <div>
             <span>Secure developer area</span>
             <strong>Varlexa AI Workspace</strong>
