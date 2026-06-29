@@ -328,6 +328,10 @@
   transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
+.input-group input.password-input {
+  padding-right: 56px;
+}
+
 .input-group select {
   appearance: none;
   cursor: pointer;
@@ -397,12 +401,14 @@
   background: transparent;
   transform: translateY(-50%);
   cursor: pointer;
-  transition: color 160ms ease, background 160ms ease;
+  transition: color 160ms ease, background 160ms ease, filter 160ms ease, box-shadow 160ms ease;
 }
 
 .password-toggle:hover {
   color: #f7fafc;
   background: rgba(49, 230, 230, 0.08);
+  box-shadow: 0 0 14px rgba(49, 230, 230, 0.16);
+  filter: brightness(1.08);
 }
 
 .error-message {
@@ -1335,6 +1341,8 @@
 .password-toggle:hover {
   color: #f8fafc;
   background: rgba(45, 212, 191, 0.08);
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.14);
+  filter: brightness(1.08);
 }
 
 .login-button {

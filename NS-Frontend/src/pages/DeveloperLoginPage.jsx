@@ -4,8 +4,6 @@ import AuthContext from '../context/AuthContext';
 import {
   Mail,
   Lock,
-  Eye,
-  EyeOff,
   ShieldCheck,
   ArrowRight,
   LoaderCircle,
@@ -16,6 +14,7 @@ import {
   CircleDot,
 } from 'lucide-react';
 import BrandWordmark from '../components/BrandWordmark';
+import PasswordInput from '../components/PasswordInput';
 import './DeveloperLoginPage.css';
 
 const ROLE_OPTIONS = [
@@ -30,7 +29,6 @@ const ROLE_OPTIONS = [
 function DeveloperLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -238,10 +236,7 @@ function DeveloperLoginPage() {
                     </div>
                     <div className="input-group">
                       <Lock size={20} />
-                      <input type={showPassword ? 'text' : 'password'} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                      <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label="Toggle password visibility">
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
+                      <PasswordInput placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
                       {errors.password && <span className="error-message">{errors.password}</span>}
                     </div>
                     <div className="login-options">
@@ -294,12 +289,12 @@ function DeveloperLoginPage() {
                     </div>
                     <div className="input-group">
                       <Lock size={20} />
-                      <input name="password" type="password" placeholder="Create Password" value={signupValues.password} onChange={updateSignupField} />
+                      <PasswordInput name="password" placeholder="Create Password" value={signupValues.password} onChange={updateSignupField} />
                       {errors.signupPassword && <span className="error-message">{errors.signupPassword}</span>}
                     </div>
                     <div className="input-group">
                       <Lock size={20} />
-                      <input name="confirmPassword" type="password" placeholder="Confirm Password" value={signupValues.confirmPassword} onChange={updateSignupField} />
+                      <PasswordInput name="confirmPassword" placeholder="Confirm Password" value={signupValues.confirmPassword} onChange={updateSignupField} />
                       {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
                     </div>
                     <div className="input-group role-group">
@@ -397,4 +392,3 @@ function DeveloperLoginPage() {
 }
 
 export default DeveloperLoginPage;
-
