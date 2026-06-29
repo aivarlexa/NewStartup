@@ -1,6 +1,7 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
+import { GoogleLogin } from "@react-oauth/google";
 import {
   Mail,
   Lock,
@@ -50,6 +51,7 @@ function DeveloperLoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
   const validateForm = () => {
     const newErrors = {};
@@ -203,6 +205,32 @@ function DeveloperLoginPage() {
       setIsRegistering(false);
     }
   }
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const response = await fetch(
+        "http://localhost:3000/api/auth/google",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            token: credentialResponse.credential,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        login(data.user, data.token);
+        navigate("/developer-dashboard");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
 
   return (
     <div className="login-page">
@@ -325,6 +353,10 @@ function DeveloperLoginPage() {
                       Sign in
                     </button>
                   </p>
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => console.log("Login Failed")}
+                  />
                   <div className="secure-badge">
                     <ShieldCheck size={17} />
                     <div>
