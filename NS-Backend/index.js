@@ -31,6 +31,7 @@ app.get("/", (req, res) => {
   res.send("HI");
 });
 
+
 app.use("/api/contact", contactRoutes);
 app.use("/api/auth", authRoutes);
 
