@@ -1,12 +1,23 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-const genrateToken = require("../config/token");
+const generateToken = require("../config/token");
 
 const register = async (req, res) => {
+  console.log("Request Body:", req.body);
+
   try {
     const { name, email, password, role } = req.body;
 
+    console.log({
+      name,
+      email,
+      password,
+      role,
+    });
+
     if (!name || !email || !password || !role) {
+      console.log("Missing Fields");
+
       return res.status(400).json({
         success: false,
         message: "All fields are required.",
@@ -15,6 +26,8 @@ const register = async (req, res) => {
 
     const existingUser = await User.findOne({ email });
 
+    console.log("Existing User:", existingUser);
+
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -22,6 +35,7 @@ const register = async (req, res) => {
       });
     }
 
+    // rest of your code...
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
