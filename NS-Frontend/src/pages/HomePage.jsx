@@ -86,11 +86,7 @@ function HomePage() {
       <Hero />
 
       <section className="logo-band" aria-label="Customer segments">
-        <span>Global banks</span>
-        <span>Cloud platforms</span>
-        <span>Healthcare networks</span>
-        <span>Industrial operations</span>
-        <span>Private equity</span>
+       
       </section>
 
       <Services />
