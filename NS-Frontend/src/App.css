@@ -5732,3 +5732,108 @@ h3 {
 
 
 
+
+.booking-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+}
+
+.booking-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  border: 1px solid rgba(125, 211, 252, 0.26);
+  border-radius: 14px;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.58);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.booking-toggle:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 211, 238, 0.56);
+  background: rgba(34, 211, 238, 0.09);
+  box-shadow: 0 16px 34px rgba(34, 211, 238, 0.12);
+}
+
+.booking-toggle svg,
+.booking-fields .field-label svg {
+  color: #67e8f9;
+}
+
+.booking-fields {
+  display: grid;
+  gap: 14px;
+  animation: contactFieldIn 320ms ease both;
+}
+
+.booking-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.slot-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.slot-grid button {
+  min-height: 38px;
+  border: 1px solid rgba(125, 211, 252, 0.24);
+  border-radius: 999px;
+  padding: 0 14px;
+  color: rgba(248, 250, 252, 0.9);
+  background: rgba(15, 23, 42, 0.62);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.slot-grid button:hover,
+.slot-grid button.selected {
+  border-color: rgba(34, 211, 238, 0.72);
+  color: #ffffff;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.18), rgba(168, 85, 247, 0.12));
+}
+
+.booking-state {
+  width: 100%;
+  color: rgba(226, 232, 240, 0.86);
+  font-size: 13px;
+}
+
+.booking-state.error,
+.form-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #fecdd3;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+@media (max-width: 720px) {
+  .booking-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes contactFieldIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

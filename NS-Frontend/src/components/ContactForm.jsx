@@ -1,6 +1,9 @@
-import { useState } from 'react'
-import { Building2, Mail, MessageSquare, Send, ShieldCheck, User } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Building2, CalendarDays, Clock, Mail, MessageSquare, Send, ShieldCheck, User } from 'lucide-react'
 import ServiceDropdown from './ServiceDropdown'
+import api, { getApiErrorMessage } from '../services/api'
+
+const DURATION_OPTIONS = [30, 45, 60, 90]
 
 function ContactForm() {
   const [formValues, setFormValues] = useState({
@@ -10,13 +13,72 @@ function ContactForm() {
     service: '',
     message: '',
   })
+  const [bookingValues, setBookingValues] = useState({
+    purpose: '',
+    date: '',
+    time: '',
+    duration: 30,
+  })
   const [errors, setErrors] = useState({})
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
+  const [slots, setSlots] = useState([])
+  const [slotStatus, setSlotStatus] = useState('idle')
+  const [bookingStatus, setBookingStatus] = useState('idle')
+  const [bookingMessage, setBookingMessage] = useState('')
+
+  const selectedDuration = useMemo(() => Number(bookingValues.duration || 30), [bookingValues.duration])
+
+  useEffect(() => {
+    if (!isBookingOpen || !bookingValues.date) {
+      setSlots([])
+      return undefined
+    }
+
+    const controller = new AbortController()
+
+    async function loadSlots() {
+      setSlotStatus('loading')
+      setBookingStatus('idle')
+      setBookingMessage('')
+      setBookingValues((current) => ({ ...current, time: '' }))
+
+      try {
+        const { data } = await api.get('/bookings/slots', {
+          params: { date: bookingValues.date, duration: selectedDuration },
+          signal: controller.signal,
+        })
+
+        if (!data.success) {
+          throw new Error(data.message || 'Unable to load available times.')
+        }
+
+        setSlots(data.slots || [])
+        setSlotStatus('success')
+      } catch (error) {
+        if (error.name === 'AbortError' || error.name === 'CanceledError' || error.code === 'ERR_CANCELED') return
+        setSlots([])
+        setSlotStatus('error')
+        setBookingStatus('error')
+        setBookingMessage(getApiErrorMessage(error, 'Unable to load available times.'))
+      }
+    }
+
+    loadSlots()
+    return () => controller.abort()
+  }, [bookingValues.date, isBookingOpen, selectedDuration])
 
   function updateField(event) {
     const { name, value } = event.target
     setFormValues((currentValues) => ({ ...currentValues, [name]: value }))
     setErrors((currentErrors) => ({ ...currentErrors, [name]: '' }))
+  }
+
+  function updateBookingField(event) {
+    const { name, value } = event.target
+    setBookingValues((currentValues) => ({ ...currentValues, [name]: value }))
+    setErrors((currentErrors) => ({ ...currentErrors, [name]: '' }))
+    setBookingMessage('')
   }
 
   function updateService(serviceTitle) {
@@ -46,50 +108,80 @@ function ContactForm() {
     return nextErrors
   }
 
-  async function submitContact(event) {
-  event.preventDefault();
+  function validateBooking() {
+    const nextErrors = {}
 
-  const nextErrors = validateForm();
+    if (!formValues.fullName.trim()) nextErrors.fullName = 'Full name is required.'
+    if (!/^\S+@\S+\.\S+$/.test(formValues.email.trim())) nextErrors.email = 'Enter a valid email address.'
+    if (!bookingValues.purpose.trim()) nextErrors.purpose = 'Meeting purpose is required.'
+    if (!bookingValues.date) nextErrors.date = 'Choose a meeting date.'
+    if (!bookingValues.time) nextErrors.time = 'Choose an available time.'
 
-  if (Object.keys(nextErrors).length) {
-    setErrors(nextErrors);
-    setIsSubmitted(false);
-    return;
+    return nextErrors
   }
 
-  try {
-    const response = await fetch(
-      "http://localhost:3000/api/contact",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formValues),
-      }
-    );
+  async function submitContact(event) {
+    event.preventDefault()
 
-    const data = await response.json();
+    const nextErrors = validateForm()
 
-    if (data.success) {
-      setIsSubmitted(true);
-
-      setFormValues({
-        fullName: "",
-        email: "",
-        company: "",
-        service: "",
-        message: "",
-      });
-    } else {
-      alert(data.message);
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors)
+      setIsSubmitted(false)
+      return
     }
 
-  } catch (error) {
-    console.error(error);
-    alert("Something went wrong");
+    try {
+      const { data } = await api.post('/contact', formValues)
+
+      if (data.success) {
+        setIsSubmitted(true)
+        setFormValues({ fullName: '', email: '', company: '', service: '', message: '' })
+      } else {
+        alert(data.message)
+      }
+    } catch (error) {
+      console.error(error)
+      alert(getApiErrorMessage(error, 'Something went wrong'))
+    }
   }
-}
+
+  async function submitBooking(event) {
+    event.preventDefault()
+    const nextErrors = validateBooking()
+
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors)
+      return
+    }
+
+    setBookingStatus('loading')
+    setBookingMessage('')
+
+    try {
+      const { data } = await api.post('/bookings', {
+        name: formValues.fullName,
+        email: formValues.email,
+        company: formValues.company,
+        purpose: bookingValues.purpose,
+        date: bookingValues.date,
+        time: bookingValues.time,
+        duration: selectedDuration,
+      })
+
+      if (!data.success) {
+        throw new Error(data.message || 'Unable to book meeting.')
+      }
+
+      setBookingStatus('success')
+      setBookingMessage(`Meeting booked. Google Meet link: ${data.booking.meetLink}`)
+      setBookingValues({ purpose: '', date: '', time: '', duration: selectedDuration })
+      setSlots([])
+    } catch (error) {
+      setBookingStatus('error')
+      setBookingMessage(getApiErrorMessage(error, error.message || 'Unable to book meeting.'))
+    }
+  }
 
   return (
     <form className="contact-form" onSubmit={submitContact} noValidate>
@@ -113,6 +205,66 @@ function ContactForm() {
         <textarea name="message" value={formValues.message} onChange={updateField} rows="6"></textarea>
         {errors.message && <small>{errors.message}</small>}
       </label>
+
+      <div className="booking-panel">
+        <button className="booking-toggle" type="button" onClick={() => setIsBookingOpen((isOpen) => !isOpen)}>
+          <CalendarDays aria-hidden="true" />
+          <span>{isBookingOpen ? 'Hide Meeting Scheduler' : 'Book a Meeting'}</span>
+        </button>
+
+        {isBookingOpen && (
+          <div className="booking-fields">
+            <label className="message-field">
+              <span className="field-label"><MessageSquare aria-hidden="true" />Meeting Purpose</span>
+              <textarea name="purpose" value={bookingValues.purpose} onChange={updateBookingField} rows="3"></textarea>
+              {errors.purpose && <small>{errors.purpose}</small>}
+            </label>
+            <div className="booking-grid">
+              <label>
+                <span className="field-label"><CalendarDays aria-hidden="true" />Date</span>
+                <input name="date" type="date" value={bookingValues.date} onChange={updateBookingField} />
+                {errors.date && <small>{errors.date}</small>}
+              </label>
+              <label>
+                <span className="field-label"><Clock aria-hidden="true" />Duration</span>
+                <select name="duration" value={bookingValues.duration} onChange={updateBookingField}>
+                  {DURATION_OPTIONS.map((duration) => <option value={duration} key={duration}>{duration} minutes</option>)}
+                </select>
+              </label>
+            </div>
+            <div>
+              <span className="field-label"><Clock aria-hidden="true" />Available Time</span>
+              <div className="slot-grid">
+                {slotStatus === 'loading' && <span className="booking-state">Loading available times...</span>}
+                {slotStatus === 'error' && <span className="booking-state error">Unable to load available times.</span>}
+                {slotStatus === 'success' && slots.length === 0 && <span className="booking-state">No available slots for this date.</span>}
+                {slots.map((slot) => (
+                  <button
+                    className={bookingValues.time === slot.time ? 'selected' : ''}
+                    type="button"
+                    key={slot.time}
+                    onClick={() => {
+                      setBookingValues((current) => ({ ...current, time: slot.time }))
+                      setErrors((currentErrors) => ({ ...currentErrors, time: '' }))
+                      setBookingStatus('idle')
+                      setBookingMessage('')
+                    }}
+                  >
+                    {slot.label}
+                  </button>
+                ))}
+              </div>
+              {errors.time && <small>{errors.time}</small>}
+            </div>
+            <button className="primary-action contact-submit" type="button" onClick={submitBooking} disabled={bookingStatus === 'loading'}>
+              <span>{bookingStatus === 'loading' ? 'Booking...' : 'Confirm Meeting'}</span>
+              <Send aria-hidden="true" />
+            </button>
+            {bookingMessage && <p className={bookingStatus === 'error' ? 'form-error' : 'form-success'}>{bookingMessage}</p>}
+          </div>
+        )}
+      </div>
+
       <button className="primary-action contact-submit" type="submit">
         <span>Send Message</span>
         <Send aria-hidden="true" />
@@ -124,3 +276,7 @@ function ContactForm() {
 }
 
 export default ContactForm
+
+
+
+

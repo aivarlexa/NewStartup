@@ -1,4 +1,4 @@
-const User = require("../models/User");
+const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../config/token");
 const { OAuth2Client } = require("google-auth-library");

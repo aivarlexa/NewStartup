@@ -18,6 +18,7 @@ import {
 import BrandWordmark from '../BrandWordmark';
 import './Dashboard.css';
 import AuthContext from '../../context/AuthContext';
+import api from '../../services/api';
 
 const dashboardNav = [
   { label: 'Overview', to: '/developer-dashboard', icon: LayoutDashboard, end: true },
@@ -42,11 +43,11 @@ function DashboardLayout() {
     document.body.classList.add('dashboard-mode');
 
     // Fetch notifications from the backend
-    fetch('http://localhost:5000/api/notifications')
-      .then(res => res.json())
-      .then(data => {
-        setNotifications(data);
-        setUnreadCount(data.length);
+    api.get('/notifications')
+      .then(({ data }) => {
+        const nextNotifications = Array.isArray(data) ? data : [];
+        setNotifications(nextNotifications);
+        setUnreadCount(nextNotifications.length);
       })
       .catch(err => console.error("Failed to fetch notifications:", err));
 
@@ -171,3 +172,4 @@ function DashboardLayout() {
 }
 
 export default DashboardLayout
+
