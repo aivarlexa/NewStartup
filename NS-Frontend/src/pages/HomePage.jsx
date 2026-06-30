@@ -3,6 +3,7 @@ import BrandWordmark from '../components/BrandWordmark'
 import Hero from '../components/Hero'
 import Services from '../components/Services'
 import { initialMessages, promptReplies } from '../data/siteData'
+import api from '../services/api'
 
 function HomePage() {
   const messagesContainerRef = useRef(null)
@@ -51,17 +52,7 @@ function HomePage() {
     ])
 
     try {
-      const response = await fetch('http://localhost:3000/api/insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: trimmedValue }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Insights service unavailable')
-      }
-
-      const data = await response.json()
+      const { data } = await api.post('/insights', { input: trimmedValue })
       setMessages((currentMessages) => [
         ...currentMessages,
         { role: 'assistant', text: data.answer || getReply(trimmedValue) },
@@ -139,3 +130,5 @@ function HomePage() {
 }
 
 export default HomePage
+
+

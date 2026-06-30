@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import BrandWordmark from '../components/BrandWordmark';
 import PasswordInput from '../components/PasswordInput';
+import api, { getApiErrorMessage } from '../services/api';
 import './DeveloperLoginPage.css';
 
 const ROLE_OPTIONS = [
@@ -50,7 +51,6 @@ function DeveloperLoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
-  console.log("Google Client ID:", import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
   function handleBack() {
     if (window.history.length > 1) {
@@ -93,14 +93,10 @@ function DeveloperLoginPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const { data } = await api.post('/auth/login', { email, password });
 
-      if (response.ok) {
-        const { user, token } = await response.json();
+      if (data.success) {
+        const { user, token } = data;
         login(user, token);
         setIsLoading(false);
         setIsSuccess(true);
@@ -109,8 +105,8 @@ function DeveloperLoginPage() {
         setErrors({ form: 'Invalid email or password.' });
         setIsLoading(false);
       }
-    } catch {
-      setErrors({ form: 'An error occurred. Please try again later.' });
+    } catch (error) {
+      setErrors({ form: getApiErrorMessage(error, 'An error occurred. Please try again later.') });
       setIsLoading(false);
     }
   };
@@ -174,18 +170,14 @@ function DeveloperLoginPage() {
     setSignupSuccess('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: signupValues.name.trim(),
-          email: signupValues.email.trim(),
-          password: signupValues.password,
-          role: signupValues.role,
-        }),
+      const { data } = await api.post('/auth/register', {
+        name: signupValues.name.trim(),
+        email: signupValues.email.trim(),
+        password: signupValues.password,
+        role: signupValues.role,
       });
 
-      if (response.ok) {
+      if (data.success) {
         const registeredEmail = signupValues.email.trim();
         setSignupSuccess('Account created successfully.');
         setSignupValues({
@@ -204,38 +196,26 @@ function DeveloperLoginPage() {
           setErrors({});
         }, 1100);
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        setErrors({ form: errorData.message || 'Unable to create account. Please try again.' });
+        setErrors({ form: data.message || 'Unable to create account. Please try again.' });
       }
-    } catch {
-      setErrors({ form: 'An error occurred. Please try again later.' });
+    } catch (error) {
+      setErrors({ form: getApiErrorMessage(error, 'An error occurred. Please try again later.') });
     } finally {
       setIsRegistering(false);
     }
   }
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const response = await fetch(
-        "http://localhost:3000/api/auth/google",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token: credentialResponse.credential,
-          }),
-        }
-      );
-
-      const data = await response.json();
+      const { data } = await api.post('/auth/google', {
+        token: credentialResponse.credential,
+      });
 
       if (data.success) {
         login(data.user, data.token);
         navigate("/developer-dashboard");
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(getApiErrorMessage(error, 'Google Login Failed'));
     }
   };
 
@@ -438,5 +418,7 @@ function DeveloperLoginPage() {
 }
 
 export default DeveloperLoginPage;
+
+
 
 
