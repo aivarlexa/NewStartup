@@ -32,6 +32,11 @@ function formatMeetingDate(booking) {
   return `${booking.date} at ${booking.time} (${booking.duration} minutes)`;
 }
 
+function getClientFromHeader(name, mailConfig) {
+  const displayName = String(name || "Website Client").replace(/"/g, "'");
+  return `"${displayName}" <${mailConfig.user}>`;
+}
+
 async function sendBookingConfirmation(booking, adminEmail) {
   const transporter = getTransporter();
   if (!transporter) {
@@ -40,7 +45,7 @@ async function sendBookingConfirmation(booking, adminEmail) {
 
   const mailConfig = getMailConfig();
 
-  const recipients = [booking.email, adminEmail || mailConfig.recipient].filter(Boolean);
+  const recipients = [mailConfig.recipient].filter(Boolean);
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.55;">
       <h2>Meeting confirmed</h2>
@@ -57,7 +62,7 @@ async function sendBookingConfirmation(booking, adminEmail) {
   `;
 
   await transporter.sendMail({
-    from: mailConfig.from,
+    from: getClientFromHeader(booking.name, mailConfig),
     to: recipients.join(","),
     replyTo: booking.email,
     subject: `Meeting confirmed - ${booking.date} ${booking.time}`,
@@ -72,8 +77,9 @@ async function sendBookingUpdate(booking, adminEmail, action) {
   const mailConfig = getMailConfig();
 
   await transporter.sendMail({
-    from: mailConfig.from,
-    to: [booking.email, adminEmail || mailConfig.recipient].filter(Boolean).join(","),
+    from: getClientFromHeader(booking.name, mailConfig),
+    to: [mailConfig.recipient].filter(Boolean).join(","),
+    replyTo: booking.email,
     subject: `Meeting ${action} - ${booking.date} ${booking.time}`,
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.55;">
@@ -93,4 +99,9 @@ module.exports = {
   sendBookingConfirmation,
   sendBookingUpdate,
 };
+
+
+
+
+
 

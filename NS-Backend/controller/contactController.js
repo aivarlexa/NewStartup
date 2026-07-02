@@ -29,6 +29,11 @@ function getTransporter() {
   return cachedTransporter;
 }
 
+function getClientFromHeader(name, mailConfig) {
+  const displayName = String(name || "Website Client").replace(/"/g, "'");
+  return `"${displayName}" <${mailConfig.user}>`;
+}
+
 const submitContact = async (req, res) => {
   try {
     const { fullName, email, company, service, message } = req.body;
@@ -59,7 +64,7 @@ const submitContact = async (req, res) => {
     }
 
     await transporter.sendMail({
-      from: mailConfig.from,
+      from: getClientFromHeader(fullName, mailConfig),
       to: mailConfig.recipient,
       replyTo: email,
       subject: `New Contact Form Submission - ${service}`,
@@ -114,3 +119,4 @@ const submitContact = async (req, res) => {
 module.exports = {
   submitContact,
 };
+
