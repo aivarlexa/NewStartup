@@ -86,13 +86,10 @@ function makeDateTime(date, time, timeZone = "Asia/Kolkata") {
 
   const hours = Math.floor(timeMinutes / 60);
   const minutes = timeMinutes % 60;
-  // Create a UTC timestamp for the given local date/time values, then
-  // adjust by the timezone offset for the requested timezone to produce
-  // an absolute UTC Date that represents that wall-clock time in the
-  // target timezone.
   const localAsUtc = Date.UTC(dateParts.year, dateParts.month - 1, dateParts.day, hours, minutes, 0);
-  const offsetMs = getTimeZoneOffsetMs(new Date(localAsUtc), timeZone);
-  return new Date(localAsUtc - offsetMs);
+  const utcDate = new Date(localAsUtc - getTimeZoneOffsetMs(new Date(localAsUtc), timeZone));
+
+  return utcDate;
 }
 
 function getCalendarDay(date) {
@@ -156,6 +153,32 @@ async function buildSlots(date, duration) {
   const calendarDay = getCalendarDay(date);
 
   if (!date || calendarDay === null || blocked) {
+    return {
+        settings,
+        slots: [],
+    };
+}
+
+if (!settings.workingDays.includes(calendarDay)) {
+    return {
+        settings,
+        slots: [],
+    };
+}
+const dayWindowStart = makeDateTime(date, "00:00", timezone);
+const dayWindowEnd = makeDateTime(
+  addDaysToDateString(date, 1),
+  "00:00",
+  timezone
+);
+
+  const existingBookings = await Booking.find({
+  status: "scheduled",
+  start: { $lt: dayWindowEnd },
+  end: { $gt: dayWindowStart }, 
+}).lean();
+
+  if (!date || calendarDay === null || blocked) {
     return { settings, slots: [] };
   }
 
@@ -168,8 +191,8 @@ async function buildSlots(date, duration) {
     return { settings, slots: [] };
   }
 
-  const dayWindowStart = makeDateTime(date, "00:00", timezone);
-  const dayWindowEnd = makeDateTime(addDaysToDateString(date, 1), "00:00", timezone);
+  // const dayWindowStart = makeDateTime(date, "00:00", timezone);
+  // const dayWindowEnd = makeDateTime(addDaysToDateString(date, 1), "00:00", timezone);
   const calendarBusySlots = await getCalendarBusySlots({
       timeMin: dayWindowStart,
       timeMax: dayWindowEnd,
@@ -183,13 +206,6 @@ async function buildSlots(date, duration) {
 
   const slots = [];
   const now = new Date();
-  // Load existing local bookings for the target day so we can exclude them
-  // from available slots. We consider bookings that start within the day
-  // window.
-  const existingBookings = await Booking.find({
-    status: "scheduled",
-    start: { $gte: dayWindowStart, $lt: dayWindowEnd },
-  }).lean();
 
 
   for (let cursor = dayStart; cursor + requestedDuration <= dayEnd; cursor += step) {
@@ -200,7 +216,7 @@ async function buildSlots(date, duration) {
     if (Number.isNaN(start.getTime()) || start <= now) continue;
 
     const calendarUnavailable = calendarBusySlots.some((busy) => rangesOverlap(start, end, busy.start, busy.end));
-    const localBookingUnavailable = existingBookings.some((booking) => rangesOverlap(start, end, new Date(booking.start), new Date(booking.end)));
+    const localBookingUnavailable = existingBookings.some((booking) => rangesOverlap(start, end, booking.start, booking.end));
 
     if (!calendarUnavailable && !localBookingUnavailable) {
       slots.push({ time, label: time, start, end });
@@ -266,6 +282,143 @@ async function getAvailableSlots(req, res) {
   }
 }
 
+async function googleAuthUrl(req, res) {
+  try {
+    const url = getGoogleAuthUrl();
+
+    return res.json({
+      success: true,
+      url,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to generate Google authorization URL.",
+    });
+  }
+}
+
+async function googleCallback(req, res) {
+  try {
+    const { code } = req.query;
+
+    if (!code) {
+      return res.status(400).send("Authorization code missing.");
+    }
+
+    const tokens = await exchangeAuthCode(code);
+
+  if (!tokens.refresh_token) {
+    return res.status(400).send(
+        "Google did not return a refresh token. Revoke access and try again."
+    );
+} 
+// Save to DB
+
+await BookingSettings.findOneAndUpdate(
+    { key: "default" },
+    {
+        googleRefreshToken:
+            tokens.refresh_token
+    }
+);
+
+    return res.redirect(
+      "http://localhost:5173/admin/settings?calendar=connected"
+    );
+  } catch (error) {
+    console.error(error);
+
+    return res.redirect(
+      "http://localhost:5173/admin/settings?calendar=failed"
+    );
+  }
+}
+async function rescheduleBooking(req, res) {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found.",
+      });
+    }
+
+    const { date, time, duration } = req.body;
+
+    const settings = await getOrCreateSettings();
+
+    const start = makeDateTime(
+      date,
+      time,
+      settings.timezone
+    );
+
+    const end = new Date(
+      start.getTime() +
+      Number(duration || booking.duration) * 60000
+    );
+
+    if (
+      await hasOverlap(
+        start,
+        end,
+        booking._id
+      )
+    ) {
+      return res.status(409).json({
+        success: false,
+        message: "Selected slot is unavailable.",
+      });
+    }
+
+    booking.date = date;
+    booking.time = time;
+    booking.duration =
+      Number(duration) || booking.duration;
+    booking.start = start;
+    booking.end = end;
+
+await booking.save();
+
+try {
+
+    await updateCalendarEvent(
+        booking,
+        settings
+    );
+
+} catch (err) {
+
+    console.error(
+        "Calendar Update Error:",
+        err
+    );
+
+}
+
+await sendBookingUpdate(
+    booking,
+    getAdminEmail(settings),
+    "rescheduled"
+);
+
+    return res.json({
+      success: true,
+      booking: normalizeBooking(booking),
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to reschedule meeting.",
+    });
+  }
+}
 async function createBooking(req, res) {
   try {
     const { name, email, company, purpose, date, time, duration } = req.body;
@@ -288,10 +441,10 @@ async function createBooking(req, res) {
     }
 
     const booking = await Booking.create({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      company: company || "",
-      purpose: purpose.trim(),
+      name: name?.trim(),
+      email: email?.trim().toLowerCase(),
+      company: company?.trim() || "",
+      purpose: purpose?.trim(),
       date,
       time,
       duration: bookingDuration,
@@ -358,77 +511,6 @@ async function cancelBooking(req, res) {
   } catch (error) {
     console.error("Cancel booking error:",error);
     return res.status(500).json({ success: false, message: "Unable to cancel meeting." });
-  }
-}
-
-async function rescheduleBooking(req, res) {
-  try {
-    const bookingId = req.params.id;
-    const { date, time, duration } = req.body;
-    const bookingDuration = Number(duration || 30);
-
-    if (!date || !time || !bookingDuration) {
-      return res.status(400).json({ success: false, message: "Date, time and duration are required." });
-    }
-
-    const booking = await Booking.findById(bookingId);
-    if (!booking) return res.status(404).json({ success: false, message: "Meeting not found." });
-
-    const { settings, slots } = await buildSlots(date, bookingDuration);
-    if (!slots.some((slot) => slot.time === time)) {
-      return res.status(409).json({ success: false, message: "That time slot is not available." });
-    }
-
-    const start = makeDateTime(date, time, settings.timezone);
-    const end = new Date(start.getTime() + bookingDuration * 60000);
-
-    if (await hasOverlap(start, end, booking._id)) {
-      return res.status(409).json({ success: false, message: "That time slot overlaps another booking." });
-    }
-
-    // persist changes
-    booking.date = date;
-    booking.time = time;
-    booking.duration = bookingDuration;
-    booking.start = start;
-    booking.end = end;
-    await booking.save();
-
-    try {
-      const settingsObj = await getOrCreateSettings();
-      await updateCalendarEvent(booking, settingsObj);
-      await sendBookingUpdate(booking, getAdminEmail(settingsObj), "rescheduled");
-    } catch (integrationError) {
-      console.error("Reschedule integration error:", integrationError);
-    }
-
-    return res.json({ success: true, booking: normalizeBooking(booking) });
-  } catch (error) {
-    console.error("Reschedule booking error:", error);
-    return res.status(500).json({ success: false, message: "Unable to reschedule meeting." });
-  }
-}
-
-function googleAuthUrl(req, res) {
-  try {
-    const url = getGoogleAuthUrl();
-    return res.json({ success: true, url });
-  } catch (error) {
-    console.error("Google auth url error:", error);
-    return res.status(500).json({ success: false, message: "Unable to generate Google auth URL." });
-  }
-}
-
-async function googleCallback(req, res) {
-  try {
-    const code = req.query.code;
-    if (!code) return res.status(400).send('Missing code');
-    const tokens = await exchangeAuthCode(code);
-    // For simplicity return tokens for admin to copy; in production store securely.
-    return res.json({ success: true, tokens });
-  } catch (error) {
-    console.error('Google callback error:', error);
-    return res.status(500).json({ success: false, message: 'Google callback failed.' });
   }
 }
 

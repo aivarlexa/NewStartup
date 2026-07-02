@@ -32,7 +32,7 @@ function getOAuthClient() {
   const client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI || "http://localhost:5000/api/bookings/google/callback"
+    process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/bookings/google/callback"
   );
 
   client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
@@ -40,10 +40,11 @@ function getOAuthClient() {
 }
 
 function getGoogleAuthUrl() {
+  console.log("Redirect URI:", process.env.GOOGLE_REDIRECT_URI);
   const client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI || "http://localhost:5000/api/bookings/google/callback"
+    process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/bookings/google/callback"
   );
 
   return client.generateAuthUrl({
@@ -60,10 +61,11 @@ function getGoogleAuthUrl() {
 }
 
 async function exchangeAuthCode(code) {
+  console.log("Redirect URI:", process.env.GOOGLE_REDIRECT_URI);
   const client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI || "http://localhost:5000/api/bookings/google/callback"
+    process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/bookings/google/callback"
   );
 
   const { tokens } = await client.getToken(code);

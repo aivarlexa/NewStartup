@@ -19,6 +19,10 @@ const bookingSettingsSchema = new mongoose.Schema(
     slotStepMinutes: { type: Number, default: 30, min: 5, max: 120 },
     defaultDuration: { type: Number, default: 30, min: 15, max: 240 },
     blockedDates: { type: [blockedDateSchema], default: [] },
+    googleRefreshToken: {
+    type: String,
+    default: "",
+},
   },
   { timestamps: true }
 );

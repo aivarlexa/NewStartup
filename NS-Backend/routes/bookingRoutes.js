@@ -6,7 +6,7 @@ const bookingController = require("../controller/bookingController");
 router.get("/settings", bookingController.getSettings);
 router.get("/slots", bookingController.getAvailableSlots);
 router.post("/", bookingController.createBooking);
-router.get("/google/auth-url", requireAdmin, bookingController.googleAuthUrl);
+router.get("/google/auth-url", bookingController.googleAuthUrl);
 router.get("/google/callback", bookingController.googleCallback);
 
 router.get("/admin", requireAdmin, bookingController.listBookings);
