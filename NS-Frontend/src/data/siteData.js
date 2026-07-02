@@ -106,7 +106,7 @@ export const footerNavLinks = [
 export const socialLinks = [
   {
     name: 'LinkedIn',
-    href: 'https://www.linkedin.com/',
+    href: 'https://www.linkedin.com/in/akshay-sir/',
     icon: 'linkedin',
     description: 'Company updates, product thinking, and enterprise AI notes.',
   },
@@ -130,7 +130,7 @@ export const socialLinks = [
   },
   {
     name: 'WhatsApp',
-    href: 'https://wa.me/910000000000',
+    href: 'https://wa.me/9100000000000',
     icon: 'whatsapp',
     description: 'Quick business conversations and project discovery requests.',
   },

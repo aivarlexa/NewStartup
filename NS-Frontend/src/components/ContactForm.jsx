@@ -6,6 +6,7 @@ import api, { getApiErrorMessage } from '../services/api'
 const DURATION_OPTIONS = [30, 45, 60, 90]
 
 function ContactForm() {
+  const [contactMode, setContactMode] = useState('message')
   const [formValues, setFormValues] = useState({
     fullName: '',
     email: '',
@@ -21,7 +22,6 @@ function ContactForm() {
   })
   const [errors, setErrors] = useState({})
   const [isSubmitted, setIsSubmitted] = useState(false)
-  const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [slots, setSlots] = useState([])
   const [slotStatus, setSlotStatus] = useState('idle')
   const [bookingStatus, setBookingStatus] = useState('idle')
@@ -30,7 +30,7 @@ function ContactForm() {
   const selectedDuration = useMemo(() => Number(bookingValues.duration || 30), [bookingValues.duration])
 
   useEffect(() => {
-    if (!isBookingOpen || !bookingValues.date) {
+    if (contactMode !== 'booking' || !bookingValues.date) {
       setSlots([])
       return undefined
     }
@@ -66,7 +66,15 @@ function ContactForm() {
 
     loadSlots()
     return () => controller.abort()
-  }, [bookingValues.date, isBookingOpen, selectedDuration])
+  }, [bookingValues.date, contactMode, selectedDuration])
+
+  function chooseMode(mode) {
+    setContactMode(mode)
+    setErrors({})
+    setIsSubmitted(false)
+    setBookingStatus('idle')
+    setBookingMessage('')
+  }
 
   function updateField(event) {
     const { name, value } = event.target
@@ -184,7 +192,30 @@ function ContactForm() {
   }
 
   return (
-    <form className="contact-form" onSubmit={submitContact} noValidate>
+    <form className="contact-form" onSubmit={contactMode === 'booking' ? submitBooking : submitContact} noValidate>
+      <div className="contact-mode-switch" role="tablist" aria-label="Choose contact type">
+        <button
+          className={contactMode === 'message' ? 'active' : ''}
+          type="button"
+          role="tab"
+          aria-selected={contactMode === 'message'}
+          onClick={() => chooseMode('message')}
+        >
+          <MessageSquare aria-hidden="true" />
+          <span>Send Message</span>
+        </button>
+        <button
+          className={contactMode === 'booking' ? 'active' : ''}
+          type="button"
+          role="tab"
+          aria-selected={contactMode === 'booking'}
+          onClick={() => chooseMode('booking')}
+        >
+          <CalendarDays aria-hidden="true" />
+          <span>Book Meeting</span>
+        </button>
+      </div>
+
       <label>
         <span className="field-label"><User aria-hidden="true" />Full Name</span>
         <input name="fullName" value={formValues.fullName} onChange={updateField} />
@@ -199,86 +230,78 @@ function ContactForm() {
         <span className="field-label"><Building2 aria-hidden="true" />Company Name</span>
         <input name="company" value={formValues.company} onChange={updateField} />
       </label>
-      <ServiceDropdown value={formValues.service} error={errors.service} onChange={updateService} />
-      <label className="message-field">
-        <span className="field-label"><MessageSquare aria-hidden="true" />Message</span>
-        <textarea name="message" value={formValues.message} onChange={updateField} rows="6"></textarea>
-        {errors.message && <small>{errors.message}</small>}
-      </label>
 
-      <div className="booking-panel">
-        <button className="booking-toggle" type="button" onClick={() => setIsBookingOpen((isOpen) => !isOpen)}>
-          <CalendarDays aria-hidden="true" />
-          <span>{isBookingOpen ? 'Hide Meeting Scheduler' : 'Book a Meeting'}</span>
-        </button>
+      {contactMode === 'message' && (
+        <div className="contact-mode-panel">
+          <ServiceDropdown value={formValues.service} error={errors.service} onChange={updateService} />
+          <label className="message-field">
+            <span className="field-label"><MessageSquare aria-hidden="true" />Message</span>
+            <textarea name="message" value={formValues.message} onChange={updateField} rows="6"></textarea>
+            {errors.message && <small>{errors.message}</small>}
+          </label>
+          <button className="primary-action contact-submit" type="submit">
+            <span>Send Message</span>
+            <Send aria-hidden="true" />
+          </button>
+          {isSubmitted && <p className="form-success">Message received. We will get back to you shortly.</p>}
+        </div>
+      )}
 
-        {isBookingOpen && (
-          <div className="booking-fields">
-            <label className="message-field">
-              <span className="field-label"><MessageSquare aria-hidden="true" />Meeting Purpose</span>
-              <textarea name="purpose" value={bookingValues.purpose} onChange={updateBookingField} rows="3"></textarea>
-              {errors.purpose && <small>{errors.purpose}</small>}
+      {contactMode === 'booking' && (
+        <div className="booking-fields contact-mode-panel">
+          <label className="message-field">
+            <span className="field-label"><MessageSquare aria-hidden="true" />Meeting Purpose</span>
+            <textarea name="purpose" value={bookingValues.purpose} onChange={updateBookingField} rows="3"></textarea>
+            {errors.purpose && <small>{errors.purpose}</small>}
+          </label>
+          <div className="booking-grid">
+            <label>
+              <span className="field-label"><CalendarDays aria-hidden="true" />Date</span>
+              <input name="date" type="date" value={bookingValues.date} onChange={updateBookingField} />
+              {errors.date && <small>{errors.date}</small>}
             </label>
-            <div className="booking-grid">
-              <label>
-                <span className="field-label"><CalendarDays aria-hidden="true" />Date</span>
-                <input name="date" type="date" value={bookingValues.date} onChange={updateBookingField} />
-                {errors.date && <small>{errors.date}</small>}
-              </label>
-              <label>
-                <span className="field-label"><Clock aria-hidden="true" />Duration</span>
-                <select name="duration" value={bookingValues.duration} onChange={updateBookingField}>
-                  {DURATION_OPTIONS.map((duration) => <option value={duration} key={duration}>{duration} minutes</option>)}
-                </select>
-              </label>
-            </div>
-            <div>
-              <span className="field-label"><Clock aria-hidden="true" />Available Time</span>
-              <div className="slot-grid">
-                {slotStatus === 'loading' && <span className="booking-state">Loading available times...</span>}
-                {slotStatus === 'error' && <span className="booking-state error">Unable to load available times.</span>}
-                {slotStatus === 'success' && slots.length === 0 && <span className="booking-state">No available slots for this date.</span>}
-                {slots.map((slot) => (
-                  <button
-                    className={bookingValues.time === slot.time ? 'selected' : ''}
-                    type="button"
-                    key={slot.time}
-                    onClick={() => {
-                      setBookingValues((current) => ({ ...current, time: slot.time }))
-                      setErrors((currentErrors) => ({ ...currentErrors, time: '' }))
-                      setBookingStatus('idle')
-                      setBookingMessage('')
-                    }}
-                  >
-                    {slot.label}
-                  </button>
-                ))}
-              </div>
-              {errors.time && <small>{errors.time}</small>}
-            </div>
-            <button className="primary-action contact-submit" type="button" onClick={submitBooking} disabled={bookingStatus === 'loading'}>
-              <span>{bookingStatus === 'loading' ? 'Booking...' : 'Confirm Meeting'}</span>
-              <Send aria-hidden="true" />
-            </button>
-            {bookingMessage && <p className={bookingStatus === 'error' ? 'form-error' : 'form-success'}>{bookingMessage}</p>}
+            <label>
+              <span className="field-label"><Clock aria-hidden="true" />Duration</span>
+              <select name="duration" value={bookingValues.duration} onChange={updateBookingField}>
+                {DURATION_OPTIONS.map((duration) => <option value={duration} key={duration}>{duration} minutes</option>)}
+              </select>
+            </label>
           </div>
-        )}
-      </div>
+          <div>
+            <span className="field-label"><Clock aria-hidden="true" />Available Time</span>
+            <div className="slot-grid">
+              {slotStatus === 'loading' && <span className="booking-state">Loading available times...</span>}
+              {slotStatus === 'error' && <span className="booking-state error">Unable to load available times.</span>}
+              {slotStatus === 'success' && slots.length === 0 && <span className="booking-state">No available slots for this date.</span>}
+              {slots.map((slot) => (
+                <button
+                  className={bookingValues.time === slot.time ? 'selected' : ''}
+                  type="button"
+                  key={slot.time}
+                  onClick={() => {
+                    setBookingValues((current) => ({ ...current, time: slot.time }))
+                    setErrors((currentErrors) => ({ ...currentErrors, time: '' }))
+                    setBookingStatus('idle')
+                    setBookingMessage('')
+                  }}
+                >
+                  {slot.label}
+                </button>
+              ))}
+            </div>
+            {errors.time && <small>{errors.time}</small>}
+          </div>
+          <button className="primary-action contact-submit" type="submit" disabled={bookingStatus === 'loading'}>
+            <span>{bookingStatus === 'loading' ? 'Booking...' : 'Confirm Meeting'}</span>
+            <Send aria-hidden="true" />
+          </button>
+          {bookingMessage && <p className={bookingStatus === 'error' ? 'form-error' : 'form-success'}>{bookingMessage}</p>}
+        </div>
+      )}
 
-      <button className="primary-action contact-submit" type="submit">
-        <span>Send Message</span>
-        <Send aria-hidden="true" />
-      </button>
       <p className="privacy-note"><ShieldCheck aria-hidden="true" />We respect your privacy. Your information is safe with us.</p>
-      {isSubmitted && <p className="form-success">Message received. We will get back to you shortly.</p>}
     </form>
   )
 }
 
 export default ContactForm
-
-
-
-
-
-
