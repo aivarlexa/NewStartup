@@ -1,31 +1,28 @@
 const nodemailer = require("nodemailer");
+const { getMailConfig } = require("../config/env");
 
 let cachedTransporter = null;
 
 function isMailConfigured() {
-  return Boolean(
-    process.env.SMTP_HOST &&
-      process.env.SMTP_PORT &&
-      process.env.SMTP_USER &&
-      process.env.SMTP_PASS
-  );
+  return getMailConfig().isConfigured;
 }
 
 function getTransporter() {
-  if (!isMailConfigured()) return null;
+  const mailConfig = getMailConfig();
+
+  if (!mailConfig.isConfigured) return null;
 
   if (cachedTransporter) {
     return cachedTransporter;
   }
 
   cachedTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure:
-      String(process.env.SMTP_SECURE || "").toLowerCase() === "true",
+    host: mailConfig.host,
+    port: mailConfig.port,
+    secure: mailConfig.secure,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: mailConfig.user,
+      pass: mailConfig.pass,
     },
   });
 
@@ -52,9 +49,18 @@ const submitContact = async (req, res) => {
       });
     }
 
+    const mailConfig = getMailConfig();
+
+    if (!mailConfig.recipient) {
+      return res.status(500).json({
+        success: false,
+        message: "Mail recipient is not configured.",
+      });
+    }
+
     await transporter.sendMail({
-      from: process.env.MAIL_FROM,
-      to: process.env.RECEIVER_EMAIL,
+      from: mailConfig.from,
+      to: mailConfig.recipient,
       replyTo: email,
       subject: `New Contact Form Submission - ${service}`,
       html: `

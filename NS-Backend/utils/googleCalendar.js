@@ -1,57 +1,46 @@
 const { OAuth2Client } = require("google-auth-library");
+const { getGoogleCalendarConfig } = require("../config/env");
 
 const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
 
-function getCalendarId() {
-  return process.env.GOOGLE_CALENDAR_ID || "primary";
-}
-
 function getAdminEmail(settings) {
-  return settings?.adminEmail || process.env.ADMIN_EMAIL || process.env.RECEIVER_EMAIL || "";
+  return getGoogleCalendarConfig(settings).adminEmail;
 }
 
-function hasUsableRefreshToken() {
-  const token = String(process.env.GOOGLE_REFRESH_TOKEN || "").trim();
+function hasUsableRefreshToken(settings = {}) {
+  const token = getGoogleCalendarConfig(settings).refreshToken;
   const isPlaceholder = token === "generated-refresh-token" || token === "your-google-refresh-token";
   return Boolean(token && !isPlaceholder);
 }
 
-function isGoogleCalendarConfigured() {
-  return Boolean(
-    process.env.GOOGLE_CLIENT_ID &&
-      process.env.GOOGLE_CLIENT_SECRET &&
-      hasUsableRefreshToken()
-  );
+function isGoogleCalendarConfigured(settings = {}) {
+  const config = getGoogleCalendarConfig(settings);
+  return Boolean(config.clientId && config.clientSecret && hasUsableRefreshToken(settings));
 }
 
-function getOAuthClient() {
-  if (!isGoogleCalendarConfigured()) {
+function getOAuthClient(settings = {}) {
+  const config = getGoogleCalendarConfig(settings);
+
+  if (!config.clientId || !config.clientSecret || !hasUsableRefreshToken(settings)) {
     return null;
   }
 
-  const client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/bookings/google/callback"
-  );
-
-  client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+  const client = new OAuth2Client(config.clientId, config.clientSecret, config.redirectUri);
+  client.setCredentials({ refresh_token: config.refreshToken });
   return client;
 }
 
 function getGoogleAuthUrl() {
-  console.log("Redirect URI:", process.env.GOOGLE_REDIRECT_URI);
-  const client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/bookings/google/callback"
-  );
+  const config = getGoogleCalendarConfig();
+
+  if (!config.clientId || !config.clientSecret) {
+    throw new Error("Google OAuth is not configured.");
+  }
+
+  const client = new OAuth2Client(config.clientId, config.clientSecret, config.redirectUri);
 
   return client.generateAuthUrl({
-    // 'offline' access type is required to get a refresh token.
     access_type: "offline",
-    // 'consent' prompt is required to be sure the user sees the consent screen,
-    // which is necessary to get a refresh token on subsequent authorizations.
     prompt: "consent",
     scope: [
       "https://www.googleapis.com/auth/calendar.events",
@@ -61,24 +50,24 @@ function getGoogleAuthUrl() {
 }
 
 async function exchangeAuthCode(code) {
-  console.log("Redirect URI:", process.env.GOOGLE_REDIRECT_URI);
-  const client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/bookings/google/callback"
-  );
+  const config = getGoogleCalendarConfig();
 
+  if (!config.clientId || !config.clientSecret) {
+    throw new Error("Google OAuth is not configured.");
+  }
+
+  const client = new OAuth2Client(config.clientId, config.clientSecret, config.redirectUri);
   const { tokens } = await client.getToken(code);
   return tokens;
 }
 
-async function getCalendarBusySlots({ timeMin, timeMax, timeZone }) {
-  const client = getOAuthClient();
+async function getCalendarBusySlots({ timeMin, timeMax, timeZone }, settings = {}) {
+  const client = getOAuthClient(settings);
   if (!client) {
     throw new Error("Google Calendar OAuth is not configured.");
   }
 
-  const calendarId = getCalendarId();
+  const calendarId = getGoogleCalendarConfig(settings).calendarId;
   const response = await client.request({
     url: `${CALENDAR_API}/freeBusy`,
     method: "POST",
@@ -102,7 +91,7 @@ async function getCalendarBusySlots({ timeMin, timeMax, timeZone }) {
 }
 
 async function createCalendarEvent(booking, settings) {
-  const client = getOAuthClient();
+  const client = getOAuthClient(settings);
   if (!client) {
     throw new Error("Google Calendar OAuth is not configured.");
   }
@@ -112,6 +101,7 @@ async function createCalendarEvent(booking, settings) {
     throw new Error("Admin email is not configured.");
   }
 
+  const calendarId = getGoogleCalendarConfig(settings).calendarId;
   const event = {
     summary: `Varlexa AI Meeting - ${booking.company || booking.name}`,
     description: [
@@ -138,7 +128,7 @@ async function createCalendarEvent(booking, settings) {
   };
 
   const response = await client.request({
-    url: `${CALENDAR_API}/calendars/${encodeURIComponent(getCalendarId())}/events?conferenceDataVersion=1&sendUpdates=all`,
+    url: `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events?conferenceDataVersion=1&sendUpdates=all`,
     method: "POST",
     data: event,
   });
@@ -146,18 +136,22 @@ async function createCalendarEvent(booking, settings) {
   const createdEvent = response.data;
   return {
     googleEventId: createdEvent.id,
-    meetLink: createdEvent.hangoutLink || createdEvent.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === "video")?.uri || "",
+    meetLink:
+      createdEvent.hangoutLink ||
+      createdEvent.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === "video")?.uri ||
+      "",
     calendarHtmlLink: createdEvent.htmlLink || "",
   };
 }
 
 async function updateCalendarEvent(booking, settings) {
-  const client = getOAuthClient();
+  const client = getOAuthClient(settings);
   if (!client || !booking.googleEventId) return null;
 
   const adminEmail = getAdminEmail(settings);
+  const calendarId = getGoogleCalendarConfig(settings).calendarId;
   const response = await client.request({
-    url: `${CALENDAR_API}/calendars/${encodeURIComponent(getCalendarId())}/events/${encodeURIComponent(booking.googleEventId)}?sendUpdates=all`,
+    url: `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(booking.googleEventId)}?sendUpdates=all`,
     method: "PATCH",
     data: {
       summary: `Varlexa AI Meeting - ${booking.company || booking.name}`,
@@ -171,12 +165,14 @@ async function updateCalendarEvent(booking, settings) {
   return response.data;
 }
 
-async function cancelCalendarEvent(booking) {
-  const client = getOAuthClient();
+async function cancelCalendarEvent(booking, settings = {}) {
+  const client = getOAuthClient(settings);
   if (!client || !booking.googleEventId) return;
 
+  const calendarId = getGoogleCalendarConfig(settings).calendarId;
+
   await client.request({
-    url: `${CALENDAR_API}/calendars/${encodeURIComponent(getCalendarId())}/events/${encodeURIComponent(booking.googleEventId)}?sendUpdates=all`,
+    url: `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(booking.googleEventId)}?sendUpdates=all`,
     method: "DELETE",
   });
 }

@@ -174,7 +174,7 @@ function ContactForm() {
       }
 
       setBookingStatus('success')
-      setBookingMessage(`Meeting booked. Google Meet link: ${data.booking.meetLink}`)
+      setBookingMessage(data.booking.meetLink ? `Meeting booked. Google Meet link: ${data.booking.meetLink}` : 'Meeting booked. We will contact you with the meeting details.')
       setBookingValues({ purpose: '', date: '', time: '', duration: selectedDuration })
       setSlots([])
     } catch (error) {
@@ -276,6 +276,8 @@ function ContactForm() {
 }
 
 export default ContactForm
+
+
 
 
 

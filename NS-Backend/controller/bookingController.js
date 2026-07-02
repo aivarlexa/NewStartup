@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Booking = require("../models/Booking");
 const BookingSettings = require("../models/BookingSettings");
 const {
@@ -10,6 +11,7 @@ const {
   getAdminEmail,
 } = require("../utils/googleCalendar");
 const { sendBookingConfirmation, sendBookingUpdate } = require("../utils/mail");
+const { getClientOrigin, getGoogleCalendarConfig, isGoogleCalendarConfigured } = require("../config/env");
 
 function isValidEmail(email) {
   return /^\S+@\S+\.\S+$/.test(String(email || "").trim());
@@ -102,6 +104,22 @@ function rangesOverlap(startA, endA, startB, endB) {
   return startA < endB && endA > startB;
 }
 
+const DEFAULT_BOOKING_SETTINGS = {
+  adminEmail: process.env.ADMIN_EMAIL || process.env.RECEIVER_EMAIL || "",
+  timezone: "Asia/Kolkata",
+  workingDays: [0, 1, 2, 3, 4, 5, 6],
+  startTime: "10:00",
+  endTime: "18:00",
+  slotStepMinutes: 30,
+  defaultDuration: 30,
+  blockedDates: [],
+  googleRefreshToken: "",
+};
+
+function isDbConnected() {
+  return mongoose.connection.readyState === 1;
+}
+
 function normalizeBooking(booking) {
   return {
     id: booking._id,
@@ -122,6 +140,10 @@ function normalizeBooking(booking) {
 }
 
 async function getOrCreateSettings() {
+  if (!isDbConnected()) {
+    return DEFAULT_BOOKING_SETTINGS;
+  }
+
   const adminEmail = process.env.ADMIN_EMAIL || process.env.RECEIVER_EMAIL || "";
   return BookingSettings.findOneAndUpdate(
     { key: "default" },
@@ -131,6 +153,10 @@ async function getOrCreateSettings() {
 }
 
 async function hasOverlap(start, end, excludeId) {
+  if (!isDbConnected()) {
+    return false;
+  }
+
   const query = {
     status: "scheduled",
     start: { $lt: end },
@@ -172,11 +198,13 @@ const dayWindowEnd = makeDateTime(
   timezone
 );
 
-  const existingBookings = await Booking.find({
-  status: "scheduled",
-  start: { $lt: dayWindowEnd },
-  end: { $gt: dayWindowStart }, 
-}).lean();
+  const existingBookings = isDbConnected()
+    ? await Booking.find({
+        status: "scheduled",
+        start: { $lt: dayWindowEnd },
+        end: { $gt: dayWindowStart },
+      }).lean()
+    : [];
 
   if (!date || calendarDay === null || blocked) {
     return { settings, slots: [] };
@@ -191,18 +219,17 @@ const dayWindowEnd = makeDateTime(
     return { settings, slots: [] };
   }
 
-  // const dayWindowStart = makeDateTime(date, "00:00", timezone);
-  // const dayWindowEnd = makeDateTime(addDaysToDateString(date, 1), "00:00", timezone);
-  const calendarBusySlots = await getCalendarBusySlots({
-      timeMin: dayWindowStart,
-      timeMax: dayWindowEnd,
-      timeZone: timezone,
-    }).catch((err) => {
-      // Gracefully handle cases where Google Calendar is not configured or fails.
-      // The app will fall back to only checking local bookings.
-      console.error("Could not fetch from Google Calendar, falling back to local availability.", err.message);
-      return [];
-    });
+  const calendarConfig = getGoogleCalendarConfig(settings);
+  const calendarBusySlots = isGoogleCalendarConfigured(calendarConfig)
+    ? await getCalendarBusySlots({
+        timeMin: dayWindowStart,
+        timeMax: dayWindowEnd,
+        timeZone: timezone,
+      }, settings).catch((err) => {
+        console.error("Could not fetch from Google Calendar, falling back to local availability.", err.message);
+        return [];
+      })
+    : [];
 
   const slots = [];
   const now = new Date();
@@ -310,30 +337,29 @@ async function googleCallback(req, res) {
 
     const tokens = await exchangeAuthCode(code);
 
-  if (!tokens.refresh_token) {
-    return res.status(400).send(
+    if (!tokens.refresh_token) {
+      return res.status(400).send(
         "Google did not return a refresh token. Revoke access and try again."
-    );
-} 
-// Save to DB
-
-await BookingSettings.findOneAndUpdate(
-    { key: "default" },
-    {
-        googleRefreshToken:
-            tokens.refresh_token
+      );
     }
-);
 
-    return res.redirect(
-      "http://localhost:5173/admin/settings?calendar=connected"
+    await BookingSettings.findOneAndUpdate(
+      { key: "default" },
+      {
+        $set: { googleRefreshToken: tokens.refresh_token },
+        $setOnInsert: {
+          key: "default",
+          adminEmail: process.env.ADMIN_EMAIL || process.env.RECEIVER_EMAIL || "",
+        },
+      },
+      { new: true, upsert: true }
     );
+
+    return res.redirect(`${getClientOrigin()}/admin/settings?calendar=connected`);
   } catch (error) {
     console.error(error);
 
-    return res.redirect(
-      "http://localhost:5173/admin/settings?calendar=failed"
-    );
+    return res.redirect(`${getClientOrigin()}/admin/settings?calendar=failed`);
   }
 }
 async function rescheduleBooking(req, res) {
@@ -382,29 +408,22 @@ async function rescheduleBooking(req, res) {
     booking.start = start;
     booking.end = end;
 
-await booking.save();
+    await booking.save();
 
-try {
+    const calendarConfig = getGoogleCalendarConfig(settings);
+    if (isGoogleCalendarConfigured(calendarConfig)) {
+      try {
+        await updateCalendarEvent(booking, settings);
+      } catch (err) {
+        console.error("Calendar Update Error:", err);
+      }
+    }
 
-    await updateCalendarEvent(
+    await sendBookingUpdate(
         booking,
-        settings
+        getAdminEmail(settings),
+        "rescheduled"
     );
-
-} catch (err) {
-
-    console.error(
-        "Calendar Update Error:",
-        err
-    );
-
-}
-
-await sendBookingUpdate(
-    booking,
-    getAdminEmail(settings),
-    "rescheduled"
-);
 
     return res.json({
       success: true,
@@ -440,7 +459,7 @@ async function createBooking(req, res) {
       return res.status(409).json({ success: false, message: "That time slot was just booked. Please choose another time." });
     }
 
-    const booking = await Booking.create({
+    const bookingData = {
       name: name?.trim(),
       email: email?.trim().toLowerCase(),
       company: company?.trim() || "",
@@ -450,27 +469,34 @@ async function createBooking(req, res) {
       duration: bookingDuration,
       start,
       end,
-    });
+      status: "scheduled",
+      googleEventId: "",
+      meetLink: "",
+      calendarHtmlLink: "",
+      cancellationReason: "",
+    };
+
+    const booking = isDbConnected()
+      ? await Booking.create(bookingData)
+      : { _id: `local-${Date.now()}`, ...bookingData, save: async () => {} };
+
+    const calendarConfig = getGoogleCalendarConfig(settings);
+    if (isGoogleCalendarConfigured(calendarConfig)) {
+      try {
+        const calendarResult = await createCalendarEvent(booking, settings);
+        booking.googleEventId = calendarResult.googleEventId || "";
+        booking.meetLink = calendarResult.meetLink || "";
+        booking.calendarHtmlLink = calendarResult.calendarHtmlLink || "";
+        await booking.save();
+      } catch (integrationError) {
+        console.warn("Calendar integration skipped:", integrationError.message);
+      }
+    }
 
     try {
-      const calendarResult = await createCalendarEvent(booking, settings);
-      booking.googleEventId = calendarResult.googleEventId;
-      booking.meetLink = calendarResult.meetLink;
-      booking.calendarHtmlLink = calendarResult.calendarHtmlLink;
-      await booking.save();
       await sendBookingConfirmation(booking, getAdminEmail(settings));
-    } catch (integrationError) {
-      if (booking.googleEventId) {
-        await cancelCalendarEvent(booking).catch((rollbackError) => {
-          console.error("Calendar rollback error:", rollbackError);
-        });
-      }
-      await Booking.findByIdAndDelete(booking._id);
-      console.error("Booking integration error:", integrationError);
-      return res.status(500).json({
-        success: false,
-        message: integrationError.message || "Unable to create Google Calendar meeting.",
-      });
+    } catch (mailError) {
+      console.warn("Booking email skipped:", mailError.message);
     }
 
     return res.status(201).json({ success: true, booking: normalizeBooking(booking) });
@@ -499,11 +525,14 @@ async function cancelBooking(req, res) {
     }
 
     if (booking.status !== "cancelled") {
-      await cancelCalendarEvent(booking);
+      const settings = await getOrCreateSettings();
+      const calendarConfig = getGoogleCalendarConfig(settings);
+      if (isGoogleCalendarConfigured(calendarConfig)) {
+        await cancelCalendarEvent(booking, settings);
+      }
       booking.status = "cancelled";
       booking.cancellationReason = req.body.reason || "Cancelled by admin";
       await booking.save();
-      const settings = await getOrCreateSettings();
       await sendBookingUpdate(booking, getAdminEmail(settings), "cancelled");
     }
 

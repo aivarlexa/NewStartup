@@ -2,6 +2,16 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../config/token");
 const { OAuth2Client } = require("google-auth-library");
+
+function getGoogleClient() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+
+  if (!clientId) {
+    return null;
+  }
+
+  return new OAuth2Client(clientId);
+}
 const register = async (req, res) => {
   console.log("Request Body:", req.body);
 
@@ -110,11 +120,18 @@ const login = async (req, res) => {
     });
   }
 };
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
 const googleLogin = async (req, res) => {
 
     try {
+
+    const client = getGoogleClient();
+
+    if (!client) {
+      return res.status(500).json({
+        success: false,
+        message: "Google login is not configured.",
+      });
+    }
 
         const { token } = req.body;
 

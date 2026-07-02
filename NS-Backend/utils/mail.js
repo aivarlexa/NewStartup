@@ -1,28 +1,28 @@
 const nodemailer = require("nodemailer");
+const { getMailConfig } = require("../config/env");
 
 let cachedTransporter = null;
 
 function isMailConfigured() {
-  return Boolean(
-    process.env.SMTP_HOST &&
-      process.env.SMTP_PORT &&
-      process.env.SMTP_USER &&
-      process.env.SMTP_PASS
-  );
+  return getMailConfig().isConfigured;
 }
 
 function getTransporter() {
-  if (!isMailConfigured()) return null;
+  const mailConfig = getMailConfig();
+  if (!mailConfig.isConfigured) return null;
   if (cachedTransporter) return cachedTransporter;
 
   cachedTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: String(process.env.SMTP_SECURE || "").toLowerCase() === "true",
+    host: mailConfig.host,
+    port: mailConfig.port,
+    secure: mailConfig.secure,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: mailConfig.user,
+      pass: mailConfig.pass,
     },
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 5000,
   });
 
   return cachedTransporter;
@@ -38,7 +38,9 @@ async function sendBookingConfirmation(booking, adminEmail) {
     throw new Error("Mail service is not configured.");
   }
 
-  const recipients = [booking.email, adminEmail].filter(Boolean);
+  const mailConfig = getMailConfig();
+
+  const recipients = [booking.email, adminEmail || mailConfig.recipient].filter(Boolean);
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.55;">
       <h2>Meeting confirmed</h2>
@@ -55,7 +57,7 @@ async function sendBookingConfirmation(booking, adminEmail) {
   `;
 
   await transporter.sendMail({
-    from: process.env.MAIL_FROM || process.env.SMTP_USER,
+    from: mailConfig.from,
     to: recipients.join(","),
     replyTo: booking.email,
     subject: `Meeting confirmed - ${booking.date} ${booking.time}`,
@@ -67,9 +69,11 @@ async function sendBookingUpdate(booking, adminEmail, action) {
   const transporter = getTransporter();
   if (!transporter) return;
 
+  const mailConfig = getMailConfig();
+
   await transporter.sendMail({
-    from: process.env.MAIL_FROM || process.env.SMTP_USER,
-    to: [booking.email, adminEmail].filter(Boolean).join(","),
+    from: mailConfig.from,
+    to: [booking.email, adminEmail || mailConfig.recipient].filter(Boolean).join(","),
     subject: `Meeting ${action} - ${booking.date} ${booking.time}`,
     html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.55;">
@@ -89,3 +93,4 @@ module.exports = {
   sendBookingConfirmation,
   sendBookingUpdate,
 };
+
