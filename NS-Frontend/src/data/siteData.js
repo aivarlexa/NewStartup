@@ -110,24 +110,14 @@ export const socialLinks = [
     icon: 'linkedin',
     description: 'Company updates, product thinking, and enterprise AI notes.',
   },
-  {
-    name: 'GitHub',
-    href: 'https://github.com/',
-    icon: 'github',
-    description: 'Engineering experiments, open tooling, and implementation references.',
-  },
+
   {
     name: 'Instagram',
     href: 'https://www.instagram.com/ceo.akshaysir/?hl=en',
     icon: 'instagram',
     description: 'Brand moments, launches, and behind-the-scenes product visuals.',
   },
-  {
-    name: 'X / Twitter',
-    href: 'https://x.com/',
-    icon: 'x',
-    description: 'Short updates on AI systems, cloud delivery, and security practices.',
-  },
+  
   {
     name: 'WhatsApp',
     href: 'https://wa.me/919130067841',

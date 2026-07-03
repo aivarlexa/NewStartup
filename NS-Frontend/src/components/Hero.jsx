@@ -67,7 +67,7 @@ function Hero() {
           Secure AI products, intelligent platforms and cloud systems engineered for organizations that refuse to stand still.
         </p>
         <div className="hero-actions">
-          <Link className="primary-action" to="/#platform">
+          <Link className="primary-action" to="/contact">
             START A PROJECT
           </Link>
         </div>
