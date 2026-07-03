@@ -118,7 +118,7 @@ export const socialLinks = [
   },
   {
     name: 'Instagram',
-    href: 'https://www.instagram.com/',
+    href: 'https://www.instagram.com/ceo.akshaysir/?hl=en',
     icon: 'instagram',
     description: 'Brand moments, launches, and behind-the-scenes product visuals.',
   },
@@ -130,7 +130,7 @@ export const socialLinks = [
   },
   {
     name: 'WhatsApp',
-    href: 'https://wa.me/9100000000000',
+    href: 'https://wa.me/919130067841',
     icon: 'whatsapp',
     description: 'Quick business conversations and project discovery requests.',
   },

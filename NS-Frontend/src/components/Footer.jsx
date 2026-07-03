@@ -53,8 +53,8 @@ function Footer() {
 
         <div className="footer-contact footer-reveal">
           <h3>Contact</h3>
-          <a href="mailto:hello@varlexa.ai">hello@varlexa.ai</a>
-          <a href="tel:+910000000000">+91 00000 00000</a>
+          <a href="mailto:aivarlexa@gmail.com">aivarlexa@gmail.com</a>
+          <a href="tel:+919130067841">+91 9130 067841</a>
           <span>Solapur, Maharashtra, India</span>
           <Link className="footer-action" to="/contact">Contact Us</Link>
         </div>

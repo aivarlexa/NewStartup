@@ -13,7 +13,7 @@ function ContactDetails() {
       </div>
       <div className="contact-detail-item detail-phone">
         <span className="contact-detail-icon"><Phone aria-hidden="true" /></span>
-        <a href="tel:+910000000000">+91 00000 00000</a>
+        <a href="tel:+919130067841">+91 9130 067841</a>
       </div>
       <div className="contact-detail-item detail-location">
         <span className="contact-detail-icon"><MapPin aria-hidden="true" /></span>
