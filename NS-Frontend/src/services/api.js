@@ -5,6 +5,16 @@ const api = axios.create({
   withCredentials: true,
 })
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  return config
+})
+
 export function getApiErrorMessage(error, fallback = 'Request failed.') {
   if (!error.response) {
     return 'Unable to connect to the server.'

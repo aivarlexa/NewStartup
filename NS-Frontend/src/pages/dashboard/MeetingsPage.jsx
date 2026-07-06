@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { CalendarOff, Link as LinkIcon, Settings, X } from 'lucide-react'
 import AuthContext from '../../context/AuthContext'
 import api, { getApiErrorMessage } from '../../services/api'
@@ -27,7 +27,7 @@ function MeetingsPage() {
 
   const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token])
 
-  async function apiFetch(path, options = {}) {
+  const apiFetch = useCallback(async function apiFetch(path, options = {}) {
     try {
       const { data } = await api.request({
         url: path,
@@ -44,11 +44,11 @@ function MeetingsPage() {
 
       return data
     } catch (error) {
-      throw new Error(getApiErrorMessage(error, error.message || 'Request failed.'))
+      throw new Error(getApiErrorMessage(error, error.message || 'Request failed.'), { cause: error })
     }
-  }
+  }, [authHeaders])
 
-  async function loadMeetings() {
+  const loadMeetings = useCallback(async function loadMeetings() {
     setStatus('loading')
     setMessage('')
 
@@ -64,16 +64,24 @@ function MeetingsPage() {
       setStatus('error')
       setMessage(error.message)
     }
-  }
+  }, [apiFetch])
 
   useEffect(() => {
-    if (token) loadMeetings()
-  }, [token])
+    if (!token) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      loadMeetings()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadMeetings, token])
 
   useEffect(() => {
     if (!rescheduleDraft.date || !rescheduleDraft.duration) {
-      setAvailableSlots([])
-      return undefined
+      const timeoutId = window.setTimeout(() => setAvailableSlots([]), 0)
+      return () => window.clearTimeout(timeoutId)
     }
 
     const controller = new AbortController()

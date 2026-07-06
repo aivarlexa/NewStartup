@@ -23,7 +23,10 @@ function getMongoUri() {
 }
 
 function getClientOrigin() {
-  return getEnv("CLIENT_ORIGIN", "http://localhost:5173");
+  return getEnv("CLIENT_ORIGIN", "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 }
 
 function getMailConfig() {

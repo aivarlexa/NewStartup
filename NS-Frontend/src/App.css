@@ -5933,3 +5933,209 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Production/mobile stability fixes */
+.app-shell {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+.topbar {
+  position: relative;
+  z-index: 40;
+}
+
+.nav-links {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nav-links a.is-active,
+.nav-cta.is-active,
+.mobile-nav-panel a.is-active {
+  background: rgba(94, 247, 200, 0.1);
+  color: var(--text-strong);
+}
+
+@media (max-width: 1040px) {
+  .mobile-nav-panel {
+    position: absolute;
+    width: 100%;
+    max-height: calc(100svh - 92px);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    width: calc(100% - 28px);
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 14px 0;
+  }
+
+  .brand,
+  .nav-wordmark {
+    min-width: 0;
+  }
+
+  .nav-wordmark {
+    width: clamp(116px, 42vw, 154px);
+  }
+
+  .mobile-nav-toggle {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+  }
+
+  .mobile-nav-panel {
+    left: 0;
+    right: 0;
+  }
+
+  .hero-section {
+    grid-template-columns: 1fr;
+    padding: 34px 16px 52px;
+    gap: 24px;
+  }
+
+  .hero-copy {
+    top: 0;
+  }
+
+  .hero-title {
+    max-width: 100%;
+    font-size: clamp(2.05rem, 10vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: 0;
+  }
+
+  .hero-title span {
+    white-space: normal;
+  }
+
+  .hero-actions,
+  .primary-action,
+  .secondary-action {
+    width: 100%;
+  }
+
+  .primary-action,
+  .secondary-action {
+    min-height: 48px;
+  }
+
+  .hero-visual {
+    width: 100%;
+    min-height: 300px;
+    transform: none;
+  }
+
+  .visual-stage {
+    min-height: 300px;
+  }
+
+  .section-heading {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .capabilities-heading,
+  .about-hero-copy h1,
+  .about-intro h2,
+  .about-values h2,
+  .about-capabilities h2,
+  .about-cta h2 {
+    letter-spacing: 0;
+  }
+
+  .capability-card {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  .capability-card h3,
+  .capability-card p,
+  .capability-tags {
+    max-width: none;
+  }
+
+  .capability-divider {
+    width: 100%;
+    height: 2px;
+    min-height: 2px;
+  }
+
+  .capability-action-block,
+  .capability-tags {
+    justify-items: start;
+    justify-content: flex-start;
+  }
+
+  .chatbot,
+  .contact-form,
+  .contact-details,
+  .policy-panel,
+  .about-info-card,
+  .about-value-card {
+    border-radius: 12px;
+  }
+
+  .chat-form {
+    grid-template-columns: minmax(0, 1fr) 46px;
+  }
+
+  .contact-page {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .contact-heading h1 {
+    letter-spacing: 0;
+  }
+
+  .contact-mode-switch {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-mode-switch button,
+  .contact-submit {
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .topbar {
+    width: calc(100% - 24px);
+  }
+
+  .hero-section {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .hero-title,
+  .hero-video-copy h2,
+  .page-heading h1,
+  .contact-heading h1 {
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .contact-form,
+  .contact-details {
+    padding: 18px;
+  }
+
+  .dashboard-header {
+    min-height: 64px;
+  }
+
+  .dashboard-content {
+    padding: 18px 12px;
+  }
+}
