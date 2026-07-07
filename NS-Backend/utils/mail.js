@@ -56,7 +56,8 @@ async function sendBookingConfirmation(booking, adminEmail) {
         <tr><td><strong>Company</strong></td><td>${booking.company || "N/A"}</td></tr>
         <tr><td><strong>Purpose</strong></td><td>${booking.purpose}</td></tr>
         <tr><td><strong>When</strong></td><td>${formatMeetingDate(booking)}</td></tr>
-        <tr><td><strong>Google Meet</strong></td><td><a href="${booking.meetLink}">${booking.meetLink}</a></td></tr>
+        <!-- 🔄 Updated from Google Meet to Whereby Call -->
+        <tr><td><strong>Whereby Video Call</strong></td><td><a href="${booking.videoLink}">${booking.videoLink}</a></td></tr>
       </table>
     </div>
   `;
@@ -86,7 +87,8 @@ async function sendBookingUpdate(booking, adminEmail, action) {
         <h2>Meeting ${action}</h2>
         <p><strong>${booking.purpose}</strong></p>
         <p>${formatMeetingDate(booking)}</p>
-        ${booking.meetLink ? `<p>Google Meet: <a href="${booking.meetLink}">${booking.meetLink}</a></p>` : ""}
+        <!-- 🔄 Updated link from meetLink to videoLink -->
+        ${booking.videoLink ? `<p>Whereby Video Call: <a href="${booking.videoLink}">${booking.videoLink}</a></p>` : ""}
         ${booking.cancellationReason ? `<p>Reason: ${booking.cancellationReason}</p>` : ""}
       </div>
     `,
@@ -99,9 +101,3 @@ module.exports = {
   sendBookingConfirmation,
   sendBookingUpdate,
 };
-
-
-
-
-
-
