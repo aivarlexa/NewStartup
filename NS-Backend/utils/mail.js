@@ -1,51 +1,42 @@
-const nodemailer = require("nodemailer");
 const { getMailConfig } = require("../config/env");
+const { Resend } = require("resend");
 
-let cachedTransporter = null;
+let cachedResendInstance = null;
 
 function isMailConfigured() {
   return getMailConfig().isConfigured;
 }
 
-function getTransporter() {
+function getResendClient() {
   const mailConfig = getMailConfig();
-  if (!mailConfig.isConfigured) return null;
-  if (cachedTransporter) return cachedTransporter;
+  if (!mailConfig.isConfigured || !process.env.RESEND_API_KEY) return null;
+  if (cachedResendInstance) return cachedResendInstance;
 
-  cachedTransporter = nodemailer.createTransport({
-    host: mailConfig.host,
-    port: mailConfig.port,
-    secure: mailConfig.secure,
-    auth: {
-      user: mailConfig.user,
-      pass: mailConfig.pass,
-    },
-    connectionTimeout: 5000,
-    greetingTimeout: 5000,
-    socketTimeout: 5000,
-  });
-
-  return cachedTransporter;
+  cachedResendInstance = new Resend(process.env.RESEND_API_KEY);
+  return cachedResendInstance;
 }
 
 function formatMeetingDate(booking) {
   return `${booking.date} at ${booking.time} (${booking.duration} minutes)`;
 }
 
-function getClientFromHeader(name, mailConfig) {
+function getClientFromHeader(name) {
   const displayName = String(name || "Website Client").replace(/"/g, "'");
-  return `"${displayName}" <${mailConfig.user}>`;
+  // While testing with a free Resend account, you must use onboarding@resend.dev
+  return `${displayName} <onboarding@resend.dev>`;
 }
 
 async function sendBookingConfirmation(booking, adminEmail) {
-  const transporter = getTransporter();
-  if (!transporter) {
-    throw new Error("Mail service is not configured.");
+  const resendClient = getResendClient();
+  if (!resendClient) {
+    throw new Error("Mail service API key is not configured.");
   }
 
   const mailConfig = getMailConfig();
+  
+  // Resend accepts an array of strings for multiple recipients
+  const recipients = [mailConfig.recipient, booking.email].filter(Boolean);
 
-  const recipients = [mailConfig.recipient].filter(Boolean);
   const html = `
     <div style="font-family: Arial, sans-serif; line-height: 1.55;">
       <h2>Meeting confirmed</h2>
@@ -56,47 +47,52 @@ async function sendBookingConfirmation(booking, adminEmail) {
         <tr><td><strong>Company</strong></td><td>${booking.company || "N/A"}</td></tr>
         <tr><td><strong>Purpose</strong></td><td>${booking.purpose}</td></tr>
         <tr><td><strong>When</strong></td><td>${formatMeetingDate(booking)}</td></tr>
-        <!-- 🔄 Updated from Google Meet to Whereby Call -->
         <tr><td><strong>Whereby Video Call</strong></td><td><a href="${booking.videoLink}">${booking.videoLink}</a></td></tr>
       </table>
     </div>
   `;
 
-  await transporter.sendMail({
-    from: getClientFromHeader(booking.name, mailConfig),
-    to: recipients.join(","),
+  const { error } = await resendClient.emails.send({
+    from: getClientFromHeader(booking.name),
+    to: recipients,
     replyTo: booking.email,
     subject: `Meeting confirmed - ${booking.date} ${booking.time}`,
     html,
   });
+
+  if (error) {
+    console.error("Resend Confirmation Error:", error);
+    throw new Error("Failed to send booking confirmation email.");
+  }
 }
 
 async function sendBookingUpdate(booking, adminEmail, action) {
-  const transporter = getTransporter();
-  if (!transporter) return;
+  const resendClient = getResendClient();
+  if (!resendClient) return;
 
   const mailConfig = getMailConfig();
+  const recipients = [mailConfig.recipient, booking.email].filter(Boolean);
 
-  await transporter.sendMail({
-    from: getClientFromHeader(booking.name, mailConfig),
-    to: [mailConfig.recipient].filter(Boolean).join(","),
+  let statusText = action === "cancel" ? "cancelled" : "updated";
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.55;">
+      <h2>Meeting Notice</h2>
+      <p>Your Varlexa AI meeting slot has been <strong>${statusText}</strong>.</p>
+      <p><strong>Details:</strong> ${formatMeetingDate(booking)}</p>
+    </div>
+  `;
+
+  await resendClient.emails.send({
+    from: getClientFromHeader("Booking System"),
+    to: recipients,
     replyTo: booking.email,
-    subject: `Meeting ${action} - ${booking.date} ${booking.time}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.55;">
-        <h2>Meeting ${action}</h2>
-        <p><strong>${booking.purpose}</strong></p>
-        <p>${formatMeetingDate(booking)}</p>
-        <!-- 🔄 Updated link from meetLink to videoLink -->
-        ${booking.videoLink ? `<p>Whereby Video Call: <a href="${booking.videoLink}">${booking.videoLink}</a></p>` : ""}
-        ${booking.cancellationReason ? `<p>Reason: ${booking.cancellationReason}</p>` : ""}
-      </div>
-    `,
+    subject: `Meeting Notification - ${booking.date} ${booking.time}`,
+    html,
   });
 }
 
 module.exports = {
-  getTransporter,
   isMailConfigured,
   sendBookingConfirmation,
   sendBookingUpdate,
