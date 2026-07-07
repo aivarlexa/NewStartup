@@ -3,6 +3,9 @@ const { Resend } = require("resend");
 
 let cachedResendInstance = null;
 
+// Define it statically here so it never fails or shows undefined
+const WHEREBY_LINK = "https://whereby.com/varlexaai-meet";
+
 function isMailConfigured() {
   return getMailConfig().isConfigured;
 }
@@ -22,7 +25,6 @@ function formatMeetingDate(booking) {
 
 function getClientFromHeader(name) {
   const displayName = String(name || "Website Client").replace(/"/g, "'");
-  // While testing with a free Resend account, you must use onboarding@resend.dev
   return `${displayName} <onboarding@resend.dev>`;
 }
 
@@ -32,7 +34,6 @@ async function sendBookingConfirmation(booking, adminEmail) {
     throw new Error("Mail service API key is not configured.");
   }
 
-  // ⚠️ SANDBOX BYPASS: Force recipient to your approved test email to prevent 403 errors
   const recipients = ["aivarlexa@gmail.com"];
 
   const html = `
@@ -46,7 +47,8 @@ async function sendBookingConfirmation(booking, adminEmail) {
         <tr><td><strong>Company</strong></td><td>${booking.company || "N/A"}</td></tr>
         <tr><td><strong>Purpose</strong></td><td>${booking.purpose}</td></tr>
         <tr><td><strong>When</strong></td><td>${formatMeetingDate(booking)}</td></tr>
-        <tr><td><strong>Whereby Video Call</strong></td><td><a href="${booking.videoLink}">${booking.videoLink}</a></td></tr>
+        <!-- 🎥 Changed from booking.videoLink to WHEREBY_LINK -->
+        <tr><td><strong>Whereby Video Call</strong></td><td><a href="${WHEREBY_LINK}">${WHEREBY_LINK}</a></td></tr>
       </table>
     </div>
   `;
@@ -54,7 +56,7 @@ async function sendBookingConfirmation(booking, adminEmail) {
   const { error } = await resendClient.emails.send({
     from: getClientFromHeader(booking.name),
     to: recipients,
-    replyTo: booking.email, // Hitting reply will still address the actual client!
+    replyTo: booking.email,
     subject: `Meeting confirmed - ${booking.date} ${booking.time}`,
     html,
   });
@@ -69,9 +71,7 @@ async function sendBookingUpdate(booking, adminEmail, action) {
   const resendClient = getResendClient();
   if (!resendClient) return;
 
-  // ⚠️ SANDBOX BYPASS: Force recipient to your approved test email to prevent 403 errors
   const recipients = ["aivarlexa@gmail.com"];
-
   let statusText = action === "cancel" ? "cancelled" : "updated";
 
   const html = `
@@ -81,6 +81,8 @@ async function sendBookingUpdate(booking, adminEmail, action) {
       <hr />
       <p>Your Varlexa AI meeting slot has been <strong>${statusText}</strong>.</p>
       <p><strong>Details:</strong> ${formatMeetingDate(booking)}</p>
+      <!-- 🎥 Added here too just in case they need to rejoin an updated meeting -->
+      <p><strong>Meeting Room Link:</strong> <a href="${WHEREBY_LINK}">${WHEREBY_LINK}</a></p>
     </div>
   `;
 
