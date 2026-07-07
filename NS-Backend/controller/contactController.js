@@ -1,61 +1,32 @@
-const nodemailer = require("nodemailer");
-const dns = require("node:dns"); // <-- 1. Add this built-in module
+const { Resend } = require("resend");
 const { getMailConfig } = require("../config/env");
 
-// 2. Force Node's DNS resolver to prioritize IPv4 over IPv6 globally
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
-
-let cachedTransporter = null;
+let cachedResendInstance = null;
 
 function isMailConfigured() {
   return getMailConfig().isConfigured;
 }
 
-function getTransporter() {
+function getResendClient() {
   const mailConfig = getMailConfig();
 
-  if (!mailConfig.isConfigured) return null;
+  // If your env config isn't set up yet, return null
+  if (!mailConfig.isConfigured || !process.env.RESEND_API_KEY) return null;
 
-  if (cachedTransporter) {
-    return cachedTransporter;
+  if (cachedResendInstance) {
+    return cachedResendInstance;
   }
 
-  console.log({
-    host: mailConfig.host,
-    port: mailConfig.port,
-    secure: mailConfig.secure,
-    user: mailConfig.user,
-    recipient: mailConfig.recipient,
-  });
-
-  cachedTransporter = nodemailer.createTransport({
-    host: mailConfig.host,
-    port: parseInt(mailConfig.port) || 587, // Ensures port is a number
-    secure: String(mailConfig.secure) === 'true', 
-    auth: {
-      user: mailConfig.user,
-      pass: mailConfig.pass,
-    },
-    // Keep this as a backup socket instruction
-    connectionTimeout: 10000, 
-  });
-
-  cachedTransporter.verify((error, success) => {
-    if (error) {
-      console.error("SMTP Verify Error:", error);
-    } else {
-      console.log("SMTP Server is ready");
-    }
-  });
-
-  return cachedTransporter;
+  // Initialize the Resend client using an API Key via HTTPS (Port 443)
+  cachedResendInstance = new Resend(process.env.RESEND_API_KEY);
+  return cachedResendInstance;
 }
 
 function getClientFromHeader(name, mailConfig) {
   const displayName = String(name || "Website Client").replace(/"/g, "'");
-  return `"${displayName}" <${mailConfig.user}>`;
+  // NOTE: For free Resend accounts, you must send FROM "onboarding@resend.dev" 
+  // until you verify your own custom domain name.
+  return `${displayName} <onboarding@resend.dev>`;
 }
 
 const submitContact = async (req, res) => {
@@ -69,12 +40,12 @@ const submitContact = async (req, res) => {
       });
     }
 
-    const transporter = getTransporter();
+    const resendClient = getResendClient();
 
-    if (!transporter) {
+    if (!resendClient) {
       return res.status(500).json({
         success: false,
-        message: "Mail service is not configured.",
+        message: "Mail service API key is not configured.",
       });
     }
 
@@ -87,18 +58,11 @@ const submitContact = async (req, res) => {
       });
     }
 
-    console.log("Mail Config:", {
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_SECURE,
-  user: process.env.SMTP_USER,
-  recipient: process.env.RECEIVER_EMAIL,
-});
-
-    await transporter.sendMail({
+    // Send the email via Resend's HTTPS API wrapper instead of SMTP
+    const { data, error } = await resendClient.emails.send({
       from: getClientFromHeader(fullName, mailConfig),
       to: mailConfig.recipient,
-      replyTo: email,
+      replyTo: email, // This lets you hit "Reply" in your inbox to email the client back directly
       subject: `New Contact Form Submission - ${service}`,
       html: `
         <div style="font-family: Arial, sans-serif;">
@@ -134,6 +98,14 @@ const submitContact = async (req, res) => {
       `,
     });
 
+    if (error) {
+      console.error("Resend API Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Unable to send message via API.",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "Message sent successfully.",
@@ -151,4 +123,3 @@ const submitContact = async (req, res) => {
 module.exports = {
   submitContact,
 };
-
