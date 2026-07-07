@@ -101,15 +101,21 @@ async function createCalendarEvent(booking, settings) {
     throw new Error("Admin email is not configured.");
   }
 
+  // 🚀 Defined your custom static testing room link directly
+  const WHEREBY_LINK = "https://whereby.com/varlexaai-meet";
+
   const calendarId = getGoogleCalendarConfig(settings).calendarId;
   const event = {
     summary: `Varlexa AI Meeting - ${booking.company || booking.name}`,
+    // 🎥 Added Whereby link directly inside the calendar event layout details description slot
     description: [
       `Purpose: ${booking.purpose}`,
       `Client: ${booking.name}`,
       `Email: ${booking.email}`,
       `Company: ${booking.company || "N/A"}`,
+      `\n🎥 Video Call Link: ${WHEREBY_LINK}`
     ].join("\n"),
+    location: WHEREBY_LINK, // 👈 Drops the custom Whereby room link right into the map location box slot
     start: {
       dateTime: booking.start.toISOString(),
       timeZone: settings.timezone,
@@ -119,16 +125,12 @@ async function createCalendarEvent(booking, settings) {
       timeZone: settings.timezone,
     },
     attendees: [{ email: booking.email }, { email: adminEmail }],
-    conferenceData: {
-      createRequest: {
-        requestId: `varlexa-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        conferenceSolutionKey: { type: "hangoutsMeet" },
-      },
-    },
+    // ✂️ Removed the entire conferenceData object container so Google does not attach Google Meet automatically
   };
 
+  // Removed conferenceDataVersion parameters since we are bypassing custom native video injections
   const response = await client.request({
-    url: `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events?conferenceDataVersion=1&sendUpdates=all`,
+    url: `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events?sendUpdates=all`,
     method: "POST",
     data: event,
   });
@@ -136,10 +138,7 @@ async function createCalendarEvent(booking, settings) {
   const createdEvent = response.data;
   return {
     googleEventId: createdEvent.id,
-    meetLink:
-      createdEvent.hangoutLink ||
-      createdEvent.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === "video")?.uri ||
-      "",
+    videoLink: WHEREBY_LINK, // 👈 Returns videoLink pointing straight to your Whereby room instead of meetLink
     calendarHtmlLink: createdEvent.htmlLink || "",
   };
 }
@@ -150,12 +149,15 @@ async function updateCalendarEvent(booking, settings) {
 
   const adminEmail = getAdminEmail(settings);
   const calendarId = getGoogleCalendarConfig(settings).calendarId;
+  const WHEREBY_LINK = "https://whereby.com/varlexaai-meet";
+
   const response = await client.request({
     url: `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(booking.googleEventId)}?sendUpdates=all`,
     method: "PATCH",
     data: {
       summary: `Varlexa AI Meeting - ${booking.company || booking.name}`,
-      description: `Purpose: ${booking.purpose}\nClient: ${booking.name}\nEmail: ${booking.email}\nCompany: ${booking.company || "N/A"}`,
+      description: `Purpose: ${booking.purpose}\nClient: ${booking.name}\nEmail: ${booking.email}\nCompany: ${booking.company || "N/A"}\n\n🎥 Video Call Link: ${WHEREBY_LINK}`,
+      location: WHEREBY_LINK, // Keep sync location accurate
       start: { dateTime: booking.start.toISOString(), timeZone: settings.timezone },
       end: { dateTime: booking.end.toISOString(), timeZone: settings.timezone },
       attendees: [{ email: booking.email }, { email: adminEmail }],
