@@ -28,6 +28,7 @@ function getTransporter() {
     host: mailConfig.host,
     port: mailConfig.port,
     secure: mailConfig.secure,
+      family: 4,
     auth: {
       user: mailConfig.user,
       pass: mailConfig.pass,
