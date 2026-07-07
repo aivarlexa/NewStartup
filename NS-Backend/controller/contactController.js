@@ -1,5 +1,11 @@
 const nodemailer = require("nodemailer");
+const dns = require("node:dns"); // <-- 1. Add this built-in module
 const { getMailConfig } = require("../config/env");
+
+// 2. Force Node's DNS resolver to prioritize IPv4 over IPv6 globally
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 let cachedTransporter = null;
 
@@ -17,32 +23,32 @@ function getTransporter() {
   }
 
   console.log({
-  host: mailConfig.host,
-  port: mailConfig.port,
-  secure: mailConfig.secure,
-  user: mailConfig.user,
-  recipient: mailConfig.recipient,
-});
-
-  cachedTransporter = nodemailer.createTransport({
     host: mailConfig.host,
     port: mailConfig.port,
     secure: mailConfig.secure,
-      family: 4,
+    user: mailConfig.user,
+    recipient: mailConfig.recipient,
+  });
+
+  cachedTransporter = nodemailer.createTransport({
+    host: mailConfig.host,
+    port: parseInt(mailConfig.port) || 587, // Ensures port is a number
+    secure: String(mailConfig.secure) === 'true', 
     auth: {
       user: mailConfig.user,
       pass: mailConfig.pass,
     },
-    
+    // Keep this as a backup socket instruction
+    connectionTimeout: 10000, 
   });
-  cachedTransporter.verify((error, success) => {
-  if (error) {
-    console.error("SMTP Verify Error:", error);
-  } else {
-    console.log("SMTP Server is ready");
-  }
-});
 
+  cachedTransporter.verify((error, success) => {
+    if (error) {
+      console.error("SMTP Verify Error:", error);
+    } else {
+      console.log("SMTP Server is ready");
+    }
+  });
 
   return cachedTransporter;
 }
