@@ -16,6 +16,14 @@ function getTransporter() {
     return cachedTransporter;
   }
 
+  console.log({
+  host: mailConfig.host,
+  port: mailConfig.port,
+  secure: mailConfig.secure,
+  user: mailConfig.user,
+  recipient: mailConfig.recipient,
+});
+
   cachedTransporter = nodemailer.createTransport({
     host: mailConfig.host,
     port: mailConfig.port,
@@ -24,7 +32,16 @@ function getTransporter() {
       user: mailConfig.user,
       pass: mailConfig.pass,
     },
+    
   });
+  cachedTransporter.verify((error, success) => {
+  if (error) {
+    console.error("SMTP Verify Error:", error);
+  } else {
+    console.log("SMTP Server is ready");
+  }
+});
+
 
   return cachedTransporter;
 }
@@ -62,6 +79,14 @@ const submitContact = async (req, res) => {
         message: "Mail recipient is not configured.",
       });
     }
+
+    console.log("Mail Config:", {
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: process.env.SMTP_SECURE,
+  user: process.env.SMTP_USER,
+  recipient: process.env.RECEIVER_EMAIL,
+});
 
     await transporter.sendMail({
       from: getClientFromHeader(fullName, mailConfig),
