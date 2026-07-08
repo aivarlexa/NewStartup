@@ -30,7 +30,7 @@ function ServiceCard({ capability, index }) {
       <span className="capability-divider" aria-hidden="true"></span>
       <p>{capability.text}</p>
       <div className="capability-action-block">
-        <span className="capability-arrow" aria-hidden="true">
+        <span className="capability-arrow" aria-hidden="true" cursor="pointer">
           ↗
         </span>
         <div className="capability-tags" aria-label={`${capability.title} categories`}>
