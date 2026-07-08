@@ -40,7 +40,7 @@ function ServiceCard({ capability, index }) {
             ↗
           </span>
         ) : (
-          <Link className="capability-arrow" to="/about" aria-label={`Learn more about ${capability.title}`}>
+          <Link className="capability-arrow" to="/contact" aria-label={`Learn more about ${capability.title}`}>
             ↗
           </Link>
         )}
