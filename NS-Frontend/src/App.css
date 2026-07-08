@@ -216,6 +216,457 @@ h1 {
   white-space: nowrap;
 }
 
+/* =========================================================
+   Hero intro sequence (logo swipe -> loading dot -> lens flare -> dial -> reveal)
+   ========================================================= */
+
+.hero-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  gap: 22px;
+  overflow: hidden;
+  background: #05070b;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 560ms ease, visibility 560ms ease;
+}
+
+.hero-intro.stage-reveal {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.hero-intro-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  opacity: 1;
+  transition: opacity 380ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-mark,
+.hero-intro.stage-flare .hero-intro-mark,
+.hero-intro.stage-dial .hero-intro-mark,
+.hero-intro.stage-reveal .hero-intro-mark {
+  opacity: 0;
+}
+
+.intro-wordmark {
+  width: min(230px, 52vw);
+  max-height: 78px;
+}
+
+.hero-intro-swipe {
+  position: absolute;
+  top: 52%;
+  left: -14%;
+  width: 128%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #5ef7c8, #78a8ff, transparent);
+  box-shadow: 0 0 16px rgba(94, 247, 200, 0.5);
+  transform: translateX(-120%) translateY(-50%) rotate(-3deg);
+  animation: introSwipe 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.hero-intro-progress {
+  position: absolute;
+  bottom: 88px;
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+}
+
+.hero-intro-dot {
+  position: relative;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0b0f16;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 280ms ease, transform 280ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-dot,
+.hero-intro.stage-flare .hero-intro-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.hero-intro.stage-flare .hero-intro-dot {
+  animation: introFlare 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero-intro.stage-dial .hero-intro-dot,
+.hero-intro.stage-reveal .hero-intro-dot {
+  opacity: 0;
+}
+
+.hero-intro-flare-rays {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.hero-intro.stage-flare .hero-intro-flare-rays {
+  animation: introRayFade 760ms ease forwards;
+  background:
+    linear-gradient(90deg, rgba(94, 247, 200, 0.4), transparent 38%, transparent 62%, rgba(120, 168, 255, 0.35)),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.55), transparent 42%);
+}
+
+.hero-intro-caption {
+  position: absolute;
+  bottom: 88px;
+  margin: 0;
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-caption,
+.hero-intro.stage-flare .hero-intro-caption,
+.hero-intro.stage-dial .hero-intro-caption {
+  opacity: 1;
+}
+
+@keyframes introSwipe {
+  to {
+    transform: translateX(120%) translateY(-50%) rotate(-3deg);
+  }
+}
+
+@keyframes introFlare {
+  0% {
+    transform: scale(1);
+    filter: blur(0);
+  }
+  55% {
+    transform: scale(10);
+    filter: blur(3px);
+    box-shadow: 0 0 60px 30px rgba(255, 255, 255, 0.22);
+  }
+  100% {
+    transform: scale(38);
+    filter: blur(12px);
+    opacity: 0;
+  }
+}
+
+@keyframes introRayFade {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* =========================================================
+   Intro-only rotating creator dial (shown briefly on page load,
+   then the overlay fades to reveal the real hero + its own
+   spinning logo visual, untouched).
+   ========================================================= */
+
+.hero-intro-dial-wrap {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.82);
+  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1), transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-intro.stage-dial .hero-intro-dial-wrap {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.hero-intro.stage-reveal .hero-intro-dial-wrap {
+  opacity: 0;
+  transform: scale(1.08);
+}
+
+.creator-dial {
+  position: relative;
+  width: min(360px, 58vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.creator-dial-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: dialSpin 32s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+.dial-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 1;
+}
+
+.dial-track-inner {
+  stroke: rgba(94, 247, 200, 0.2);
+}
+
+.dial-label {
+  fill: rgba(226, 232, 240, 0.82);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.dial-label-inner {
+  fill: rgba(148, 163, 184, 0.72);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.dial-arrow {
+  fill: rgba(94, 247, 200, 0.7);
+}
+
+.dial-arrow-inner {
+  fill: rgba(120, 168, 255, 0.62);
+}
+
+.creator-dial-center {
+  position: absolute;
+  inset: 37%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.16), rgba(5, 7, 11, 0.94));
+  box-shadow:
+    inset 0 0 26px rgba(0, 0, 0, 0.62),
+    0 18px 40px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(94, 247, 200, 0.1);
+}
+
+.creator-dial-center img {
+  width: 44%;
+  height: 44%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.4));
+}
+
+@keyframes dialSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   Hero section signature background: drifting color blooms,
+   flowing circuit-style traces, and a slow vertical scan beam.
+   Sits behind hero-copy / hero-visual (z-index 0), above
+   the app-shell grid, and is hidden by the video layer when
+   is-video-active is on.
+   ========================================================= */
+
+.hero-bg-signature {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+  opacity: 0.28;
+  will-change: transform;
+}
+
+.blob-one {
+  top: -12%;
+  left: 6%;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(94, 247, 200, 0.55), transparent 70%);
+  animation: heroBlobDrift 22s ease-in-out infinite;
+}
+
+.blob-two {
+  top: 30%;
+  right: -8%;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(120, 168, 255, 0.5), transparent 70%);
+  animation: heroBlobDrift 26s ease-in-out infinite reverse;
+  animation-delay: -6s;
+}
+
+.blob-three {
+  bottom: -16%;
+  left: 32%;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(179, 137, 255, 0.42), transparent 70%);
+  animation: heroBlobDrift 30s ease-in-out infinite;
+  animation-delay: -12s;
+}
+
+.hero-bg-traces {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.34;
+}
+
+.trace-path {
+  fill: none;
+  stroke: url(#traceGradient);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 2 14;
+  filter: drop-shadow(0 0 6px rgba(94, 247, 200, 0.25));
+  animation: traceFlow 14s linear infinite;
+}
+
+.trace-two {
+  stroke-width: 1.1;
+  stroke-dasharray: 1 11;
+  animation-duration: 18s;
+  animation-direction: reverse;
+  opacity: 0.8;
+}
+
+.trace-three {
+  stroke-width: 1;
+  stroke-dasharray: 3 16;
+  animation-duration: 22s;
+  opacity: 0.65;
+}
+
+.hero-bg-scanline {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(94, 247, 200, 0.5), rgba(120, 168, 255, 0.55), transparent);
+  box-shadow: 0 0 18px rgba(94, 247, 200, 0.3);
+  animation: heroScan 7s ease-in-out infinite;
+}
+
+@keyframes heroBlobDrift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, 6%, 0) scale(1.08);
+  }
+}
+
+@keyframes traceFlow {
+  to {
+    stroke-dashoffset: -240;
+  }
+}
+
+@keyframes heroScan {
+  0% {
+    top: 6%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  48% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0;
+  }
+  100% {
+    top: 94%;
+    opacity: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .intro-wordmark {
+    width: min(180px, 58vw);
+  }
+
+  .hero-intro-progress,
+  .hero-intro-caption {
+    bottom: 64px;
+  }
+
+  .creator-dial {
+    width: min(260px, 66vw);
+  }
+
+  .dial-label {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+
+  .dial-label-inner {
+    font-size: 7.5px;
+  }
+
+  .hero-bg-blob {
+    filter: blur(44px);
+  }
+
+  .blob-one,
+  .blob-two,
+  .blob-three {
+    width: 260px;
+    height: 260px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-intro,
+  .hero-intro-mark,
+  .hero-intro-swipe,
+  .hero-intro-dot,
+  .hero-intro-flare-rays,
+  .hero-intro-caption,
+  .hero-intro-dial-wrap,
+  .creator-dial-svg,
+  .hero-bg-blob,
+  .trace-path,
+  .hero-bg-scanline {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 h2 {
   margin-bottom: 18px;
   color: var(--text-strong);
@@ -2738,6 +3189,305 @@ h3 {
   height: 520px;
   animation-duration: 58s;
   animation-direction: reverse;
+}
+
+/* =========================================================
+   Hero intro sequence (logo swipe -> loading dot -> lens flare)
+   ========================================================= */
+
+.hero-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  gap: 22px;
+  overflow: hidden;
+  background: #05070b;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 520ms ease, visibility 520ms ease;
+}
+
+.hero-intro.stage-reveal {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.hero-intro-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  opacity: 1;
+  transition: opacity 380ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-mark,
+.hero-intro.stage-flare .hero-intro-mark {
+  opacity: 0;
+}
+
+.intro-wordmark {
+  width: min(230px, 52vw);
+  max-height: 78px;
+}
+
+.hero-intro-swipe {
+  position: absolute;
+  top: 52%;
+  left: -14%;
+  width: 128%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #5ef7c8, #78a8ff, transparent);
+  box-shadow: 0 0 16px rgba(94, 247, 200, 0.5);
+  transform: translateX(-120%) translateY(-50%) rotate(-3deg);
+  animation: introSwipe 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.hero-intro-progress {
+  position: absolute;
+  bottom: 88px;
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+}
+
+.hero-intro-dot {
+  position: relative;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0b0f16;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-dot,
+.hero-intro.stage-flare .hero-intro-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.hero-intro.stage-flare .hero-intro-dot {
+  animation: introFlare 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero-intro-flare-rays {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.hero-intro.stage-flare .hero-intro-flare-rays {
+  animation: introRayFade 760ms ease forwards;
+  background:
+    linear-gradient(90deg, rgba(94, 247, 200, 0.4), transparent 38%, transparent 62%, rgba(120, 168, 255, 0.35)),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.55), transparent 42%);
+}
+
+.hero-intro-caption {
+  position: absolute;
+  bottom: 88px;
+  margin: 0;
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-caption,
+.hero-intro.stage-flare .hero-intro-caption {
+  opacity: 1;
+}
+
+@keyframes introSwipe {
+  to {
+    transform: translateX(120%) translateY(-50%) rotate(-3deg);
+  }
+}
+
+@keyframes introFlare {
+  0% {
+    transform: scale(1);
+    filter: blur(0);
+  }
+  55% {
+    transform: scale(10);
+    filter: blur(3px);
+    box-shadow: 0 0 60px 30px rgba(255, 255, 255, 0.22);
+  }
+  100% {
+    transform: scale(38);
+    filter: blur(12px);
+    opacity: 0.35;
+  }
+}
+
+@keyframes introRayFade {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* =========================================================
+   Rotating creator dial (replaces the spinning logo visual)
+   ========================================================= */
+
+.creator-dial-visual .visual-stage {
+  position: relative;
+}
+
+.creator-dial {
+  position: relative;
+  z-index: 3;
+  width: min(420px, 84%);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.creator-dial-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: dialSpin 32s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+.dial-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 1;
+}
+
+.dial-track-inner {
+  stroke: rgba(94, 247, 200, 0.2);
+}
+
+.dial-label {
+  fill: rgba(226, 232, 240, 0.82);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.dial-label-inner {
+  fill: rgba(148, 163, 184, 0.72);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.dial-arrow {
+  fill: rgba(94, 247, 200, 0.7);
+}
+
+.dial-arrow-inner {
+  fill: rgba(120, 168, 255, 0.62);
+}
+
+.creator-dial-center {
+  position: absolute;
+  inset: 37%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.16), rgba(5, 7, 11, 0.94));
+  box-shadow:
+    inset 0 0 26px rgba(0, 0, 0, 0.62),
+    0 18px 40px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(94, 247, 200, 0.1);
+  animation: dialCenterPulse 4.2s ease-in-out infinite;
+}
+
+.creator-dial-center img {
+  width: 44%;
+  height: 44%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.4));
+}
+
+@keyframes dialSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dialCenterPulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 26px rgba(0, 0, 0, 0.62),
+      0 18px 40px rgba(0, 0, 0, 0.5),
+      0 0 30px rgba(94, 247, 200, 0.1);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 26px rgba(0, 0, 0, 0.62),
+      0 18px 40px rgba(0, 0, 0, 0.5),
+      0 0 42px rgba(94, 247, 200, 0.22);
+  }
+}
+
+@media (max-width: 720px) {
+  .intro-wordmark {
+    width: min(180px, 58vw);
+  }
+
+  .hero-intro-progress,
+  .hero-intro-caption {
+    bottom: 64px;
+  }
+
+  .dial-label {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+
+  .dial-label-inner {
+    font-size: 7.5px;
+  }
+}
+
+@media (max-width: 430px) {
+  .creator-dial {
+    width: min(300px, 88%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-intro,
+  .hero-intro-mark,
+  .hero-intro-swipe,
+  .hero-intro-dot,
+  .hero-intro-flare-rays,
+  .hero-intro-caption,
+  .creator-dial-svg,
+  .creator-dial-center {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 .contact-node,
