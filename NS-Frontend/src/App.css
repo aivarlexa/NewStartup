@@ -157,7 +157,7 @@
 .hero-section {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 520px;
+  grid-template-columns: minmax(0, 1fr) 520px;
   align-items: center;
   gap: 110px;
   width: 100%;
@@ -170,7 +170,8 @@
   position: relative;
   top: -28px;
   z-index: 2;
-  max-width: 650px;
+  max-width: 100%;
+  min-width: 0;
   transition: opacity 260ms ease, transform 260ms ease;
 }
 
@@ -219,12 +220,12 @@ h1 {
     font-weight:900;
     line-height:.96;
     letter-spacing:-.07em;
-    max-width:760px;
+    max-width:100%;
 }
 
 .hero-title span {
   display: block;
-  white-space: nowrap;
+  white-space: normal;
 }
 /* =========================================================
    Hero intro sequence (logo swipe -> loading dot -> lens flare -> dial -> reveal)
@@ -812,7 +813,6 @@ h3 {
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
     rgba(9, 13, 19, 0.9);
   box-shadow: var(--shadow-panel);
-  transform: translateX(60px);
   transform-style: preserve-3d;
   transition: transform 220ms ease, border-color 220ms ease;
 }
