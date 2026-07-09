@@ -14,13 +14,62 @@ const DIAL_SEGMENTS_INNER = [
   { id: 'media', label: 'CREATOR MEDIA', offset: '53%' },
 ]
 
+// Neural-network background: three columns of nodes connected by smooth
+// curves, confined to the right side behind the hero visual so it never
+// competes with the heading text. Each link gets a small pulse that travels
+// along it - alternating direction per link for a "bidirectional signal" feel.
+const NEURAL_NODES = [
+  // Left Column
+  { id: 'a1', cx: 180, cy: 120, r: 4 },
+  { id: 'a2', cx: 180, cy: 260, r: 5 },
+  { id: 'a3', cx: 180, cy: 430, r: 4 },
+  { id: 'a4', cx: 180, cy: 610, r: 5 },
+
+  // Middle
+  { id: 'b1', cx: 520, cy: 90, r: 4 },
+  { id: 'b2', cx: 520, cy: 230, r: 5 },
+  { id: 'b3', cx: 520, cy: 380, r: 4 },
+  { id: 'b4', cx: 520, cy: 520, r: 5 },
+  { id: 'b5', cx: 520, cy: 660, r: 4 },
+
+  // Right
+  { id: 'c1', cx: 920, cy: 130, r: 4 },
+  { id: 'c2', cx: 920, cy: 280, r: 5 },
+  { id: 'c3', cx: 920, cy: 470, r: 4 },
+  { id: 'c4', cx: 920, cy: 640, r: 5 }
+]
+
+
+const NEURAL_LINKS = [
+  { from: [180, 120], to: [520, 90], delay: 0, duration: 5, reverse: false },
+  { from: [180, 120], to: [520, 230], delay: 0.4, duration: 6, reverse: true },
+  { from: [520, 300], to: [920, 230], delay: 0.8, duration: 5.5, reverse: false },
+  { from: [520, 300], to: [920, 370], delay: 1.2, duration: 6.2, reverse: true },
+  { from: [520, 440], to: [920, 370], delay: 1.6, duration: 5.2, reverse: false },
+  { from: [520, 440], to: [920, 510], delay: 2.0, duration: 6.4, reverse: true },
+  { from: [520, 580], to: [920, 510], delay: 2.4, duration: 5.6, reverse: false },
+  { from: [520, 580], to: [920, 630], delay: 2.8, duration: 6.0, reverse: true },
+  { from: [920, 90], to: [1130, 140], delay: 0.2, duration: 5.4, reverse: false },
+  { from: [920, 230], to: [1130, 140], delay: 0.6, duration: 5.8, reverse: true },
+
+  { from: [920, 510], to: [1130, 300], delay: 1.8, duration: 6.3, reverse: false },
+  { from: [920, 510], to: [1130, 460], delay: 2.2, duration: 5.7, reverse: true },
+  { from: [920, 630], to: [1130, 460], delay: 2.6, duration: 6.0, reverse: false },
+  { from: [920, 630], to: [1130, 600], delay: 3.0, duration: 5.9, reverse: true },
+]
+
+function neuralLinkPath([x1, y1], [x2, y2]) {
+  const midX = (x1 + x2) / 2
+  return `M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}`
+}
+
 // Intro sequence stages, in order. Each stage's duration lives in INTRO_TIMING.
 // mark -> pulse -> flare -> dial -> reveal -> done
 const INTRO_TIMING = {
   mark: 1050, // logo + swipe-line + progress count
   pulse: 550, // logo fades, single dot remains
   flare: 780, // dot blooms into a lens flare
-  dial: 1500, // the creator dial resolves out of the flare and spins briefly
+  dial: 3200, // the creator dial resolves out of the flare and spins for a while
   reveal: 620, // whole overlay fades away to reveal the real hero
 }
 
@@ -87,24 +136,37 @@ function Hero() {
 
   return (
     <section className={`hero-section ${isHeroVideoVisible ? 'is-video-active' : ''}`} id="top" ref={heroRef}>
-      {/* Signature animated background: flowing traces + drifting color blooms + scan beam */}
       <div className="hero-bg-signature" aria-hidden="true">
-        <div className="hero-bg-blob blob-one"></div>
-        <div className="hero-bg-blob blob-two"></div>
-        <div className="hero-bg-blob blob-three"></div>
-        <svg className="hero-bg-traces" viewBox="0 0 1200 800" preserveAspectRatio="none">
+        <svg className="hero-neural-svg" viewBox="0 0 1180 700" preserveAspectRatio="xMidYMid slice">
           <defs>
-            <linearGradient id="traceGradient" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#5ef7c8" />
-              <stop offset="50%" stopColor="#78a8ff" />
-              <stop offset="100%" stopColor="#b389ff" />
+            <linearGradient id="neuralGradient" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#b389ff" />
+              <stop offset="48%" stopColor="#78a8ff" />
+              <stop offset="100%" stopColor="#5ef7c8" />
             </linearGradient>
           </defs>
-          <path className="trace-path trace-one" d="M-50,620 C220,520 380,700 620,560 C860,420 980,540 1250,380" />
-          <path className="trace-path trace-two" d="M-50,180 C200,260 360,120 640,220 C900,310 1000,160 1250,240" />
-          <path className="trace-path trace-three" d="M-50,420 C260,380 460,460 700,380 C940,300 1050,400 1250,340" />
+
+          {NEURAL_LINKS.map((link, index) => (
+            <path key={index} className="neural-link" d={neuralLinkPath(link.from, link.to)} />
+          ))}
+
+          {NEURAL_LINKS.map((link, index) => (
+            <circle
+              key={`pulse-${index}`}
+              className={`neural-pulse ${link.reverse ? 'is-reverse' : ''}`}
+              r="3"
+              style={{
+                offsetPath: `path('${neuralLinkPath(link.from, link.to)}')`,
+                animationDuration: `${link.duration}s`,
+                animationDelay: `${link.delay}s`,
+              }}
+            />
+          ))}
+
+          {NEURAL_NODES.map((node) => (
+            <circle key={node.id} className="neural-node" cx={node.cx} cy={node.cy} r={node.r} />
+          ))}
         </svg>
-        <div className="hero-bg-scanline"></div>
       </div>
 
       {introStage !== 'done' && (
@@ -150,7 +212,12 @@ function Hero() {
                 <path className="dial-arrow dial-arrow-inner" d="M210,94 l6,13 l-13,2 z" transform="rotate(270 210 210)" />
               </svg>
               <div className="creator-dial-center">
-                <img src={varlexaMark} alt="" />
+                <div className="lens-glass">
+                  <video className="lens-video" autoPlay muted loop playsInline>
+                    <source src="/media/dial-video.mp4" type="video/mp4" />
+                  </video>
+                  <span className="lens-highlight" />
+                </div>
               </div>
             </div>
           </div>
@@ -173,22 +240,23 @@ function Hero() {
         </div>
         <div className="hero-video-copy">
           <p className="brand-breadcrumb hero-video-breadcrumb">
-        
+
           </p>
-          <h2>Verlexa AI Intelligence Beyond Imagination Innovation Beyond Expectations</h2>
+          <h2>Varlexa AI Intelligence Beyond Imagination Innovation Beyond Expectations</h2>
         </div>
       </div>
       <div className="hero-copy">
         <p className="eyebrow brand-breadcrumb">
-      
+
         </p>
         <h1 className="hero-title">
-          <span>AI Solutions &amp;</span>
-          <span>Software Engineering</span>
-          <span>for Modern Business</span>
+          <span>Transforming Businesses</span>
+          <span>with Artificial Intelligence</span>
         </h1>
         <p className="hero-lede">
-          Secure AI products, intelligent platforms and cloud systems engineered for organizations that refuse to stand still.
+          Varlexa AI builds intelligent AI agents, automation systems,
+          and custom software that help businesses grow faster,
+          reduce costs, and make smarter decisions.
         </p>
         <div className="hero-actions">
           <Link className="primary-action" to="/contact">
