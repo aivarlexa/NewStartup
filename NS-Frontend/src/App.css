@@ -157,25 +157,40 @@
 .hero-section {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 0.98fr) minmax(440px, 0.9fr);
+  grid-template-columns: 1fr 520px;
   align-items: center;
-  gap: 64px;
+  gap: 110px;
   width: 100%;
   min-height: min(720px, calc(100svh - 78px));
   margin: 0 auto;
   padding: 54px max(24px, calc((100vw - 1180px) / 2)) 48px;
   overflow: hidden;
 }
-
 .hero-copy {
   position: relative;
   top: -28px;
   z-index: 2;
   max-width: 650px;
-  transition:
-    opacity 260ms ease,
-    transform 260ms ease;
+  transition: opacity 260ms ease, transform 260ms ease;
 }
+
+.hero-copy::before{
+    content:'';
+    position:absolute;
+    inset:-60px;
+    z-index:-1;
+
+    background:
+        radial-gradient(
+            ellipse at center,
+            rgba(5,7,11,.55),
+            rgba(5,7,11,.35),
+            transparent 80%
+        );
+
+    backdrop-filter:blur(2px);
+}
+
 
 .eyebrow {
   margin: 0 0 14px;
@@ -199,23 +214,18 @@ h1 {
   line-height: 0.98;
   font-weight: 800;
 }
-.hero-title {
-  max-width: 650px;
-  margin: 0;
-  color: #f4f6f8;
-  font-family: "Trebuchet MS", Arial, sans-serif;
-  font-size: clamp(2.55rem, 3.8vw, 4.1rem);
-  font-weight: 900;
-  line-height: 1.01;
-  letter-spacing: -0.065em;
-  text-wrap: balance;
+.hero-title{
+    font-size:clamp(3.5rem,6vw,5.8rem);
+    font-weight:900;
+    line-height:.96;
+    letter-spacing:-.07em;
+    max-width:760px;
 }
 
 .hero-title span {
   display: block;
   white-space: nowrap;
 }
-
 /* =========================================================
    Hero intro sequence (logo swipe -> loading dot -> lens flare -> dial -> reveal)
    ========================================================= */
@@ -406,7 +416,7 @@ h1 {
 
 .creator-dial {
   position: relative;
-  width: min(360px, 58vw);
+  width: min(920px, 94vw);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -453,25 +463,62 @@ h1 {
   fill: rgba(120, 168, 255, 0.62);
 }
 
+/* Center lens: metallic bezel + clear looping video + light glass highlight */
 .creator-dial-center {
   position: absolute;
-  inset: 37%;
+  inset: 34%;
   z-index: 2;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.16), rgba(5, 7, 11, 0.94));
+  background: conic-gradient(
+    from 200deg,
+    rgba(255, 255, 255, 0.28),
+    rgba(40, 46, 58, 0.9) 22%,
+    rgba(8, 10, 16, 0.96) 48%,
+    rgba(60, 68, 82, 0.85) 74%,
+    rgba(255, 255, 255, 0.22) 100%
+  );
   box-shadow:
-    inset 0 0 26px rgba(0, 0, 0, 0.62),
-    0 18px 40px rgba(0, 0, 0, 0.5),
-    0 0 30px rgba(94, 247, 200, 0.1);
+    0 22px 46px rgba(0, 0, 0, 0.55),
+    0 0 34px rgba(94, 247, 200, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  padding: 3%;
 }
 
-.creator-dial-center img {
-  width: 44%;
-  height: 44%;
-  object-fit: contain;
-  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.4));
+.lens-glass {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #05070b;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06);
+}
+
+.lens-video {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.lens-highlight {
+  position: absolute;
+  top: 8%;
+  left: 14%;
+  z-index: 2;
+  width: 30%;
+  height: 15%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.42), transparent 72%);
+  filter: blur(2px);
+  transform: rotate(-20deg);
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 @keyframes dialSpin {
@@ -484,11 +531,12 @@ h1 {
 }
 
 /* =========================================================
-   Hero section signature background: drifting color blooms,
-   flowing circuit-style traces, and a slow vertical scan beam.
-   Sits behind hero-copy / hero-visual (z-index 0), above
-   the app-shell grid, and is hidden by the video layer when
-   is-video-active is on.
+   Hero section background: layered neural-network diagram.
+   Confined mostly to the right two-thirds (behind the hero
+   visual), with a left-side mask so it never competes with
+   the heading text. Sits at z-index 0, behind hero-copy /
+   hero-visual, and gets covered by the video layer when
+   is-video-active is on (that layer is z-index 1).
    ========================================================= */
 
 .hero-bg-signature {
@@ -497,121 +545,122 @@ h1 {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-}
 
-.hero-bg-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(64px);
-  opacity: 0.28;
-  will-change: transform;
-}
+  mask-image: linear-gradient(
+    90deg,
+    rgba(0,0,0,.28) 0%,
+    rgba(0,0,0,.45) 15%,
+    rgba(0,0,0,.75) 35%,
+    #000 55%,
+    #000 100%
+  );
 
-.blob-one {
-  top: -12%;
-  left: 6%;
-  width: 420px;
-  height: 420px;
-  background: radial-gradient(circle, rgba(94, 247, 200, 0.55), transparent 70%);
-  animation: heroBlobDrift 22s ease-in-out infinite;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    rgba(0,0,0,.28) 0%,
+    rgba(0,0,0,.45) 15%,
+    rgba(0,0,0,.75) 35%,
+    #000 55%,
+    #000 100%
+  );
 }
-
-.blob-two {
-  top: 30%;
-  right: -8%;
-  width: 480px;
-  height: 480px;
-  background: radial-gradient(circle, rgba(120, 168, 255, 0.5), transparent 70%);
-  animation: heroBlobDrift 26s ease-in-out infinite reverse;
-  animation-delay: -6s;
-}
-
-.blob-three {
-  bottom: -16%;
-  left: 32%;
-  width: 380px;
-  height: 380px;
-  background: radial-gradient(circle, rgba(179, 137, 255, 0.42), transparent 70%);
-  animation: heroBlobDrift 30s ease-in-out infinite;
-  animation-delay: -12s;
-}
-
-.hero-bg-traces {
+.hero-neural-svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.34;
+  opacity: 0.55; /* slightly lower so it stays atmospheric behind text */
 }
 
-.trace-path {
+
+.neural-link {
   fill: none;
-  stroke: url(#traceGradient);
-  stroke-width: 1.4;
+  stroke: url(#neuralGradient);
+  stroke-width: 1.6;
   stroke-linecap: round;
-  stroke-dasharray: 2 14;
-  filter: drop-shadow(0 0 6px rgba(94, 247, 200, 0.25));
-  animation: traceFlow 14s linear infinite;
+  opacity: 0.42;
 }
 
-.trace-two {
-  stroke-width: 1.1;
-  stroke-dasharray: 1 11;
-  animation-duration: 18s;
-  animation-direction: reverse;
-  opacity: 0.8;
+.neural-node{
+    fill:#6af8d0;
+    filter:
+        drop-shadow(0 0 6px rgba(94,247,200,.8))
+        drop-shadow(0 0 18px rgba(120,168,255,.35));
 }
 
-.trace-three {
-  stroke-width: 1;
-  stroke-dasharray: 3 16;
-  animation-duration: 22s;
-  opacity: 0.65;
+.neural-pulse {
+  fill: #eafff5;
+  filter: drop-shadow(0 0 6px rgba(120, 168, 255, 0.85));
+  offset-rotate: 0deg;
+  animation-name: neuralFlowForward;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
-.hero-bg-scanline {
-  position: absolute;
-  left: 4%;
-  right: 4%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(94, 247, 200, 0.5), rgba(120, 168, 255, 0.55), transparent);
-  box-shadow: 0 0 18px rgba(94, 247, 200, 0.3);
-  animation: heroScan 7s ease-in-out infinite;
+.neural-pulse.is-reverse {
+  animation-name: neuralFlowReverse;
 }
 
-@keyframes heroBlobDrift {
+@keyframes neuralFlowForward {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes neuralFlowReverse {
+  0% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+}
+
+@keyframes neuralNodeGlow {
   0%,
   100% {
-    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.55;
+    transform: scale(0.9);
   }
   50% {
-    transform: translate3d(4%, 6%, 0) scale(1.08);
+    opacity: 1;
+    transform: scale(1.15);
   }
 }
 
-@keyframes traceFlow {
-  to {
-    stroke-dashoffset: -240;
+@media (max-width: 1040px) {
+  .hero-bg-signature {
+    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.5) 14%, #000 38%, #000 100%);
+    -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.5) 14%, #000 38%, #000 100%);
+  }
+
+  .hero-neural-svg {
+    opacity: 0.36;
   }
 }
 
-@keyframes heroScan {
-  0% {
-    top: 6%;
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  48% {
-    opacity: 1;
-  }
-  60% {
-    opacity: 0;
-  }
-  100% {
-    top: 94%;
-    opacity: 0;
+@media (max-width: 720px) {
+  .hero-neural-svg {
+    opacity: 0.32;
   }
 }
 
@@ -626,7 +675,7 @@ h1 {
   }
 
   .creator-dial {
-    width: min(260px, 66vw);
+    width: min(480px, 90vw);
   }
 
   .dial-label {
@@ -636,17 +685,6 @@ h1 {
 
   .dial-label-inner {
     font-size: 7.5px;
-  }
-
-  .hero-bg-blob {
-    filter: blur(44px);
-  }
-
-  .blob-one,
-  .blob-two,
-  .blob-three {
-    width: 260px;
-    height: 260px;
   }
 }
 
@@ -659,9 +697,8 @@ h1 {
   .hero-intro-caption,
   .hero-intro-dial-wrap,
   .creator-dial-svg,
-  .hero-bg-blob,
-  .trace-path,
-  .hero-bg-scanline {
+  .neural-node,
+  .neural-pulse {
     animation: none !important;
     transition: none !important;
   }
@@ -690,9 +727,12 @@ h3 {
   line-height: 1.72;
 }
 
-.hero-lede {
-  font-size: 17px;
-  line-height: 1.6;
+.hero-lede{
+    max-width:620px;
+    margin-top:28px;
+    color:#b8c2d1;
+    font-size:1.25rem;
+    line-height:1.75;
 }
 
 .hero-actions {
@@ -772,7 +812,7 @@ h3 {
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
     rgba(9, 13, 19, 0.9);
   box-shadow: var(--shadow-panel);
-  transform: perspective(1400px) rotateX(1deg) rotateY(-3deg);
+  transform: translateX(60px);
   transform-style: preserve-3d;
   transition: transform 220ms ease, border-color 220ms ease;
 }
