@@ -157,25 +157,40 @@
 .hero-section {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 0.98fr) minmax(440px, 0.9fr);
+  grid-template-columns: 1fr 520px;
   align-items: center;
-  gap: 64px;
+  gap: 110px;
   width: 100%;
   min-height: min(720px, calc(100svh - 78px));
   margin: 0 auto;
   padding: 54px max(24px, calc((100vw - 1180px) / 2)) 48px;
   overflow: hidden;
 }
-
 .hero-copy {
   position: relative;
   top: -28px;
   z-index: 2;
   max-width: 650px;
-  transition:
-    opacity 260ms ease,
-    transform 260ms ease;
+  transition: opacity 260ms ease, transform 260ms ease;
 }
+
+.hero-copy::before{
+    content:'';
+    position:absolute;
+    inset:-60px;
+    z-index:-1;
+
+    background:
+        radial-gradient(
+            ellipse at center,
+            rgba(5,7,11,.55),
+            rgba(5,7,11,.35),
+            transparent 80%
+        );
+
+    backdrop-filter:blur(2px);
+}
+
 
 .eyebrow {
   margin: 0 0 14px;
@@ -199,21 +214,494 @@ h1 {
   line-height: 0.98;
   font-weight: 800;
 }
-.hero-title {
-  max-width: 650px;
-  margin: 0;
-  color: #f4f6f8;
-  font-family: "Trebuchet MS", Arial, sans-serif;
-  font-size: clamp(2.55rem, 3.8vw, 4.1rem);
-  font-weight: 900;
-  line-height: 1.01;
-  letter-spacing: -0.065em;
-  text-wrap: balance;
+.hero-title{
+    font-size:clamp(3.5rem,6vw,5.8rem);
+    font-weight:900;
+    line-height:.96;
+    letter-spacing:-.07em;
+    max-width:760px;
 }
 
 .hero-title span {
   display: block;
   white-space: nowrap;
+}
+/* =========================================================
+   Hero intro sequence (logo swipe -> loading dot -> lens flare -> dial -> reveal)
+   ========================================================= */
+
+.hero-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  gap: 22px;
+  overflow: hidden;
+  background: #05070b;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 560ms ease, visibility 560ms ease;
+}
+
+.hero-intro.stage-reveal {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.hero-intro-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  opacity: 1;
+  transition: opacity 380ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-mark,
+.hero-intro.stage-flare .hero-intro-mark,
+.hero-intro.stage-dial .hero-intro-mark,
+.hero-intro.stage-reveal .hero-intro-mark {
+  opacity: 0;
+}
+
+.intro-wordmark {
+  width: min(230px, 52vw);
+  max-height: 78px;
+}
+
+.hero-intro-swipe {
+  position: absolute;
+  top: 52%;
+  left: -14%;
+  width: 128%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #5ef7c8, #78a8ff, transparent);
+  box-shadow: 0 0 16px rgba(94, 247, 200, 0.5);
+  transform: translateX(-120%) translateY(-50%) rotate(-3deg);
+  animation: introSwipe 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.hero-intro-progress {
+  position: absolute;
+  bottom: 88px;
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+}
+
+.hero-intro-dot {
+  position: relative;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0b0f16;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 280ms ease, transform 280ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-dot,
+.hero-intro.stage-flare .hero-intro-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.hero-intro.stage-flare .hero-intro-dot {
+  animation: introFlare 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero-intro.stage-dial .hero-intro-dot,
+.hero-intro.stage-reveal .hero-intro-dot {
+  opacity: 0;
+}
+
+.hero-intro-flare-rays {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.hero-intro.stage-flare .hero-intro-flare-rays {
+  animation: introRayFade 760ms ease forwards;
+  background:
+    linear-gradient(90deg, rgba(94, 247, 200, 0.4), transparent 38%, transparent 62%, rgba(120, 168, 255, 0.35)),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.55), transparent 42%);
+}
+
+.hero-intro-caption {
+  position: absolute;
+  bottom: 88px;
+  margin: 0;
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-caption,
+.hero-intro.stage-flare .hero-intro-caption,
+.hero-intro.stage-dial .hero-intro-caption {
+  opacity: 1;
+}
+
+@keyframes introSwipe {
+  to {
+    transform: translateX(120%) translateY(-50%) rotate(-3deg);
+  }
+}
+
+@keyframes introFlare {
+  0% {
+    transform: scale(1);
+    filter: blur(0);
+  }
+  55% {
+    transform: scale(10);
+    filter: blur(3px);
+    box-shadow: 0 0 60px 30px rgba(255, 255, 255, 0.22);
+  }
+  100% {
+    transform: scale(38);
+    filter: blur(12px);
+    opacity: 0;
+  }
+}
+
+@keyframes introRayFade {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* =========================================================
+   Intro-only rotating creator dial (shown briefly on page load,
+   then the overlay fades to reveal the real hero + its own
+   spinning logo visual, untouched).
+   ========================================================= */
+
+.hero-intro-dial-wrap {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.82);
+  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1), transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-intro.stage-dial .hero-intro-dial-wrap {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.hero-intro.stage-reveal .hero-intro-dial-wrap {
+  opacity: 0;
+  transform: scale(1.08);
+}
+
+.creator-dial {
+  position: relative;
+  width: min(920px, 94vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.creator-dial-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: dialSpin 32s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+.dial-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 1;
+}
+
+.dial-track-inner {
+  stroke: rgba(94, 247, 200, 0.2);
+}
+
+.dial-label {
+  fill: rgba(226, 232, 240, 0.82);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.dial-label-inner {
+  fill: rgba(148, 163, 184, 0.72);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.dial-arrow {
+  fill: rgba(94, 247, 200, 0.7);
+}
+
+.dial-arrow-inner {
+  fill: rgba(120, 168, 255, 0.62);
+}
+
+/* Center lens: metallic bezel + clear looping video + light glass highlight */
+.creator-dial-center {
+  position: absolute;
+  inset: 34%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 200deg,
+    rgba(255, 255, 255, 0.28),
+    rgba(40, 46, 58, 0.9) 22%,
+    rgba(8, 10, 16, 0.96) 48%,
+    rgba(60, 68, 82, 0.85) 74%,
+    rgba(255, 255, 255, 0.22) 100%
+  );
+  box-shadow:
+    0 22px 46px rgba(0, 0, 0, 0.55),
+    0 0 34px rgba(94, 247, 200, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  padding: 3%;
+}
+
+.lens-glass {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #05070b;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06);
+}
+
+.lens-video {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.lens-highlight {
+  position: absolute;
+  top: 8%;
+  left: 14%;
+  z-index: 2;
+  width: 30%;
+  height: 15%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.42), transparent 72%);
+  filter: blur(2px);
+  transform: rotate(-20deg);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@keyframes dialSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   Hero section background: layered neural-network diagram.
+   Confined mostly to the right two-thirds (behind the hero
+   visual), with a left-side mask so it never competes with
+   the heading text. Sits at z-index 0, behind hero-copy /
+   hero-visual, and gets covered by the video layer when
+   is-video-active is on (that layer is z-index 1).
+   ========================================================= */
+
+.hero-bg-signature {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+
+  mask-image: linear-gradient(
+    90deg,
+    rgba(0,0,0,.28) 0%,
+    rgba(0,0,0,.45) 15%,
+    rgba(0,0,0,.75) 35%,
+    #000 55%,
+    #000 100%
+  );
+
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    rgba(0,0,0,.28) 0%,
+    rgba(0,0,0,.45) 15%,
+    rgba(0,0,0,.75) 35%,
+    #000 55%,
+    #000 100%
+  );
+}
+.hero-neural-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55; /* slightly lower so it stays atmospheric behind text */
+}
+
+
+.neural-link {
+  fill: none;
+  stroke: url(#neuralGradient);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0.42;
+}
+
+.neural-node{
+    fill:#6af8d0;
+    filter:
+        drop-shadow(0 0 6px rgba(94,247,200,.8))
+        drop-shadow(0 0 18px rgba(120,168,255,.35));
+}
+
+.neural-pulse {
+  fill: #eafff5;
+  filter: drop-shadow(0 0 6px rgba(120, 168, 255, 0.85));
+  offset-rotate: 0deg;
+  animation-name: neuralFlowForward;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.neural-pulse.is-reverse {
+  animation-name: neuralFlowReverse;
+}
+
+@keyframes neuralFlowForward {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes neuralFlowReverse {
+  0% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+}
+
+@keyframes neuralNodeGlow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@media (max-width: 1040px) {
+  .hero-bg-signature {
+    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.5) 14%, #000 38%, #000 100%);
+    -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0.5) 14%, #000 38%, #000 100%);
+  }
+
+  .hero-neural-svg {
+    opacity: 0.36;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero-neural-svg {
+    opacity: 0.32;
+  }
+}
+
+@media (max-width: 720px) {
+  .intro-wordmark {
+    width: min(180px, 58vw);
+  }
+
+  .hero-intro-progress,
+  .hero-intro-caption {
+    bottom: 64px;
+  }
+
+  .creator-dial {
+    width: min(480px, 90vw);
+  }
+
+  .dial-label {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+
+  .dial-label-inner {
+    font-size: 7.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-intro,
+  .hero-intro-mark,
+  .hero-intro-swipe,
+  .hero-intro-dot,
+  .hero-intro-flare-rays,
+  .hero-intro-caption,
+  .hero-intro-dial-wrap,
+  .creator-dial-svg,
+  .neural-node,
+  .neural-pulse {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 h2 {
@@ -239,9 +727,12 @@ h3 {
   line-height: 1.72;
 }
 
-.hero-lede {
-  font-size: 17px;
-  line-height: 1.6;
+.hero-lede{
+    max-width:620px;
+    margin-top:28px;
+    color:#b8c2d1;
+    font-size:1.25rem;
+    line-height:1.75;
 }
 
 .hero-actions {
@@ -321,7 +812,7 @@ h3 {
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
     rgba(9, 13, 19, 0.9);
   box-shadow: var(--shadow-panel);
-  transform: perspective(1400px) rotateX(1deg) rotateY(-3deg);
+  transform: translateX(60px);
   transform-style: preserve-3d;
   transition: transform 220ms ease, border-color 220ms ease;
 }
@@ -2738,6 +3229,305 @@ h3 {
   height: 520px;
   animation-duration: 58s;
   animation-direction: reverse;
+}
+
+/* =========================================================
+   Hero intro sequence (logo swipe -> loading dot -> lens flare)
+   ========================================================= */
+
+.hero-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  gap: 22px;
+  overflow: hidden;
+  background: #05070b;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 520ms ease, visibility 520ms ease;
+}
+
+.hero-intro.stage-reveal {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.hero-intro-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  opacity: 1;
+  transition: opacity 380ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-mark,
+.hero-intro.stage-flare .hero-intro-mark {
+  opacity: 0;
+}
+
+.intro-wordmark {
+  width: min(230px, 52vw);
+  max-height: 78px;
+}
+
+.hero-intro-swipe {
+  position: absolute;
+  top: 52%;
+  left: -14%;
+  width: 128%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #5ef7c8, #78a8ff, transparent);
+  box-shadow: 0 0 16px rgba(94, 247, 200, 0.5);
+  transform: translateX(-120%) translateY(-50%) rotate(-3deg);
+  animation: introSwipe 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.hero-intro-progress {
+  position: absolute;
+  bottom: 88px;
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+}
+
+.hero-intro-dot {
+  position: relative;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0b0f16;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-dot,
+.hero-intro.stage-flare .hero-intro-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.hero-intro.stage-flare .hero-intro-dot {
+  animation: introFlare 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero-intro-flare-rays {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.hero-intro.stage-flare .hero-intro-flare-rays {
+  animation: introRayFade 760ms ease forwards;
+  background:
+    linear-gradient(90deg, rgba(94, 247, 200, 0.4), transparent 38%, transparent 62%, rgba(120, 168, 255, 0.35)),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.55), transparent 42%);
+}
+
+.hero-intro-caption {
+  position: absolute;
+  bottom: 88px;
+  margin: 0;
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.hero-intro.stage-pulse .hero-intro-caption,
+.hero-intro.stage-flare .hero-intro-caption {
+  opacity: 1;
+}
+
+@keyframes introSwipe {
+  to {
+    transform: translateX(120%) translateY(-50%) rotate(-3deg);
+  }
+}
+
+@keyframes introFlare {
+  0% {
+    transform: scale(1);
+    filter: blur(0);
+  }
+  55% {
+    transform: scale(10);
+    filter: blur(3px);
+    box-shadow: 0 0 60px 30px rgba(255, 255, 255, 0.22);
+  }
+  100% {
+    transform: scale(38);
+    filter: blur(12px);
+    opacity: 0.35;
+  }
+}
+
+@keyframes introRayFade {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* =========================================================
+   Rotating creator dial (replaces the spinning logo visual)
+   ========================================================= */
+
+.creator-dial-visual .visual-stage {
+  position: relative;
+}
+
+.creator-dial {
+  position: relative;
+  z-index: 3;
+  width: min(420px, 84%);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.creator-dial-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: dialSpin 32s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+.dial-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 1;
+}
+
+.dial-track-inner {
+  stroke: rgba(94, 247, 200, 0.2);
+}
+
+.dial-label {
+  fill: rgba(226, 232, 240, 0.82);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.dial-label-inner {
+  fill: rgba(148, 163, 184, 0.72);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.dial-arrow {
+  fill: rgba(94, 247, 200, 0.7);
+}
+
+.dial-arrow-inner {
+  fill: rgba(120, 168, 255, 0.62);
+}
+
+.creator-dial-center {
+  position: absolute;
+  inset: 37%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.16), rgba(5, 7, 11, 0.94));
+  box-shadow:
+    inset 0 0 26px rgba(0, 0, 0, 0.62),
+    0 18px 40px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(94, 247, 200, 0.1);
+  animation: dialCenterPulse 4.2s ease-in-out infinite;
+}
+
+.creator-dial-center img {
+  width: 44%;
+  height: 44%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.4));
+}
+
+@keyframes dialSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dialCenterPulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 26px rgba(0, 0, 0, 0.62),
+      0 18px 40px rgba(0, 0, 0, 0.5),
+      0 0 30px rgba(94, 247, 200, 0.1);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 26px rgba(0, 0, 0, 0.62),
+      0 18px 40px rgba(0, 0, 0, 0.5),
+      0 0 42px rgba(94, 247, 200, 0.22);
+  }
+}
+
+@media (max-width: 720px) {
+  .intro-wordmark {
+    width: min(180px, 58vw);
+  }
+
+  .hero-intro-progress,
+  .hero-intro-caption {
+    bottom: 64px;
+  }
+
+  .dial-label {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+
+  .dial-label-inner {
+    font-size: 7.5px;
+  }
+}
+
+@media (max-width: 430px) {
+  .creator-dial {
+    width: min(300px, 88%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-intro,
+  .hero-intro-mark,
+  .hero-intro-swipe,
+  .hero-intro-dot,
+  .hero-intro-flare-rays,
+  .hero-intro-caption,
+  .creator-dial-svg,
+  .creator-dial-center {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 .contact-node,
