@@ -80,6 +80,7 @@ const INTRO_TIMING = {
 
 function Hero() {
   const heroRef = useRef(null)
+  const introScrollUnlockRef = useRef(null)
   const [isHeroVideoVisible, setIsHeroVideoVisible] = useState(false)
   const [introStage, setIntroStage] = useState('mark')
   const [introPercent, setIntroPercent] = useState(0)
@@ -119,6 +120,68 @@ function Hero() {
       timers.forEach(clearTimeout)
     }
   }, [])
+
+  // Lock page scroll on mount; unlock when intro finishes.
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) {
+      return undefined
+    }
+
+    let scrollY = window.scrollY
+    const html = document.documentElement
+    const body = document.body
+
+    const preventScroll = (event) => {
+      event.preventDefault()
+    }
+
+    const unlockScroll = () => {
+      html.classList.remove('intro-scroll-lock')
+      body.classList.remove('intro-scroll-lock')
+      body.style.position = ''
+      body.style.top = ''
+      body.style.left = ''
+      body.style.right = ''
+      body.style.width = ''
+      body.style.overflow = ''
+      html.style.overflow = ''
+      window.removeEventListener('wheel', preventScroll)
+      window.removeEventListener('touchmove', preventScroll)
+      window.scrollTo(0, scrollY)
+    }
+
+    scrollY = window.scrollY
+    html.classList.add('intro-scroll-lock')
+    body.classList.add('intro-scroll-lock')
+    body.style.position = 'fixed'
+    body.style.top = `-${scrollY}px`
+    body.style.left = '0'
+    body.style.right = '0'
+    body.style.width = '100%'
+    body.style.overflow = 'hidden'
+    html.style.overflow = 'hidden'
+    window.addEventListener('wheel', preventScroll, { passive: false })
+    window.addEventListener('touchmove', preventScroll, { passive: false })
+
+    introScrollUnlockRef.current = unlockScroll
+
+    return () => {
+      introScrollUnlockRef.current?.()
+      introScrollUnlockRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (introStage !== 'done') {
+      return undefined
+    }
+
+    introScrollUnlockRef.current?.()
+    introScrollUnlockRef.current = null
+
+    return undefined
+  }, [introStage])
 
   useEffect(() => {
     function updateHeroVideo() {
@@ -190,11 +253,29 @@ function Hero() {
             <div className="creator-dial">
               <svg className="creator-dial-svg" viewBox="0 0 420 420" aria-hidden="true">
                 <defs>
-                  <path id="dial-ring-outer" d="M210,32 a178,178 0 1,1 -0.1,0" />
-                  <path id="dial-ring-inner" d="M210,94 a116,116 0 1,1 -0.1,0" />
+                  <linearGradient id="dialRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#5ef7c8" stopOpacity="0.95" />
+                    <stop offset="45%" stopColor="#78a8ff" stopOpacity="0.75" />
+                    <stop offset="100%" stopColor="#b389ff" stopOpacity="0.85" />
+                  </linearGradient>
+                  <linearGradient id="dialRingGradientInner" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#78a8ff" stopOpacity="0.8" />
+                    <stop offset="100%" stopColor="#5ef7c8" stopOpacity="0.65" />
+                  </linearGradient>
+                  <filter id="dialRingGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="2.8" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <path id="dial-ring-outer" d="M210,20 a190,190 0 1,1 -0.1,0" />
+                  <path id="dial-ring-inner" d="M210,85 a125,125 0 1,1 -0.1,0" />
                 </defs>
-                <circle className="dial-track dial-track-outer" cx="210" cy="210" r="178" />
-                <circle className="dial-track dial-track-inner" cx="210" cy="210" r="116" />
+                <circle className="dial-track dial-track-halo" cx="210" cy="210" r="198" />
+                <circle className="dial-track dial-track-outer" cx="210" cy="210" r="190" />
+                <circle className="dial-track dial-track-inner" cx="210" cy="210" r="125" />
+                <circle className="dial-track dial-track-core" cx="210" cy="210" r="88" />
 
                 {DIAL_SEGMENTS.map((segment) => (
                   <text key={segment.id} className="dial-label">
@@ -211,10 +292,10 @@ function Hero() {
                   </text>
                 ))}
 
-                <path className="dial-arrow" d="M210,32 l7,15 l-15,2 z" />
-                <path className="dial-arrow" d="M210,32 l7,15 l-15,2 z" transform="rotate(180 210 210)" />
-                <path className="dial-arrow dial-arrow-inner" d="M210,94 l6,13 l-13,2 z" transform="rotate(90 210 210)" />
-                <path className="dial-arrow dial-arrow-inner" d="M210,94 l6,13 l-13,2 z" transform="rotate(270 210 210)" />
+                <path className="dial-arrow" d="M210,20 l8,16 l-16,2 z" />
+                <path className="dial-arrow" d="M210,20 l8,16 l-16,2 z" transform="rotate(180 210 210)" />
+                <path className="dial-arrow dial-arrow-inner" d="M210,85 l7,14 l-14,2 z" transform="rotate(90 210 210)" />
+                <path className="dial-arrow dial-arrow-inner" d="M210,85 l7,14 l-14,2 z" transform="rotate(270 210 210)" />
               </svg>
               <div className="creator-dial-center">
                 <div className="lens-glass">
