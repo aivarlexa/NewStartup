@@ -14,11 +14,13 @@ const DIAL_SEGMENTS_INNER = [
   { id: 'media', label: 'CREATOR MEDIA', offset: '53%' },
 ]
 
-// Neural-network background: three columns of nodes connected by smooth
-// curves, confined to the right side behind the hero visual so it never
-// competes with the heading text. Each link gets a small pulse that travels
-// along it - alternating direction per link for a "bidirectional signal" feel.
+// Neural-network background spans the full hero section behind text and logo.
 const NEURAL_NODES = [
+  // Far Left (behind headline)
+  { id: 'l1', cx: 60, cy: 140, r: 4 },
+  { id: 'l2', cx: 90, cy: 320, r: 5 },
+  { id: 'l3', cx: 50, cy: 520, r: 4 },
+
   // Left Column
   { id: 'a1', cx: 180, cy: 120, r: 4 },
   { id: 'a2', cx: 180, cy: 260, r: 5 },
@@ -41,6 +43,9 @@ const NEURAL_NODES = [
 
 
 const NEURAL_LINKS = [
+  { from: [60, 140], to: [180, 120], delay: 0.1, duration: 5.2, reverse: false },
+  { from: [90, 320], to: [180, 260], delay: 0.5, duration: 5.8, reverse: true },
+  { from: [50, 520], to: [180, 430], delay: 0.9, duration: 6.1, reverse: false },
   { from: [180, 120], to: [520, 90], delay: 0, duration: 5, reverse: false },
   { from: [180, 120], to: [520, 230], delay: 0.4, duration: 6, reverse: true },
   { from: [520, 300], to: [920, 230], delay: 0.8, duration: 5.5, reverse: false },
@@ -249,10 +254,12 @@ function Hero() {
         <p className="eyebrow brand-breadcrumb">
 
         </p>
-        <h1 className="hero-title">
-          <span>Transforming Businesses</span>
-          <span>with Artificial Intelligence</span>
-        </h1>
+        <div className="hero-title-wrap">
+          <h1 className="hero-title">
+            <span className="hero-title-line">Transforming Businesses</span>
+            <span className="hero-title-line hero-title-accent">with Artificial Intelligence</span>
+          </h1>
+        </div>
         <p className="hero-lede">
           Varlexa AI builds intelligent AI agents, automation systems,
           and custom software that help businesses grow faster,
