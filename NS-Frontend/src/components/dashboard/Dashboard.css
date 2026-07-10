@@ -1122,3 +1122,248 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Responsive hardening layer for dashboard pages */
+.developer-dashboard,
+.dashboard-main-shell,
+.dashboard-content,
+.dashboard-page,
+.dashboard-panel,
+.dashboard-project-card,
+.dashboard-summary-card,
+.chat-workspace,
+.chat-side-panel,
+.chat-main-panel,
+.chat-info-panel,
+.dashboard-chat-message,
+.dashboard-chat-message div,
+.ai-message,
+.profile-panel {
+  min-width: 0;
+}
+
+.dashboard-main-shell,
+.dashboard-content {
+  width: 100%;
+  overflow-x: clip;
+}
+
+.dashboard-page-heading h1,
+.dashboard-panel h2,
+.dashboard-project-card h2,
+.chat-side-panel h2,
+.chat-info-panel h2,
+.profile-copy h2,
+.dashboard-chat-message p,
+.ai-message,
+.file-stack span,
+.developer-chip-row span {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-sidebar {
+  overflow-y: auto;
+}
+
+.dashboard-modal {
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
+}
+
+@media (max-width: 1180px) {
+  .dashboard-sidebar {
+    height: 100svh;
+    max-height: 100svh;
+  }
+
+  .dashboard-main-shell {
+    min-height: 100svh;
+  }
+}
+
+@media (max-width: 980px) {
+  .dashboard-content {
+    padding: 28px 22px;
+  }
+
+  .dashboard-project-grid,
+  .project-detail-grid,
+  .meetings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .project-overview-panel,
+  .project-message-panel,
+  .calendar-panel {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .dashboard-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .profile-panel {
+    grid-template-columns: 132px minmax(0, 1fr);
+  }
+
+  .profile-stack {
+    grid-column: 1 / -1;
+  }
+
+  .chat-side-panel {
+    max-height: 300px;
+    overflow: auto;
+  }
+
+  .chat-main-panel,
+  .ai-chat-panel {
+    min-height: 560px;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-header {
+    gap: 10px;
+  }
+
+  .dashboard-header-left,
+  .dashboard-header-actions {
+    flex: 0 0 auto;
+  }
+
+  .dashboard-page {
+    gap: 20px;
+  }
+
+  .dashboard-page-heading h1,
+  .dashboard-auth-card h1 {
+    font-size: clamp(2rem, 11vw, 3.1rem);
+    letter-spacing: -0.035em;
+  }
+
+  .dashboard-heading-actions > *,
+  .dashboard-primary-button,
+  .dashboard-action-link,
+  .dashboard-meeting-card button,
+  .chat-info-panel button,
+  .profile-copy button {
+    width: 100%;
+  }
+
+  .dashboard-panel,
+  .dashboard-project-card,
+  .dashboard-summary-card,
+  .chat-side-panel,
+  .chat-main-panel,
+  .chat-info-panel {
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  .dashboard-summary-grid,
+  .quick-action-grid,
+  .dashboard-filters,
+  .profile-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-avatar {
+    width: 104px;
+    height: 104px;
+    border-radius: 24px;
+  }
+
+  .dashboard-project-top {
+    gap: 10px;
+  }
+
+  .dashboard-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-progress strong {
+    justify-self: start;
+  }
+
+  .dashboard-chat-message {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .dashboard-chat-message > span {
+    width: 34px;
+    height: 34px;
+    font-size: 0.76rem;
+  }
+
+  .dashboard-chat-form {
+    display: grid;
+    grid-template-columns: 44px 44px minmax(0, 1fr) 44px;
+    align-items: center;
+  }
+
+  .client-main-panel .dashboard-chat-form,
+  .ai-chat-panel .dashboard-chat-form {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .dashboard-chat-form input {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard-content {
+    padding: 18px 12px 26px;
+  }
+
+  .dashboard-header {
+    min-height: auto;
+    padding: 10px 12px;
+  }
+
+  .dashboard-back-button span,
+  .dashboard-profile-pill {
+    display: none;
+  }
+
+  .dashboard-notification-panel {
+    top: 58px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
+  .dashboard-panel,
+  .dashboard-project-card,
+  .dashboard-summary-card,
+  .chat-side-panel,
+  .chat-main-panel,
+  .chat-info-panel,
+  .dashboard-modal {
+    padding: 16px;
+  }
+
+  .dashboard-chat-form {
+    grid-template-columns: repeat(3, 44px);
+  }
+
+  .dashboard-chat-form input {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  .client-main-panel .dashboard-chat-form,
+  .ai-chat-panel .dashboard-chat-form {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .mini-calendar {
+    gap: 5px;
+  }
+
+  .mini-calendar span {
+    border-radius: 8px;
+    font-size: 0.78rem;
+  }
+}
