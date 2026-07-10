@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Footer from './components/Footer'
 import DashboardLayout from './components/dashboard/DashboardLayout'
 import Navbar from './components/Navbar'
@@ -65,8 +65,9 @@ function App() {
               <Route path="profile" element={<ProfilePage />} />
             </Route>
           </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        {!isDashboardRoute && <Footer />}
+        {!isDashboardRoute && !isDeveloperLoginRoute && <Footer />}
       </main>
     </AuthProvider>
   )

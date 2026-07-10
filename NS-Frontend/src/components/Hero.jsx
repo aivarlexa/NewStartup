@@ -14,11 +14,13 @@ const DIAL_SEGMENTS_INNER = [
   { id: 'media', label: 'CREATOR MEDIA', offset: '53%' },
 ]
 
-// Neural-network background: three columns of nodes connected by smooth
-// curves, confined to the right side behind the hero visual so it never
-// competes with the heading text. Each link gets a small pulse that travels
-// along it - alternating direction per link for a "bidirectional signal" feel.
+// Neural-network background spans the full hero section behind text and logo.
 const NEURAL_NODES = [
+  // Far Left (behind headline)
+  { id: 'l1', cx: 60, cy: 140, r: 4 },
+  { id: 'l2', cx: 90, cy: 320, r: 5 },
+  { id: 'l3', cx: 50, cy: 520, r: 4 },
+
   // Left Column
   { id: 'a1', cx: 180, cy: 120, r: 4 },
   { id: 'a2', cx: 180, cy: 260, r: 5 },
@@ -41,6 +43,9 @@ const NEURAL_NODES = [
 
 
 const NEURAL_LINKS = [
+  { from: [60, 140], to: [180, 120], delay: 0.1, duration: 5.2, reverse: false },
+  { from: [90, 320], to: [180, 260], delay: 0.5, duration: 5.8, reverse: true },
+  { from: [50, 520], to: [180, 430], delay: 0.9, duration: 6.1, reverse: false },
   { from: [180, 120], to: [520, 90], delay: 0, duration: 5, reverse: false },
   { from: [180, 120], to: [520, 230], delay: 0.4, duration: 6, reverse: true },
   { from: [520, 300], to: [920, 230], delay: 0.8, duration: 5.5, reverse: false },
@@ -69,12 +74,14 @@ const INTRO_TIMING = {
   mark: 1050, // logo + swipe-line + progress count
   pulse: 550, // logo fades, single dot remains
   flare: 780, // dot blooms into a lens flare
-  dial: 3200, // the creator dial resolves out of the flare and spins for a while
-  reveal: 620, // whole overlay fades away to reveal the real hero
+  dial: 3700, // the creator dial resolves out of the flare and has time to breathe
+  reveal: 780, // whole overlay fades away to reveal the real hero
 }
 
 function Hero() {
   const heroRef = useRef(null)
+  const introScrollUnlockRef = useRef(null)
+  const centerVideoRef = useRef(null)
   const [isHeroVideoVisible, setIsHeroVideoVisible] = useState(false)
   const [introStage, setIntroStage] = useState('mark')
   const [introPercent, setIntroPercent] = useState(0)
@@ -99,13 +106,11 @@ function Hero() {
     }
     rafId = requestAnimationFrame(tickProgress)
 
-    const stageOrder = ['pulse', 'flare', 'dial', 'reveal', 'done']
+    const stageOrder = ['pulse', 'flare', 'dial']
     const stageDelays = [
       INTRO_TIMING.mark,
       INTRO_TIMING.mark + INTRO_TIMING.pulse,
       INTRO_TIMING.mark + INTRO_TIMING.pulse + INTRO_TIMING.flare,
-      INTRO_TIMING.mark + INTRO_TIMING.pulse + INTRO_TIMING.flare + INTRO_TIMING.dial,
-      INTRO_TIMING.mark + INTRO_TIMING.pulse + INTRO_TIMING.flare + INTRO_TIMING.dial + INTRO_TIMING.reveal,
     ]
     const timers = stageOrder.map((stage, index) => setTimeout(() => setIntroStage(stage), stageDelays[index]))
 
@@ -114,6 +119,117 @@ function Hero() {
       timers.forEach(clearTimeout)
     }
   }, [])
+
+  useEffect(() => {
+    const videoElement = centerVideoRef.current
+    if (!videoElement) {
+      return undefined
+    }
+
+    videoElement.load()
+    return undefined
+  }, [])
+
+  useEffect(() => {
+    const videoElement = centerVideoRef.current
+    if (!videoElement || introStage !== 'dial') {
+      return undefined
+    }
+
+    const finishIntro = () => setIntroStage('reveal')
+    const revealTimer = setTimeout(finishIntro, INTRO_TIMING.dial)
+    const startVideo = () => {
+      videoElement.playbackRate = 1
+      videoElement.currentTime = 0
+      videoElement.play().catch(() => {})
+    }
+
+    videoElement.addEventListener('ended', finishIntro, { once: true })
+
+    if (videoElement.readyState >= 1) {
+      startVideo()
+    } else {
+      videoElement.addEventListener('loadedmetadata', startVideo, { once: true })
+      videoElement.load()
+    }
+
+    return () => {
+      clearTimeout(revealTimer)
+      videoElement.removeEventListener('ended', finishIntro)
+      videoElement.removeEventListener('loadedmetadata', startVideo)
+    }
+  }, [introStage])
+
+  useEffect(() => {
+    if (introStage !== 'reveal') {
+      return undefined
+    }
+
+    const doneTimer = setTimeout(() => setIntroStage('done'), INTRO_TIMING.reveal)
+    return () => clearTimeout(doneTimer)
+  }, [introStage])
+  // Lock page scroll on mount; unlock when intro finishes.
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) {
+      return undefined
+    }
+
+    let scrollY = window.scrollY
+    const html = document.documentElement
+    const body = document.body
+
+    const preventScroll = (event) => {
+      event.preventDefault()
+    }
+
+    const unlockScroll = () => {
+      html.classList.remove('intro-scroll-lock')
+      body.classList.remove('intro-scroll-lock')
+      body.style.position = ''
+      body.style.top = ''
+      body.style.left = ''
+      body.style.right = ''
+      body.style.width = ''
+      body.style.overflow = ''
+      html.style.overflow = ''
+      window.removeEventListener('wheel', preventScroll)
+      window.removeEventListener('touchmove', preventScroll)
+      window.scrollTo(0, scrollY)
+    }
+
+    scrollY = window.scrollY
+    html.classList.add('intro-scroll-lock')
+    body.classList.add('intro-scroll-lock')
+    body.style.position = 'fixed'
+    body.style.top = `-${scrollY}px`
+    body.style.left = '0'
+    body.style.right = '0'
+    body.style.width = '100%'
+    body.style.overflow = 'hidden'
+    html.style.overflow = 'hidden'
+    window.addEventListener('wheel', preventScroll, { passive: false })
+    window.addEventListener('touchmove', preventScroll, { passive: false })
+
+    introScrollUnlockRef.current = unlockScroll
+
+    return () => {
+      introScrollUnlockRef.current?.()
+      introScrollUnlockRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (introStage !== 'done') {
+      return undefined
+    }
+
+    introScrollUnlockRef.current?.()
+    introScrollUnlockRef.current = null
+
+    return undefined
+  }, [introStage])
+
 
   useEffect(() => {
     function updateHeroVideo() {
@@ -185,11 +301,29 @@ function Hero() {
             <div className="creator-dial">
               <svg className="creator-dial-svg" viewBox="0 0 420 420" aria-hidden="true">
                 <defs>
-                  <path id="dial-ring-outer" d="M210,22 a188,188 0 1,1 -0.1,0" />
-                  <path id="dial-ring-inner" d="M210,82 a128,128 0 1,1 -0.1,0" />
+                  <linearGradient id="dialRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#5ef7c8" stopOpacity="0.95" />
+                    <stop offset="45%" stopColor="#78a8ff" stopOpacity="0.75" />
+                    <stop offset="100%" stopColor="#b389ff" stopOpacity="0.85" />
+                  </linearGradient>
+                  <linearGradient id="dialRingGradientInner" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#78a8ff" stopOpacity="0.8" />
+                    <stop offset="100%" stopColor="#5ef7c8" stopOpacity="0.65" />
+                  </linearGradient>
+                  <filter id="dialRingGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="2.8" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <path id="dial-ring-outer" d="M210,20 a190,190 0 1,1 -0.1,0" />
+                  <path id="dial-ring-inner" d="M210,85 a125,125 0 1,1 -0.1,0" />
                 </defs>
-                <circle className="dial-track dial-track-outer" cx="210" cy="210" r="400" />
-                <circle className="dial-track dial-track-inner" cx="210" cy="210" r="250" />
+                <circle className="dial-track dial-track-halo" cx="210" cy="210" r="198" />
+                <circle className="dial-track dial-track-outer" cx="210" cy="210" r="190" />
+                <circle className="dial-track dial-track-inner" cx="210" cy="210" r="125" />
+                <circle className="dial-track dial-track-core" cx="210" cy="210" r="88" />
 
                 {DIAL_SEGMENTS.map((segment) => (
                   <text key={segment.id} className="dial-label">
@@ -206,14 +340,21 @@ function Hero() {
                   </text>
                 ))}
 
-                <path className="dial-arrow" d="M210,32 l7,15 l-15,2 z" />
-                <path className="dial-arrow" d="M210,32 l7,15 l-15,2 z" transform="rotate(180 210 210)" />
-                <path className="dial-arrow dial-arrow-inner" d="M210,94 l6,13 l-13,2 z" transform="rotate(90 210 210)" />
-                <path className="dial-arrow dial-arrow-inner" d="M210,94 l6,13 l-13,2 z" transform="rotate(270 210 210)" />
+                <path className="dial-arrow" d="M210,20 l8,16 l-16,2 z" />
+                <path className="dial-arrow" d="M210,20 l8,16 l-16,2 z" transform="rotate(180 210 210)" />
+                <path className="dial-arrow dial-arrow-inner" d="M210,85 l7,14 l-14,2 z" transform="rotate(90 210 210)" />
+                <path className="dial-arrow dial-arrow-inner" d="M210,85 l7,14 l-14,2 z" transform="rotate(270 210 210)" />
               </svg>
+
               <div className="creator-dial-center">
                 <div className="lens-glass">
-                  <video className="lens-video" autoPlay muted loop playsInline>
+                  <video
+                    className="lens-video"
+                    ref={centerVideoRef}
+                    muted
+                    playsInline
+                    preload="auto"
+                  >
                     <source src="/media/dial-video.mp4" type="video/mp4" />
                   </video>
                   <span className="lens-highlight" />
@@ -221,8 +362,6 @@ function Hero() {
               </div>
             </div>
           </div>
-
-          <p className="hero-intro-caption">AI Solutions &amp; Software Engineering</p>
         </div>
       )}
 
@@ -249,10 +388,12 @@ function Hero() {
         <p className="eyebrow brand-breadcrumb">
 
         </p>
-        <h1 className="hero-title">
-          <span>Transforming Businesses</span>
-          <span>with Artificial Intelligence</span>
-        </h1>
+        <div className="hero-title-wrap">
+          <h1 className="hero-title">
+            <span className="hero-title-line">Transforming Businesses</span>
+            <span className="hero-title-line hero-title-accent">with Artificial Intelligence</span>
+          </h1>
+        </div>
         <p className="hero-lede">
           Varlexa AI builds intelligent AI agents, automation systems,
           and custom software that help businesses grow faster,

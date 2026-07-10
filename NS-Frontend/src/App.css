@@ -1,3 +1,10 @@
+html.intro-scroll-lock,
+html.intro-scroll-lock body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
 .app-shell {
   position: relative;
   overflow: hidden;
@@ -157,9 +164,9 @@
 .hero-section {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr min(680px, 48vw);
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
   align-items: center;
-  gap: 90px;
+  gap: clamp(40px, 5vw, 72px);
   width: 100%;
   min-height: min(780px, calc(100svh - 78px));
   margin: 0 auto;
@@ -170,25 +177,14 @@
   position: relative;
   top: -28px;
   z-index: 2;
-  max-width: 650px;
+  max-width: 100%;
+  min-width: 0;
+  padding-right: 8px;
   transition: opacity 260ms ease, transform 260ms ease;
 }
 
-.hero-copy::before{
-    content:'';
-    position:absolute;
-    inset:-60px;
-    z-index:-1;
-
-    background:
-        radial-gradient(
-            ellipse at center,
-            rgba(5,7,11,.55),
-            rgba(5,7,11,.35),
-            transparent 80%
-        );
-
-    backdrop-filter:blur(2px);
+.hero-copy::before {
+  display: none;
 }
 
 
@@ -214,26 +210,71 @@ h1 {
   line-height: 0.98;
   font-weight: 800;
 }
-.hero-title{
-    font-size:clamp(3.5rem,6vw,5.8rem);
-    font-weight:900;
-    line-height:.96;
-    letter-spacing:-.07em;
-    max-width:760px;
+.hero-title-wrap {
+  position: relative;
+  margin-bottom: 20px;
+  overflow: visible;
 }
 
-.hero-title span {
+.hero-title {
+  font-family: "Plus Jakarta Sans", var(--font-sans);
+  font-size: clamp(2.5rem, 3.6vw, 4rem);
+  font-weight: 800;
+  line-height: 1.22;
+  letter-spacing: -0.03em;
+  max-width: 100%;
+  margin-bottom: 0;
+  overflow: visible;
+  text-wrap: balance;
+}
+
+.hero-title-line {
   display: block;
-  white-space: nowrap;
+  overflow: visible;
+  padding-bottom: 0.04em;
+}
+
+.hero-title-line:first-child {
+  color: var(--text-strong);
+}
+
+.hero-title-accent {
+  display: block;
+  padding-bottom: 0.18em;
+  line-height: 1.28;
+  background: linear-gradient(
+    120deg,
+    #f0fdf9 0%,
+    #5ef7c8 24%,
+    #78a8ff 54%,
+    #b389ff 82%,
+    #d4c4ff 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  animation: heroTitleShimmer 8s ease-in-out infinite alternate;
+}
+
+@keyframes heroTitleShimmer {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 100% center;
+  }
 }
 /* =========================================================
    Hero intro sequence (logo swipe -> loading dot -> lens flare -> dial -> reveal)
    ========================================================= */
 
 .hero-intro {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 30;
+  z-index: 60;
   display: grid;
   place-items: center;
   gap: 22px;
@@ -400,8 +441,8 @@ h1 {
   display: grid;
   place-items: center;
   opacity: 0;
-  transform: scale(0.82);
-  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1), transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(0.88);
+  transition: opacity 760ms cubic-bezier(0.16, 1, 0.3, 1), transform 760ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hero-intro.stage-dial .hero-intro-dial-wrap {
@@ -411,7 +452,102 @@ h1 {
 
 .hero-intro.stage-reveal .hero-intro-dial-wrap {
   opacity: 0;
-  transform: scale(1.08);
+  transform: scale(1.015);
+}
+
+.hero-intro-dial-wrap .creator-dial {
+  position: relative;
+  width: min(1180px, 96vmin);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.hero-intro-dial-wrap .creator-dial::before {
+  content: '';
+  position: absolute;
+  inset: -8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(94, 247, 200, 0.2) 0%, rgba(120, 168, 255, 0.1) 38%, transparent 72%);
+  pointer-events: none;
+  animation: dialAuraPulse 4.5s ease-in-out infinite alternate;
+}
+
+.hero-intro-dial-wrap .creator-dial-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: dialSpin 32s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+
+.hero-intro-dial-wrap .dial-track-halo {
+  fill: none;
+  stroke: rgba(120, 168, 255, 0.12);
+  stroke-width: 1;
+  opacity: 0.7;
+}
+
+.hero-intro-dial-wrap .dial-track-outer {
+  fill: none;
+  stroke: url(#dialRingGradient);
+  stroke-width: 2.4;
+  opacity: 0.95;
+}
+
+.hero-intro-dial-wrap .dial-track-inner {
+  fill: none;
+  stroke: url(#dialRingGradientInner);
+  stroke-width: 1.9;
+  opacity: 0.9;
+}
+
+.hero-intro-dial-wrap .dial-track-core {
+  fill: none;
+  stroke: rgba(94, 247, 200, 0.22);
+  stroke-width: 1;
+  stroke-dasharray: 3 9;
+  opacity: 0.65;
+}
+
+.hero-intro-dial-wrap .dial-label {
+  fill: rgba(248, 250, 252, 0.96);
+  font-size: 14.5px;
+  letter-spacing: 0.28em;
+  filter: drop-shadow(0 0 8px rgba(120, 168, 255, 0.45));
+}
+
+.hero-intro-dial-wrap .dial-label-inner {
+  fill: rgba(210, 222, 240, 0.88);
+  font-size: 11.5px;
+  letter-spacing: 0.22em;
+}
+
+.hero-intro-dial-wrap .dial-arrow {
+  fill: rgba(94, 247, 200, 0.95);
+  filter: drop-shadow(0 0 10px rgba(94, 247, 200, 0.65));
+}
+
+.hero-intro-dial-wrap .dial-arrow-inner {
+  fill: rgba(120, 168, 255, 0.88);
+  filter: drop-shadow(0 0 10px rgba(120, 168, 255, 0.55));
+}
+
+.hero-intro-dial-wrap .creator-dial-center {
+  inset: 30%;
+}
+
+@keyframes dialAuraPulse {
+  0% {
+    opacity: 0.72;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
 }
 
 .creator-dial {
@@ -469,6 +605,8 @@ h1 {
   display: grid;
   place-items: center;
   border-radius: 50%;
+  overflow: hidden;
+  contain: layout paint;
   background: conic-gradient(
     from 200deg,
     rgba(255, 255, 255, 0.28),
@@ -481,7 +619,7 @@ h1 {
     0 22px 46px rgba(0, 0, 0, 0.55),
     0 0 34px rgba(94, 247, 200, 0.12),
     inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-  padding: 3%;
+  padding: 0;
 }
 
 .lens-glass {
@@ -490,6 +628,7 @@ h1 {
   height: 100%;
   overflow: hidden;
   border-radius: 50%;
+  clip-path: circle(50% at 50% 50%);
   background: #05070b;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06);
 }
@@ -500,8 +639,11 @@ h1 {
   z-index: 1;
   width: 100%;
   height: 100%;
+  display: block;
   object-fit: cover;
-  border-radius: 50%;
+  object-position: center center;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .lens-highlight {
@@ -513,7 +655,6 @@ h1 {
   height: 15%;
   border-radius: 50%;
   background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.42), transparent 72%);
-  filter: blur(2px);
   transform: rotate(-20deg);
   opacity: 0.6;
   pointer-events: none;
@@ -528,46 +669,20 @@ h1 {
   }
 }
 
-/* =========================================================
-   Hero section background: layered neural-network diagram.
-   Confined mostly to the right two-thirds (behind the hero
-   visual), with a left-side mask so it never competes with
-   the heading text. Sits at z-index 0, behind hero-copy /
-   hero-visual, and gets covered by the video layer when
-   is-video-active is on (that layer is z-index 1).
-   ========================================================= */
-
+/* Hero neural network spans the full section behind text and logo. */
 .hero-bg-signature {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-
-  mask-image: linear-gradient(
-    90deg,
-    rgba(0,0,0,.28) 0%,
-    rgba(0,0,0,.45) 15%,
-    rgba(0,0,0,.75) 35%,
-    #000 55%,
-    #000 100%
-  );
-
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    rgba(0,0,0,.28) 0%,
-    rgba(0,0,0,.45) 15%,
-    rgba(0,0,0,.75) 35%,
-    #000 55%,
-    #000 100%
-  );
 }
 .hero-neural-svg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.55; /* slightly lower so it stays atmospheric behind text */
+  opacity: 0.62;
 }
 
 
@@ -677,17 +792,17 @@ h1 {
     bottom: 64px;
   }
 
-  .creator-dial {
-    width: min(480px, 90vw);
+  .hero-intro-dial-wrap .creator-dial {
+    width: min(96vmin, 720px);
   }
 
-  .dial-label {
+  .hero-intro-dial-wrap .dial-label {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+  }
+
+  .hero-intro-dial-wrap .dial-label-inner {
     font-size: 9px;
-    letter-spacing: 0.18em;
-  }
-
-  .dial-label-inner {
-    font-size: 7.5px;
   }
 }
 
@@ -700,10 +815,16 @@ h1 {
   .hero-intro-caption,
   .hero-intro-dial-wrap,
   .creator-dial-svg,
+  .hero-intro-dial-wrap .creator-dial::before,
   .neural-node,
-  .neural-pulse {
+  .neural-pulse,
+  .hero-title-accent {
     animation: none !important;
     transition: none !important;
+  }
+
+  .hero-title-accent {
+    background-position: 50% center;
   }
 }
 
@@ -807,6 +928,7 @@ h3 {
   position: relative;
   z-index: 2;
   display: grid;
+<<<<<<< HEAD
   min-height: 620px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -816,8 +938,19 @@ h3 {
     rgba(9, 13, 19, 0.9);
   box-shadow: var(--shadow-panel);
   transform: translateX(60px);
+=======
+  justify-self: end;
+  width: 100%;
+  max-width: 420px;
+  min-height: 460px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+>>>>>>> prithvi
   transform-style: preserve-3d;
-  transition: transform 220ms ease, border-color 220ms ease;
+  transition: transform 220ms ease;
 }
 
 .is-video-active .hero-copy,
@@ -828,25 +961,25 @@ h3 {
 }
 
 .hero-visual::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(5, 7, 11, 0.46), rgba(5, 7, 11, 0.82)),
-    radial-gradient(circle at 58% 40%, rgba(94, 247, 200, 0.14), transparent 36%);
+  display: none;
 }
 
 .hero-visual:hover {
-  border-color: rgba(94, 247, 200, 0.35);
   transform: perspective(1400px) rotateX(0deg) rotateY(-1.6deg) translateY(-4px);
 }
 
 .visual-stage {
   position: relative;
   z-index: 2;
+<<<<<<< HEAD
   min-height: 620px;
+=======
+  display: grid;
+  min-height: 460px;
+  place-items: center;
+  perspective: 1000px;
+  background: transparent;
+>>>>>>> prithvi
 }
 
 .chat-header {
@@ -875,18 +1008,6 @@ h3 {
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 0 6px rgba(94, 247, 200, 0.1);
-}
-
-.visual-stage {
-  position: relative;
-  display: grid;
-  min-height: 500px;
-  place-items: center;
-  perspective: 1000px;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 44px 44px;
 }
 
 .logo-showcase {
@@ -3236,160 +3357,6 @@ h3 {
 }
 
 /* =========================================================
-   Hero intro sequence (logo swipe -> loading dot -> lens flare)
-   ========================================================= */
-
-.hero-intro {
-  position: absolute;
-  inset: 0;
-  z-index: 30;
-  display: grid;
-  place-items: center;
-  gap: 22px;
-  overflow: hidden;
-  background: #05070b;
-  opacity: 1;
-  visibility: visible;
-  transition: opacity 520ms ease, visibility 520ms ease;
-}
-
-.hero-intro.stage-reveal {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.hero-intro-mark {
-  position: relative;
-  display: grid;
-  place-items: center;
-  opacity: 1;
-  transition: opacity 380ms ease;
-}
-
-.hero-intro.stage-pulse .hero-intro-mark,
-.hero-intro.stage-flare .hero-intro-mark {
-  opacity: 0;
-}
-
-.intro-wordmark {
-  width: min(230px, 52vw);
-  max-height: 78px;
-}
-
-.hero-intro-swipe {
-  position: absolute;
-  top: 52%;
-  left: -14%;
-  width: 128%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #5ef7c8, #78a8ff, transparent);
-  box-shadow: 0 0 16px rgba(94, 247, 200, 0.5);
-  transform: translateX(-120%) translateY(-50%) rotate(-3deg);
-  animation: introSwipe 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-.hero-intro-progress {
-  position: absolute;
-  bottom: 88px;
-  color: rgba(226, 232, 240, 0.55);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.28em;
-}
-
-.hero-intro-dot {
-  position: relative;
-  z-index: 1;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #0b0f16;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
-  opacity: 0;
-  transform: scale(0.4);
-  transition: opacity 300ms ease, transform 300ms ease;
-}
-
-.hero-intro.stage-pulse .hero-intro-dot,
-.hero-intro.stage-flare .hero-intro-dot {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.hero-intro.stage-flare .hero-intro-dot {
-  animation: introFlare 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.hero-intro-flare-rays {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0;
-}
-
-.hero-intro.stage-flare .hero-intro-flare-rays {
-  animation: introRayFade 760ms ease forwards;
-  background:
-    linear-gradient(90deg, rgba(94, 247, 200, 0.4), transparent 38%, transparent 62%, rgba(120, 168, 255, 0.35)),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.55), transparent 42%);
-}
-
-.hero-intro-caption {
-  position: absolute;
-  bottom: 88px;
-  margin: 0;
-  color: rgba(226, 232, 240, 0.55);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  opacity: 0;
-  transition: opacity 300ms ease;
-}
-
-.hero-intro.stage-pulse .hero-intro-caption,
-.hero-intro.stage-flare .hero-intro-caption {
-  opacity: 1;
-}
-
-@keyframes introSwipe {
-  to {
-    transform: translateX(120%) translateY(-50%) rotate(-3deg);
-  }
-}
-
-@keyframes introFlare {
-  0% {
-    transform: scale(1);
-    filter: blur(0);
-  }
-  55% {
-    transform: scale(10);
-    filter: blur(3px);
-    box-shadow: 0 0 60px 30px rgba(255, 255, 255, 0.22);
-  }
-  100% {
-    transform: scale(38);
-    filter: blur(12px);
-    opacity: 0.35;
-  }
-}
-
-@keyframes introRayFade {
-  0% {
-    opacity: 0;
-  }
-  40% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-/* =========================================================
    Rotating creator dial (replaces the spinning logo visual)
    ========================================================= */
 
@@ -3397,7 +3364,7 @@ h3 {
   position: relative;
 }
 
-.creator-dial {
+.creator-dial-visual .creator-dial {
   position: relative;
   z-index: 3;
   width: min(520px, 84%);
@@ -3406,7 +3373,7 @@ h3 {
   place-items: center;
 }
 
-.creator-dial-svg {
+.creator-dial-visual .creator-dial-svg {
   width: 100%;
   height: 100%;
   overflow: visible;
@@ -6730,5 +6697,216 @@ h3 {
 @media (max-width: 720px) {
   .contact-mode-switch {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Production/mobile stability fixes */
+.app-shell {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+.topbar {
+  position: relative;
+  z-index: 40;
+}
+
+.nav-links {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nav-links a.is-active,
+.nav-cta.is-active,
+.mobile-nav-panel a.is-active {
+  background: rgba(94, 247, 200, 0.1);
+  color: var(--text-strong);
+}
+
+@media (max-width: 1040px) {
+  .mobile-nav-panel {
+    position: absolute;
+    width: 100%;
+    max-height: calc(100svh - 92px);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    width: calc(100% - 28px);
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 14px 0;
+  }
+
+  .brand,
+  .nav-wordmark {
+    min-width: 0;
+  }
+
+  .nav-wordmark {
+    width: clamp(116px, 42vw, 154px);
+  }
+
+  .mobile-nav-toggle {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+  }
+
+  .mobile-nav-panel {
+    left: 0;
+    right: 0;
+  }
+
+  .hero-section {
+    grid-template-columns: 1fr;
+    padding: 34px 16px 52px;
+    gap: 24px;
+  }
+
+  .hero-copy {
+    top: 0;
+  }
+
+  .hero-title {
+    max-width: 100%;
+    font-size: clamp(2.05rem, 8.5vw, 2.85rem);
+    line-height: 1.22;
+    letter-spacing: -0.025em;
+  }
+
+  .hero-title-accent {
+    padding-bottom: 0.14em;
+    line-height: 1.26;
+  }
+
+  .hero-title-line {
+    white-space: normal;
+  }
+
+  .hero-actions,
+  .primary-action,
+  .secondary-action {
+    width: 100%;
+  }
+
+  .primary-action,
+  .secondary-action {
+    min-height: 48px;
+  }
+
+  .hero-visual {
+    width: 100%;
+    min-height: 300px;
+    transform: none;
+  }
+
+  .visual-stage {
+    min-height: 300px;
+  }
+
+  .section-heading {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .capabilities-heading,
+  .about-hero-copy h1,
+  .about-intro h2,
+  .about-values h2,
+  .about-capabilities h2,
+  .about-cta h2 {
+    letter-spacing: 0;
+  }
+
+  .capability-card {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  .capability-card h3,
+  .capability-card p,
+  .capability-tags {
+    max-width: none;
+  }
+
+  .capability-divider {
+    width: 100%;
+    height: 2px;
+    min-height: 2px;
+  }
+
+  .capability-action-block,
+  .capability-tags {
+    justify-items: start;
+    justify-content: flex-start;
+  }
+
+  .chatbot,
+  .contact-form,
+  .contact-details,
+  .policy-panel,
+  .about-info-card,
+  .about-value-card {
+    border-radius: 12px;
+  }
+
+  .chat-form {
+    grid-template-columns: minmax(0, 1fr) 46px;
+  }
+
+  .contact-page {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .contact-heading h1 {
+    letter-spacing: 0;
+  }
+
+  .contact-mode-switch {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-mode-switch button,
+  .contact-submit {
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .topbar {
+    width: calc(100% - 24px);
+  }
+
+  .hero-section {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .hero-title,
+  .hero-video-copy h2,
+  .page-heading h1,
+  .contact-heading h1 {
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .contact-form,
+  .contact-details {
+    padding: 18px;
+  }
+
+  .dashboard-header {
+    min-height: 64px;
+  }
+
+  .dashboard-content {
+    padding: 18px 12px;
   }
 }

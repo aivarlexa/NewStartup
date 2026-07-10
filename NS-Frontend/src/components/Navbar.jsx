@@ -42,9 +42,10 @@ function Navbar() {
         <BrandWordmark className="nav-wordmark" alt="" />
       </Link>
       <div className="nav-links">
-        <Link to="/#platform">Services</Link>
+        <Link className={location.hash === '#platform' ? 'is-active' : ''} to="/#platform">Services</Link>
         <Link className={location.pathname === '/about' ? 'is-active' : ''} to="/about">About</Link>
-        <Link to="/#chatbot">Insights</Link>
+        <Link className={location.hash === '#chatbot' ? 'is-active' : ''} to="/#chatbot">Insights</Link>
+        <Link className={location.pathname === '/contact' ? 'is-active' : ''} to="/contact">Contact</Link>
         <Link
           className={`nav-cta ${location.pathname === '/developer-login' ? 'is-active' : ''}`}
           to="/developer-login"
@@ -67,9 +68,9 @@ function Navbar() {
         id="mobile-navigation-menu"
       >
         <Link to="/#top" onClick={closeMobileMenu}>Home</Link>
-        <Link to="/#platform" onClick={closeMobileMenu}>Services</Link>
+        <Link className={location.hash === '#platform' ? 'is-active' : ''} to="/#platform" onClick={closeMobileMenu}>Services</Link>
         <Link className={location.pathname === '/about' ? 'is-active' : ''} to="/about" onClick={closeMobileMenu}>About</Link>
-        <Link to="/#chatbot" onClick={closeMobileMenu}>Insights</Link>
+        <Link className={location.hash === '#chatbot' ? 'is-active' : ''} to="/#chatbot" onClick={closeMobileMenu}>Insights</Link>
         <Link className={location.pathname === '/contact' ? 'is-active' : ''} to="/contact" onClick={closeMobileMenu}>Connect With Us</Link>
         <Link
           className={`mobile-nav-cta ${location.pathname === '/developer-login' ? 'is-active' : ''}`}

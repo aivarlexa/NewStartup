@@ -31,8 +31,8 @@ function ContactForm() {
 
   useEffect(() => {
     if (contactMode !== 'booking' || !bookingValues.date) {
-      setSlots([])
-      return undefined
+      const timeoutId = window.setTimeout(() => setSlots([]), 0)
+      return () => window.clearTimeout(timeoutId)
     }
 
     const controller = new AbortController()
