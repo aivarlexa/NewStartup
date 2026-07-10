@@ -157,11 +157,11 @@
 .hero-section {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 520px;
+  grid-template-columns: 1fr min(680px, 48vw);
   align-items: center;
-  gap: 110px;
+  gap: 90px;
   width: 100%;
-  min-height: min(720px, calc(100svh - 78px));
+  min-height: min(780px, calc(100svh - 78px));
   margin: 0 auto;
   padding: 54px max(24px, calc((100vw - 1180px) / 2)) 48px;
   overflow: hidden;
@@ -416,7 +416,7 @@ h1 {
 
 .creator-dial {
   position: relative;
-  width: min(920px, 94vw);
+  width: min(1100px, 96vw);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -433,14 +433,12 @@ h1 {
 .dial-track {
   fill: none;
   stroke: rgba(255, 255, 255, 0.14);
-  stroke-width: 1;
-}
+    stroke-width: 2.5;
+  }
 
-.dial-track-inner {
-  stroke: rgba(94, 247, 200, 0.2);
-}
-
-.dial-label {
+  .dial-track-inner {
+    stroke: rgba(94, 247, 200, 0.2);
+    stroke-width: 2.5;
   fill: rgba(226, 232, 240, 0.82);
   font-family: "Trebuchet MS", Arial, sans-serif;
   font-size: 11px;
@@ -656,6 +654,11 @@ h1 {
   .hero-neural-svg {
     opacity: 0.36;
   }
+
+  .hero-section {
+    grid-template-columns: 1fr min(620px, 44vw);
+    gap: 70px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -804,7 +807,7 @@ h3 {
   position: relative;
   z-index: 2;
   display: grid;
-  min-height: 500px;
+  min-height: 620px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
@@ -843,6 +846,7 @@ h3 {
 .visual-stage {
   position: relative;
   z-index: 2;
+  min-height: 620px;
 }
 
 .chat-header {
@@ -2766,12 +2770,12 @@ h3 {
   }
 
   .hero-visual {
-    min-height: 460px;
+    min-height: 520px;
     transform: none;
   }
 
   .visual-stage {
-    min-height: 460px;
+    min-height: 520px;
   }
 
   .hero-visual:hover {
@@ -3396,7 +3400,7 @@ h3 {
 .creator-dial {
   position: relative;
   z-index: 3;
-  width: min(420px, 84%);
+  width: min(520px, 84%);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -3413,11 +3417,12 @@ h3 {
 .dial-track {
   fill: none;
   stroke: rgba(255, 255, 255, 0.14);
-  stroke-width: 1;
+  stroke-width: 2.5;
 }
 
 .dial-track-inner {
   stroke: rgba(94, 247, 200, 0.2);
+  stroke-width: 2.5;
 }
 
 .dial-label {
@@ -3500,6 +3505,10 @@ h3 {
     bottom: 64px;
   }
 
+  .creator-dial {
+    width: min(560px, 90vw);
+  }
+
   .dial-label {
     font-size: 9px;
     letter-spacing: 0.18em;
@@ -3512,7 +3521,7 @@ h3 {
 
 @media (max-width: 430px) {
   .creator-dial {
-    width: min(300px, 88%);
+    width: min(360px, 88%);
   }
 }
 
