@@ -28,20 +28,34 @@
 }
 
 html {
+  width: 100%;
+  overflow-x: clip;
   scroll-behavior: smooth;
   background: var(--bg);
 }
 
 body {
+  width: 100%;
   min-width: 320px;
   min-height: 100svh;
   margin: 0;
+  overflow-x: clip;
   background: var(--bg);
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
 }
 
 button:focus-visible,
