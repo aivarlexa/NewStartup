@@ -74,13 +74,14 @@ const INTRO_TIMING = {
   mark: 1050, // logo + swipe-line + progress count
   pulse: 550, // logo fades, single dot remains
   flare: 780, // dot blooms into a lens flare
-  dial: 3200, // the creator dial resolves out of the flare and spins for a while
-  reveal: 620, // whole overlay fades away to reveal the real hero
+  dial: 3000, // the creator dial resolves out of the flare and has time to breathe
+  reveal: 780, // whole overlay fades away to reveal the real hero
 }
 
 function Hero() {
   const heroRef = useRef(null)
   const introScrollUnlockRef = useRef(null)
+  const centerVideoRef = useRef(null)
   const [isHeroVideoVisible, setIsHeroVideoVisible] = useState(false)
   const [introStage, setIntroStage] = useState('mark')
   const [introPercent, setIntroPercent] = useState(0)
@@ -105,13 +106,11 @@ function Hero() {
     }
     rafId = requestAnimationFrame(tickProgress)
 
-    const stageOrder = ['pulse', 'flare', 'dial', 'reveal', 'done']
+    const stageOrder = ['pulse', 'flare', 'dial']
     const stageDelays = [
       INTRO_TIMING.mark,
       INTRO_TIMING.mark + INTRO_TIMING.pulse,
       INTRO_TIMING.mark + INTRO_TIMING.pulse + INTRO_TIMING.flare,
-      INTRO_TIMING.mark + INTRO_TIMING.pulse + INTRO_TIMING.flare + INTRO_TIMING.dial,
-      INTRO_TIMING.mark + INTRO_TIMING.pulse + INTRO_TIMING.flare + INTRO_TIMING.dial + INTRO_TIMING.reveal,
     ]
     const timers = stageOrder.map((stage, index) => setTimeout(() => setIntroStage(stage), stageDelays[index]))
 
@@ -121,6 +120,49 @@ function Hero() {
     }
   }, [])
 
+  useEffect(() => {
+    const videoElement = centerVideoRef.current
+    if (!videoElement) {
+      return undefined
+    }
+
+    if (introStage === 'flare') {
+      videoElement.load()
+      return undefined
+    }
+
+    if (introStage !== 'dial') {
+      return undefined
+    }
+
+    const revealTimer = setTimeout(() => setIntroStage('reveal'), INTRO_TIMING.dial)
+    const startVideo = () => {
+      videoElement.playbackRate = 1.25
+      videoElement.currentTime = 0
+      videoElement.play().catch(() => {})
+    }
+
+    if (videoElement.readyState >= 1) {
+      startVideo()
+    } else {
+      videoElement.addEventListener('loadedmetadata', startVideo, { once: true })
+      videoElement.load()
+    }
+
+    return () => {
+      clearTimeout(revealTimer)
+      videoElement.removeEventListener('loadedmetadata', startVideo)
+    }
+  }, [introStage])
+
+  useEffect(() => {
+    if (introStage !== 'reveal') {
+      return undefined
+    }
+
+    const doneTimer = setTimeout(() => setIntroStage('done'), INTRO_TIMING.reveal)
+    return () => clearTimeout(doneTimer)
+  }, [introStage])
   // Lock page scroll on mount; unlock when intro finishes.
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -182,6 +224,7 @@ function Hero() {
 
     return undefined
   }, [introStage])
+
 
   useEffect(() => {
     function updateHeroVideo() {
@@ -297,9 +340,17 @@ function Hero() {
                 <path className="dial-arrow dial-arrow-inner" d="M210,85 l7,14 l-14,2 z" transform="rotate(90 210 210)" />
                 <path className="dial-arrow dial-arrow-inner" d="M210,85 l7,14 l-14,2 z" transform="rotate(270 210 210)" />
               </svg>
+
               <div className="creator-dial-center">
                 <div className="lens-glass">
-                  <video className="lens-video" autoPlay muted loop playsInline>
+                  <video
+                    className="lens-video"
+                    ref={centerVideoRef}
+                    muted
+                    loop
+                    playsInline
+                    preload="auto"
+                  >
                     <source src="/media/dial-video.mp4" type="video/mp4" />
                   </video>
                   <span className="lens-highlight" />
@@ -307,8 +358,6 @@ function Hero() {
               </div>
             </div>
           </div>
-
-          <p className="hero-intro-caption">AI Solutions &amp; Software Engineering</p>
         </div>
       )}
 
