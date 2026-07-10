@@ -185,11 +185,11 @@ function Hero() {
             <div className="creator-dial">
               <svg className="creator-dial-svg" viewBox="0 0 420 420" aria-hidden="true">
                 <defs>
-                  <path id="dial-ring-outer" d="M210,32 a178,178 0 1,1 -0.1,0" />
-                  <path id="dial-ring-inner" d="M210,94 a116,116 0 1,1 -0.1,0" />
+                  <path id="dial-ring-outer" d="M210,22 a188,188 0 1,1 -0.1,0" />
+                  <path id="dial-ring-inner" d="M210,82 a128,128 0 1,1 -0.1,0" />
                 </defs>
-                <circle className="dial-track dial-track-outer" cx="210" cy="210" r="178" />
-                <circle className="dial-track dial-track-inner" cx="210" cy="210" r="116" />
+                <circle className="dial-track dial-track-outer" cx="210" cy="210" r="400" />
+                <circle className="dial-track dial-track-inner" cx="210" cy="210" r="250" />
 
                 {DIAL_SEGMENTS.map((segment) => (
                   <text key={segment.id} className="dial-label">
