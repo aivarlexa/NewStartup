@@ -74,7 +74,7 @@ const INTRO_TIMING = {
   mark: 1050, // logo + swipe-line + progress count
   pulse: 550, // logo fades, single dot remains
   flare: 780, // dot blooms into a lens flare
-  dial: 3000, // the creator dial resolves out of the flare and has time to breathe
+  dial: 3700, // the creator dial resolves out of the flare and has time to breathe
   reveal: 780, // whole overlay fades away to reveal the real hero
 }
 
@@ -126,21 +126,25 @@ function Hero() {
       return undefined
     }
 
-    if (introStage === 'flare') {
-      videoElement.load()
+    videoElement.load()
+    return undefined
+  }, [])
+
+  useEffect(() => {
+    const videoElement = centerVideoRef.current
+    if (!videoElement || introStage !== 'dial') {
       return undefined
     }
 
-    if (introStage !== 'dial') {
-      return undefined
-    }
-
-    const revealTimer = setTimeout(() => setIntroStage('reveal'), INTRO_TIMING.dial)
+    const finishIntro = () => setIntroStage('reveal')
+    const revealTimer = setTimeout(finishIntro, INTRO_TIMING.dial)
     const startVideo = () => {
-      videoElement.playbackRate = 1.25
+      videoElement.playbackRate = 1
       videoElement.currentTime = 0
       videoElement.play().catch(() => {})
     }
+
+    videoElement.addEventListener('ended', finishIntro, { once: true })
 
     if (videoElement.readyState >= 1) {
       startVideo()
@@ -151,6 +155,7 @@ function Hero() {
 
     return () => {
       clearTimeout(revealTimer)
+      videoElement.removeEventListener('ended', finishIntro)
       videoElement.removeEventListener('loadedmetadata', startVideo)
     }
   }, [introStage])
@@ -347,7 +352,6 @@ function Hero() {
                     className="lens-video"
                     ref={centerVideoRef}
                     muted
-                    loop
                     playsInline
                     preload="auto"
                   >

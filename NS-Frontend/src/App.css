@@ -461,10 +461,6 @@ h1 {
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  filter:
-    drop-shadow(0 0 48px rgba(94, 247, 200, 0.22))
-    drop-shadow(0 0 120px rgba(120, 168, 255, 0.14))
-    drop-shadow(0 0 180px rgba(179, 137, 255, 0.08));
 }
 
 .hero-intro-dial-wrap .creator-dial::before {
@@ -473,7 +469,7 @@ h1 {
   inset: -8%;
   border-radius: 50%;
   background:
-    radial-gradient(circle, rgba(94, 247, 200, 0.14) 0%, rgba(120, 168, 255, 0.08) 38%, transparent 72%);
+    radial-gradient(circle, rgba(94, 247, 200, 0.2) 0%, rgba(120, 168, 255, 0.1) 38%, transparent 72%);
   pointer-events: none;
   animation: dialAuraPulse 4.5s ease-in-out infinite alternate;
 }
@@ -486,11 +482,6 @@ h1 {
   transform-origin: 50% 50%;
 }
 
-.hero-intro-dial-wrap .dial-track-halo,
-.hero-intro-dial-wrap .dial-track-outer,
-.hero-intro-dial-wrap .dial-track-inner {
-  filter: url(#dialRingGlow);
-}
 
 .hero-intro-dial-wrap .dial-track-halo {
   fill: none;
@@ -617,6 +608,7 @@ h1 {
   place-items: center;
   border-radius: 50%;
   overflow: hidden;
+  contain: layout paint;
   background: conic-gradient(
     from 200deg,
     rgba(255, 255, 255, 0.28),
@@ -638,6 +630,7 @@ h1 {
   height: 100%;
   overflow: hidden;
   border-radius: 50%;
+  clip-path: circle(50% at 50% 50%);
   background: #05070b;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06);
 }
@@ -651,9 +644,8 @@ h1 {
   display: block;
   object-fit: cover;
   object-position: center center;
-  border-radius: 50%;
   transform: translateZ(0);
-  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .lens-highlight {
@@ -665,7 +657,6 @@ h1 {
   height: 15%;
   border-radius: 50%;
   background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.42), transparent 72%);
-  filter: blur(2px);
   transform: rotate(-20deg);
   opacity: 0.6;
   pointer-events: none;
