@@ -74,15 +74,26 @@ const INTRO_TIMING = {
   mark: 1050, // logo + swipe-line + progress count
   pulse: 550, // logo fades, single dot remains
   flare: 780, // dot blooms into a lens flare
-  dial: 3700, // the creator dial resolves out of the flare and has time to breathe
   reveal: 780, // whole overlay fades away to reveal the real hero
 }
+
+const DIAL_VIDEO_SRC = '/media/dial-video.mp4'
+const DIAL_VIDEO_VISIBLE_DELAY = 0
+const DIAL_VIDEO_PLAY_DURATION = 2700
+const DIAL_VIDEO_PLAYBACK_RATE = 1.5
+const DIAL_VIDEO_START_TIME = 1.15
+const DIAL_VIDEO_INTERVIEW_START_TIME = 9.2
+const DIAL_VIDEO_READY_TIME = DIAL_VIDEO_START_TIME + 0.08
+const DIAL_VIDEO_SKIP_RANGES = [
+  { start: 3.1, end: DIAL_VIDEO_INTERVIEW_START_TIME },
+]
 
 function Hero() {
   const heroRef = useRef(null)
   const introScrollUnlockRef = useRef(null)
   const centerVideoRef = useRef(null)
   const [isHeroVideoVisible, setIsHeroVideoVisible] = useState(false)
+  const [isDialVideoPlaying, setIsDialVideoPlaying] = useState(false)
   const [introStage, setIntroStage] = useState('mark')
   const [introPercent, setIntroPercent] = useState(0)
 
@@ -136,27 +147,117 @@ function Hero() {
       return undefined
     }
 
-    const finishIntro = () => setIntroStage('reveal')
-    const revealTimer = setTimeout(finishIntro, INTRO_TIMING.dial)
+    setIsDialVideoPlaying(false)
+
+    let hasPreparedVideo = false
+    let hasStartedVideo = false
+    let hasFinishedIntro = false
+    let hasShownVideo = false
+    const skippedRanges = new Set()
+    let startTimer
+    let revealTimer
+
+    const finishIntro = () => {
+      if (hasFinishedIntro) {
+        return
+      }
+
+      hasFinishedIntro = true
+      setIntroStage('reveal')
+    }
+    const rewindVideo = () => {
+      videoElement.pause()
+      try {
+        videoElement.currentTime = DIAL_VIDEO_START_TIME
+      } catch {
+        // Metadata may still be loading; loadedmetadata retries the seek.
+      }
+      videoElement.playbackRate = DIAL_VIDEO_PLAYBACK_RATE
+    }
+
+    const showDialVideo = () => {
+      if (hasShownVideo) {
+        return
+      }
+
+      hasShownVideo = true
+      setIsDialVideoPlaying(true)
+    }
+
+    const scheduleReveal = (delay = DIAL_VIDEO_PLAY_DURATION) => {
+      clearTimeout(revealTimer)
+      revealTimer = setTimeout(finishIntro, delay)
+    }
+
     const startVideo = () => {
-      videoElement.playbackRate = 1
-      videoElement.currentTime = 0
+      if (hasStartedVideo) {
+        return
+      }
+
+      hasStartedVideo = true
+      videoElement.playbackRate = DIAL_VIDEO_PLAYBACK_RATE
+      scheduleReveal()
       videoElement.play().catch(() => {})
     }
 
+    const queueStartVideo = () => {
+      if (hasStartedVideo) {
+        return
+      }
+
+      clearTimeout(startTimer)
+      startTimer = setTimeout(startVideo, DIAL_VIDEO_VISIBLE_DELAY)
+    }
+
+    const handleTimeUpdate = () => {
+      if (videoElement.currentTime >= DIAL_VIDEO_READY_TIME) {
+        showDialVideo()
+      }
+
+      const skipIndex = DIAL_VIDEO_SKIP_RANGES.findIndex((range, index) => (
+        !skippedRanges.has(index) &&
+        videoElement.currentTime >= range.start &&
+        videoElement.currentTime < range.end
+      ))
+
+      if (skipIndex !== -1) {
+        skippedRanges.add(skipIndex)
+        videoElement.currentTime = DIAL_VIDEO_SKIP_RANGES[skipIndex].end
+      }
+    }
+
+    const handleLoadedMetadata = () => {
+      if (hasPreparedVideo) {
+        return
+      }
+
+      hasPreparedVideo = true
+      rewindVideo()
+      clearTimeout(revealTimer)
+    }
+
+    videoElement.addEventListener('timeupdate', handleTimeUpdate)
+    videoElement.addEventListener('seeked', queueStartVideo)
+    videoElement.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true })
     videoElement.addEventListener('ended', finishIntro, { once: true })
 
+    videoElement.src = DIAL_VIDEO_SRC
+    videoElement.load()
+    scheduleReveal(DIAL_VIDEO_VISIBLE_DELAY + DIAL_VIDEO_PLAY_DURATION)
+
     if (videoElement.readyState >= 1) {
-      startVideo()
-    } else {
-      videoElement.addEventListener('loadedmetadata', startVideo, { once: true })
-      videoElement.load()
+      handleLoadedMetadata()
     }
 
     return () => {
+      clearTimeout(startTimer)
       clearTimeout(revealTimer)
+      videoElement.pause()
+      setIsDialVideoPlaying(false)
+      videoElement.removeEventListener('timeupdate', handleTimeUpdate)
+      videoElement.removeEventListener('seeked', queueStartVideo)
       videoElement.removeEventListener('ended', finishIntro)
-      videoElement.removeEventListener('loadedmetadata', startVideo)
+      videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata)
     }
   }, [introStage])
 
@@ -349,13 +450,13 @@ function Hero() {
               <div className="creator-dial-center">
                 <div className="lens-glass">
                   <video
-                    className="lens-video"
+                    className={`lens-video ${isDialVideoPlaying ? 'is-playing' : ''}`}
                     ref={centerVideoRef}
                     muted
                     playsInline
                     preload="auto"
                   >
-                    <source src="/media/dial-video.mp4" type="video/mp4" />
+                    <source src={DIAL_VIDEO_SRC} type="video/mp4" />
                   </video>
                   <span className="lens-highlight" />
                 </div>
