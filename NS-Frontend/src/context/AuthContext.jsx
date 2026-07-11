@@ -3,27 +3,39 @@ import { createContext, useState } from 'react';
 const AuthContext = createContext();
 
 function getStoredUser() {
-  const storedUser = localStorage.getItem('user');
+  const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
 
-  if (!storedUser) {
-    return null;
-  }
+  if (!storedUser) return null;
 
   try {
     return JSON.parse(storedUser);
   } catch {
     localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
     return null;
   }
 }
 
+export function getDashboardPath(role) {
+  return role === 'Client' ? '/client/dashboard' : '/developer/dashboard';
+}
+
+export function getLoginPath(role) {
+  return role === 'Client' ? '/client/login' : '/developer/login';
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getStoredUser);
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [token, setToken] = useState(() => localStorage.getItem('token') || sessionStorage.getItem('token'));
 
-  const login = (userData, authToken) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('token', authToken);
+  const login = (userData, authToken, remember = true) => {
+    const storage = remember ? localStorage : sessionStorage;
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    storage.setItem('user', JSON.stringify(userData));
+    storage.setItem('token', authToken);
     setUser(userData);
     setToken(authToken);
   };
@@ -31,15 +43,13 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('token');
     setUser(null);
     setToken(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, token, login, logout }}>{children}</AuthContext.Provider>;
 };
 
 export default AuthContext;

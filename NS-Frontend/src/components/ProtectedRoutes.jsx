@@ -1,11 +1,20 @@
 import { useContext } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
-import AuthContext from '../context/AuthContext';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import AuthContext, { getDashboardPath, getLoginPath } from '../context/AuthContext';
 
-function ProtectedRoutes() {
-  const { token } = useContext(AuthContext);
+function ProtectedRoutes({ role = 'Developer' }) {
+  const { token, user } = useContext(AuthContext);
+  const location = useLocation();
 
-  return token ? <Outlet /> : <Navigate to="/developer-login" />;
+  if (!token) {
+    return <Navigate to={getLoginPath(role)} replace state={{ from: location }} />;
+  }
+
+  if (user?.role !== role) {
+    return <Navigate to={getDashboardPath(user?.role)} replace />;
+  }
+
+  return <Outlet />;
 }
 
 export default ProtectedRoutes;

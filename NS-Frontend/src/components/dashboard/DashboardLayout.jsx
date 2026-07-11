@@ -21,13 +21,13 @@ import AuthContext from '../../context/AuthContext';
 import api from '../../services/api';
 
 const dashboardNav = [
-  { label: 'Overview', to: '/developer-dashboard', icon: LayoutDashboard, end: true },
-  { label: 'My Projects', to: '/developer-dashboard/projects', icon: Briefcase },
-  { label: 'Team Chat', to: '/developer-dashboard/team-chat', icon: MessagesSquare },
-  { label: 'Client Chat', to: '/developer-dashboard/client-chat', icon: MessageCircle },
-  { label: 'Meetings', to: '/developer-dashboard/meetings', icon: CalendarDays },
-  { label: 'AI Developer', to: '/developer-dashboard/ai-assistant', icon: Bot },
-  { label: 'Profile', to: '/developer-dashboard/profile', icon: User },
+  { label: 'Overview', to: '/developer/dashboard', icon: LayoutDashboard, end: true },
+  { label: 'My Projects', to: '/developer/dashboard/projects', icon: Briefcase },
+  { label: 'Team Chat', to: '/developer/dashboard/team-chat', icon: MessagesSquare },
+  { label: 'Client Chat', to: '/developer/dashboard/client-chat', icon: MessageCircle },
+  { label: 'Meetings', to: '/developer/dashboard/meetings', icon: CalendarDays },
+  { label: 'AI Developer', to: '/developer/dashboard/ai-assistant', icon: Bot },
+  { label: 'Profile', to: '/developer/dashboard/profile', icon: User },
 ]
 
 function DashboardLayout() {
@@ -54,7 +54,7 @@ function DashboardLayout() {
     return () => document.body.classList.remove('dashboard-mode');
   }, []); // Empty dependency array ensures this runs once on mount
 
-  const canGoBack = location.pathname !== '/developer-dashboard';
+  const canGoBack = location.pathname !== '/developer/dashboard';
 
   function handleBack() {
     if (window.history.length > 1) {
@@ -62,12 +62,12 @@ function DashboardLayout() {
       return;
     }
 
-    navigate('/developer-dashboard');
+    navigate('/developer/dashboard');
   }
 
   function handleLogout() {
     logout();
-    navigate('/developer-login');
+    navigate('/developer/login');
   }
 
   function openNotifications() {
@@ -79,7 +79,7 @@ function DashboardLayout() {
     <section className="developer-dashboard">
       <aside className={`dashboard-sidebar ${isSidebarOpen ? 'is-open' : ''}`}>
         <div className="dashboard-sidebar-head">
-          <Link to="/developer-dashboard" aria-label="Varlexa AI Developer Dashboard">
+          <Link to="/developer/dashboard" aria-label="Varlexa AI Developer Dashboard">
             <BrandWordmark className="dashboard-wordmark" alt="VARLEXA AI" />
           </Link>
           <button className="dashboard-icon-button mobile-close" type="button" onClick={() => setIsSidebarOpen(false)} aria-label="Close dashboard menu">
@@ -144,7 +144,7 @@ function DashboardLayout() {
               <Bell size={18} />
               {unreadCount > 0 && <span>{unreadCount}</span>}
             </button>
-            <Link className="dashboard-profile-pill" to="/developer-dashboard/profile">
+            <Link className="dashboard-profile-pill" to="/developer/dashboard/profile">
               <ShieldCheck size={17} />
               <span>{user?.name || 'Developer'}</span>
             </Link>
@@ -172,4 +172,5 @@ function DashboardLayout() {
 }
 
 export default DashboardLayout
+
 

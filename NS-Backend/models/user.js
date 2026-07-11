@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
+      trim: true,
     },
 
     password: {
@@ -30,6 +31,41 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    phone: {
+      type: String,
+      default: "",
+    },
+
+    companyName: {
+      type: String,
+      default: "",
+    },
+
+    address: {
+      type: String,
+      default: "",
+    },
+
+    website: {
+      type: String,
+      default: "",
+    },
+
+    linkedin: {
+      type: String,
+      default: "",
+    },
+
+    bio: {
+      type: String,
+      default: "",
+    },
+
+    preferredTechnologies: {
+      type: [String],
+      default: [],
+    },
+
     role: {
       type: String,
       enum: [
@@ -41,6 +77,19 @@ const userSchema = new mongoose.Schema(
         "Other",
       ],
       default: "Client",
+    },
+
+    settings: {
+      theme: { type: String, enum: ["dark", "light"], default: "dark" },
+      language: { type: String, default: "English" },
+      privacy: { type: String, default: "standard" },
+      accountSecurity: { type: String, default: "standard" },
+      notifications: {
+        email: { type: Boolean, default: true },
+        messages: { type: Boolean, default: true },
+        meetings: { type: Boolean, default: true },
+        projectUpdates: { type: Boolean, default: true },
+      },
     },
   },
   {

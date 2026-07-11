@@ -6,7 +6,7 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -34,3 +34,4 @@ export async function getAvailableSlots(date, duration) {
 }
 
 export default api
+

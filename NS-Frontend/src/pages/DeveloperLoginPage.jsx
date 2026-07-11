@@ -1,6 +1,6 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthContext from '../context/AuthContext';
+import AuthContext, { getDashboardPath } from '../context/AuthContext';
 import { GoogleLogin } from "@react-oauth/google";
 import {
   ArrowLeft,
@@ -11,7 +11,6 @@ import {
   LoaderCircle,
   Shield,
   User,
-  BriefcaseBusiness,
   MoreVertical,
   CircleDot,
 } from 'lucide-react';
@@ -20,37 +19,24 @@ import PasswordInput from '../components/PasswordInput';
 import api, { getApiErrorMessage } from '../services/api';
 import './DeveloperLoginPage.css';
 
-const ROLE_OPTIONS = [
-  'Client',
-  'Business Owner',
-  'Project Manager',
-  'Designer',
-  'Developer',
-  'Other',
-];
-
-function DeveloperLoginPage() {
+function DeveloperLoginPage({ role = 'Developer' }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [authMode, setAuthMode] = useState('signup');
+  const [authMode, setAuthMode] = useState('signin');
   const [isFormSwitching, setIsFormSwitching] = useState(false);
   const [switchDirection, setSwitchDirection] = useState('idle');
-  const [signupValues, setSignupValues] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: '',
-  });
+  const [signupValues, setSignupValues] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [signupSuccess, setSignupSuccess] = useState('');
   const [signinNotice, setSigninNotice] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const dashboardPath = getDashboardPath(role);
+  const roleLabel = role.toLowerCase();
 
   function handleBack() {
     if (window.history.length > 1) {
@@ -61,55 +47,43 @@ function DeveloperLoginPage() {
     navigate('/');
   }
 
-  const validateForm = () => {
+  function validateForm() {
     const newErrors = {};
-    if (!email) {
-      newErrors.email = 'Email is required.';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email must be valid.';
-    }
-    if (!password) {
-      newErrors.password = 'Password is required.';
-    }
+    if (!email) newErrors.email = 'Email is required.';
+    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Email must be valid.';
+    if (!password) newErrors.password = 'Password is required.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  async function handleLogin(event) {
+    event.preventDefault();
     if (!validateForm()) return;
 
     setIsLoading(true);
 
-    // Temporary frontend demo login
-    if (email === 'developer@varlexa.ai' && password === 'varlexa123') {
-      setTimeout(() => {
-        login({ name: 'Demo User', role: 'Developer' }, 'demo-token');
+    if (role === 'Developer' && email === 'developer@varlexa.ai' && password === 'varlexa123') {
+      window.setTimeout(() => {
+        login({ name: 'Demo User', email, role: 'Developer' }, 'demo-token', rememberMe);
         setIsLoading(false);
         setIsSuccess(true);
-        setTimeout(() => navigate('/developer-dashboard'), 1000);
-      }, 1500);
+        window.setTimeout(() => navigate(dashboardPath), 1000);
+      }, 900);
       return;
     }
 
     try {
-      const { data } = await api.post('/auth/login', { email, password });
-
-      if (data.success) {
-        const { user, token } = data;
-        login(user, token);
-        setIsLoading(false);
-        setIsSuccess(true);
-        setTimeout(() => navigate('/developer-dashboard'), 1000);
-      } else {
-        setErrors({ form: 'Invalid email or password.' });
-        setIsLoading(false);
-      }
+      const { data } = await api.post('/auth/login', { email, password, role });
+      if (!data.success) throw new Error(data.message || 'Invalid email or password.');
+      login(data.user, data.token, rememberMe);
+      setIsSuccess(true);
+      window.setTimeout(() => navigate(getDashboardPath(data.user.role)), 700);
     } catch (error) {
-      setErrors({ form: getApiErrorMessage(error, 'An error occurred. Please try again later.') });
+      setErrors({ form: getApiErrorMessage(error, error.message || 'An error occurred. Please try again later.') });
+    } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   function switchMode(nextMode) {
     if (authMode === nextMode || isFormSwitching) return;
@@ -119,9 +93,7 @@ function DeveloperLoginPage() {
     setErrors({});
     setSignupSuccess('');
     setSigninNotice('');
-    window.setTimeout(() => {
-      setAuthMode(nextMode);
-    }, 260);
+    window.setTimeout(() => setAuthMode(nextMode), 260);
     window.setTimeout(() => {
       setIsFormSwitching(false);
       setSwitchDirection('idle');
@@ -138,25 +110,12 @@ function DeveloperLoginPage() {
     const trimmedName = signupValues.name.trim();
     const trimmedEmail = signupValues.email.trim();
 
-    if (!trimmedName) {
-      newErrors.name = 'Full Name is required.';
-    }
-    if (!trimmedEmail) {
-      newErrors.signupEmail = 'Email is required.';
-    } else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
-      newErrors.signupEmail = 'Email must be valid.';
-    }
-    if (!signupValues.password) {
-      newErrors.signupPassword = 'Password is required.';
-    } else if (signupValues.password.length < 8) {
-      newErrors.signupPassword = 'Password must be at least 8 characters.';
-    }
-    if (signupValues.confirmPassword !== signupValues.password) {
-      newErrors.confirmPassword = 'Confirm Password must match Password.';
-    }
-    if (!signupValues.role) {
-      newErrors.role = 'Role is required.';
-    }
+    if (!trimmedName) newErrors.name = 'Full Name is required.';
+    if (!trimmedEmail) newErrors.signupEmail = 'Email is required.';
+    else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) newErrors.signupEmail = 'Email must be valid.';
+    if (!signupValues.password) newErrors.signupPassword = 'Password is required.';
+    else if (signupValues.password.length < 8) newErrors.signupPassword = 'Password must be at least 8 characters.';
+    if (signupValues.confirmPassword !== signupValues.password) newErrors.confirmPassword = 'Confirm Password must match Password.';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -174,51 +133,54 @@ function DeveloperLoginPage() {
         name: signupValues.name.trim(),
         email: signupValues.email.trim(),
         password: signupValues.password,
-        role: signupValues.role,
+        role,
       });
 
-      if (data.success) {
-        const registeredEmail = signupValues.email.trim();
-        setSignupSuccess('Account created successfully.');
-        setSignupValues({
-          name: '',
-          email: '',
-          password: '',
-          confirmPassword: '',
-          role: '',
-        });
-        window.setTimeout(() => {
-          setEmail(registeredEmail);
-          setPassword('');
-          setSigninNotice('Your account is ready. Please sign in to continue.');
-          setAuthMode('signin');
-          setSignupSuccess('');
-          setErrors({});
-        }, 1100);
-      } else {
-        setErrors({ form: data.message || 'Unable to create account. Please try again.' });
-      }
+      if (!data.success) throw new Error(data.message || 'Unable to create account. Please try again.');
+      const registeredEmail = signupValues.email.trim();
+      setSignupSuccess('Account created successfully.');
+      setSignupValues({ name: '', email: '', password: '', confirmPassword: '' });
+      window.setTimeout(() => {
+        setEmail(registeredEmail);
+        setPassword('');
+        setSigninNotice('Your account is ready. Please sign in to continue.');
+        setAuthMode('signin');
+        setSignupSuccess('');
+        setErrors({});
+      }, 900);
     } catch (error) {
-      setErrors({ form: getApiErrorMessage(error, 'An error occurred. Please try again later.') });
+      setErrors({ form: getApiErrorMessage(error, error.message || 'An error occurred. Please try again later.') });
     } finally {
       setIsRegistering(false);
     }
   }
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      const { data } = await api.post('/auth/google', {
-        token: credentialResponse.credential,
-      });
 
+  async function handleForgotPassword() {
+    if (!email) {
+      setErrors({ email: 'Enter your email first.' });
+      return;
+    }
+
+    try {
+      const { data } = await api.post('/auth/forgot-password', { email, role });
+      setSigninNotice(data.message || 'Password reset instructions will be sent if the account exists.');
+      setErrors({});
+    } catch (error) {
+      setErrors({ form: getApiErrorMessage(error, 'Unable to start password reset.') });
+    }
+  }
+
+  async function handleGoogleSuccess(credentialResponse) {
+    try {
+      const { data } = await api.post('/auth/google', { token: credentialResponse.credential, role });
       if (data.success) {
-        login(data.user, data.token);
-        navigate("/developer-dashboard");
+        login(data.user, data.token, rememberMe);
+        navigate(getDashboardPath(data.user.role));
       }
     } catch (error) {
-      console.error(getApiErrorMessage(error, 'Google Login Failed'));
+      setErrors({ form: getApiErrorMessage(error, 'Google Login Failed') });
     }
-  };
-
+  }
 
   return (
     <div className="login-page">
@@ -238,7 +200,7 @@ function DeveloperLoginPage() {
               <BrandWordmark alt="VARLEXA AI" />
               <div className="secure-label">
                 <Shield size={14} />
-                <span>{authMode === 'signup' ? 'GET STARTED' : 'SECURE ACCESS'}</span>
+                <span>{authMode === 'signup' ? `${role.toUpperCase()} ACCESS` : 'SECURE ACCESS'}</span>
               </div>
             </div>
 
@@ -246,7 +208,7 @@ function DeveloperLoginPage() {
               {authMode === 'signin' ? (
                 <div className={`login-card ${isSuccess ? 'fade-out' : ''}`}>
                   <h1>Sign in</h1>
-                  <p>Enter your workspace credentials to continue.</p>
+                  <p>Enter your {roleLabel} workspace credentials to continue.</p>
                   {signinNotice && <p className="auth-notice">{signinNotice}</p>}
                   <div className="accent-line"></div>
                   <form onSubmit={handleLogin} noValidate>
@@ -266,7 +228,7 @@ function DeveloperLoginPage() {
                         <input type="checkbox" checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} />
                         Remember me
                       </label>
-                      <a href="#" className="forgot-password">Forgot password?</a>
+                      <button className="forgot-password" type="button" onClick={handleForgotPassword}>Forgot password?</button>
                     </div>
                     <button type="submit" className="login-button" disabled={isLoading}>
                       {isLoading ? <LoaderCircle className="spinner" /> : <>Sign in to Workspace <ArrowRight size={20} /></>}
@@ -295,8 +257,8 @@ function DeveloperLoginPage() {
                 </div>
               ) : (
                 <div className="signup-card">
-                  <h1>Create your workspace</h1>
-                  <p>Set up your account and start working with your team.</p>
+                  <h1>Create your {roleLabel} workspace</h1>
+                  <p>Set up your {roleLabel} account and start working securely.</p>
                   <div className="accent-line"></div>
                   <form onSubmit={handleSignup} noValidate>
                     <div className="input-group">
@@ -319,17 +281,6 @@ function DeveloperLoginPage() {
                       <PasswordInput name="confirmPassword" placeholder="Confirm Password" value={signupValues.confirmPassword} onChange={updateSignupField} />
                       {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
                     </div>
-                    <div className="input-group role-group">
-                      <BriefcaseBusiness size={20} />
-                      <select name="role" value={signupValues.role} onChange={updateSignupField} aria-label="Select your role" className={signupValues.role ? '' : 'is-placeholder'}>
-                        <option value="" disabled hidden>Select your role</option>
-                        {ROLE_OPTIONS.map((role) => (
-                          <option key={role} value={role}>{role}</option>
-                        ))}
-                      </select>
-                      <span className="select-label">Select your role</span>
-                      {errors.role && <span className="error-message">{errors.role}</span>}
-                    </div>
                     <button type="submit" className="login-button" disabled={isRegistering}>
                       {isRegistering ? <LoaderCircle className="spinner" /> : <>Continue <ArrowRight size={20} /></>}
                     </button>
@@ -342,10 +293,7 @@ function DeveloperLoginPage() {
                       Sign in
                     </button>
                   </p>
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => console.log("Login Failed")}
-                  />
+                  <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setErrors({ form: 'Google Login Failed' })} />
                   <div className="secure-badge">
                     <ShieldCheck size={17} />
                     <div>
@@ -362,12 +310,8 @@ function DeveloperLoginPage() {
         <aside className="login-cyan-panel">
           <div className="cyan-panel-content">
             <span>VARLEXA AI</span>
-            <h2>
-              Everything.
-              <br />
-              In one place.
-            </h2>
-            <p>Collaborate with your team, manage<br />projects, and move work forward.</p>
+            <h2>{role === 'Client' ? 'Hire.' : 'Build.'}<br />{role === 'Client' ? 'Manage. Grow.' : 'Ship. Grow.'}</h2>
+            <p>{role === 'Client' ? 'Create requirements, schedule meetings, and collaborate with developers.' : 'Collaborate with clients, manage projects, and move work forward.'}</p>
             <div className="status-panel">
               <CircleDot className="status-dot-active" size={12} />
               <div>
@@ -378,18 +322,8 @@ function DeveloperLoginPage() {
             <div className="network-mesh" aria-hidden="true">
               <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-                    <feMerge>
-                      <feMergeNode in="coloredBlur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                  <linearGradient id="meshLineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#31E6E6" />
-                    <stop offset="48%" stopColor="#2E8BFF" />
-                    <stop offset="100%" stopColor="#CC3DFF" />
-                  </linearGradient>
+                  <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur" /><feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                  <linearGradient id="meshLineGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#31E6E6" /><stop offset="48%" stopColor="#2E8BFF" /><stop offset="100%" stopColor="#CC3DFF" /></linearGradient>
                 </defs>
                 <line x1="7%" y1="76%" x2="27%" y2="52%" className="network-line line-pulse-one" />
                 <line x1="27%" y1="52%" x2="51%" y2="68%" className="network-line line-pulse-two" />
@@ -418,7 +352,3 @@ function DeveloperLoginPage() {
 }
 
 export default DeveloperLoginPage;
-
-
-
-

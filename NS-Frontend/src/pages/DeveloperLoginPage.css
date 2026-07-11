@@ -2612,3 +2612,16 @@
 }
 
 
+
+.forgot-password {
+  border: 0;
+  padding: 0;
+  color: #31e6e6;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.forgot-password:hover {
+  color: #f7fafc;
+}
