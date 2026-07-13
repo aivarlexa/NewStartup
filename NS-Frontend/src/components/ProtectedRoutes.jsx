@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import AuthContext, { getDashboardPath, getLoginPath } from '../context/AuthContext';
+import AuthContext from '../context/AuthContext';
+import { getDashboardPath, getLoginPath } from '../context/authRoutes';
 
 function ProtectedRoutes({ role = 'Developer' }) {
   const { token, user } = useContext(AuthContext);

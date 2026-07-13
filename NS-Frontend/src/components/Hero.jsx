@@ -69,13 +69,25 @@ function neuralLinkPath([x1, y1], [x2, y2]) {
 }
 
 // Intro sequence stages, in order. Each stage's duration lives in INTRO_TIMING.
-// mark -> pulse -> flare -> dial -> reveal -> done
+// mark -> beam -> split -> core -> dial -> reveal -> done
 const INTRO_TIMING = {
-  mark: 1050, // logo + swipe-line + progress count
-  pulse: 550, // logo fades, single dot remains
-  flare: 780, // dot blooms into a lens flare
+  mark: 650, // centered logo fades in
+  beam: 420, // diagonal energy beam crosses the E
+  split: 260, // beam halves dissolve outward
+  core: 280, // energy core pulses once at the E
   reveal: 780, // whole overlay fades away to reveal the real hero
 }
+
+const INTRO_PARTICLES = [
+  { id: 'p1', x: '-36%', y: '-42%', delay: '80ms', size: 2 },
+  { id: 'p2', x: '-26%', y: '30%', delay: '210ms', size: 1 },
+  { id: 'p3', x: '-12%', y: '-30%', delay: '340ms', size: 2 },
+  { id: 'p4', x: '8%', y: '36%', delay: '160ms', size: 1 },
+  { id: 'p5', x: '22%', y: '-38%', delay: '280ms', size: 2 },
+  { id: 'p6', x: '36%', y: '18%', delay: '430ms', size: 1 },
+  { id: 'p7', x: '44%', y: '-12%', delay: '520ms', size: 1 },
+  { id: 'p8', x: '-44%', y: '6%', delay: '470ms', size: 1 },
+]
 
 const DIAL_VIDEO_SRC = '/media/dial-video.mp4'
 const DIAL_VIDEO_VISIBLE_DELAY = 0
@@ -94,39 +106,28 @@ function Hero() {
   const centerVideoRef = useRef(null)
   const [isHeroVideoVisible, setIsHeroVideoVisible] = useState(false)
   const [isDialVideoPlaying, setIsDialVideoPlaying] = useState(false)
-  const [introStage, setIntroStage] = useState('mark')
-  const [introPercent, setIntroPercent] = useState(0)
+  const [introStage, setIntroStage] = useState(() => (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'done' : 'mark'
+  ))
 
-  // Intro sequence: logo swipe -> loading dot -> lens flare -> dial -> reveal hero
+  // Intro sequence: centered logo -> beam -> split -> core -> dial -> reveal hero
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReducedMotion) {
-      setIntroStage('done')
-      return
+      return undefined
     }
 
-    let rafId
-    const startedAt = performance.now()
-    function tickProgress(now) {
-      const elapsed = now - startedAt
-      const percent = Math.min(100, Math.round((elapsed / INTRO_TIMING.mark) * 100))
-      setIntroPercent(percent)
-      if (percent < 100) {
-        rafId = requestAnimationFrame(tickProgress)
-      }
-    }
-    rafId = requestAnimationFrame(tickProgress)
 
-    const stageOrder = ['pulse', 'flare', 'dial']
+    const stageOrder = ['beam', 'split', 'core', 'dial']
     const stageDelays = [
       INTRO_TIMING.mark,
-      INTRO_TIMING.mark + INTRO_TIMING.pulse,
-      INTRO_TIMING.mark + INTRO_TIMING.pulse + INTRO_TIMING.flare,
+      INTRO_TIMING.mark + INTRO_TIMING.beam,
+      INTRO_TIMING.mark + INTRO_TIMING.beam + INTRO_TIMING.split,
+      INTRO_TIMING.mark + INTRO_TIMING.beam + INTRO_TIMING.split + INTRO_TIMING.core,
     ]
     const timers = stageOrder.map((stage, index) => setTimeout(() => setIntroStage(stage), stageDelays[index]))
 
     return () => {
-      cancelAnimationFrame(rafId)
       timers.forEach(clearTimeout)
     }
   }, [])
@@ -389,14 +390,29 @@ function Hero() {
       {introStage !== 'done' && (
         <div className={`hero-intro stage-${introStage}`} aria-hidden="true">
           <div className="hero-intro-mark">
+            <span className="hero-intro-ambient" />
             <BrandWordmark className="intro-wordmark" alt="VARLEXA AI" />
-            <span className="hero-intro-swipe" />
+            <span className="intro-e-glow" />
+            <span className="intro-core" />
           </div>
-          <span className="hero-intro-dot" />
+          <span className="intro-particle-field">
+            {INTRO_PARTICLES.map((particle) => (
+              <span
+                key={particle.id}
+                className="intro-particle"
+                style={{
+                  '--particle-x': particle.x,
+                  '--particle-y': particle.y,
+                  '--particle-delay': particle.delay,
+                  '--particle-size': `${particle.size}px`,
+                }}
+              />
+            ))}
+          </span>
+          <span className="intro-beam intro-beam-main" />
+          <span className="intro-beam intro-beam-return" />
+          <span className="intro-beam-sparks" />
           <span className="hero-intro-flare-rays" />
-          {introStage === 'mark' && (
-            <span className="hero-intro-progress">{String(introPercent).padStart(2, '0')}</span>
-          )}
 
           <div className="hero-intro-dial-wrap">
             <div className="creator-dial">

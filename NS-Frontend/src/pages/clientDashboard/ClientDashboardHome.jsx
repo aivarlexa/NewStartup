@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Bell, Briefcase, CalendarDays, CheckCircle2, Clock, MessageCircle } from 'lucide-react'
-import api, { getApiErrorMessage } from '../../services/api'
+import api from '../../services/api'
 
 const cards = [
   ['activeProjects', 'Active Projects', Briefcase],

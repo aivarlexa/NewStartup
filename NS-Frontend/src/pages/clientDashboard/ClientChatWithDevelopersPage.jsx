@@ -149,7 +149,7 @@ function ClientChatWithDevelopersPage() {
           <div className="dashboard-chat-messages">
             {messages.map((message) => (
               <article className="dashboard-chat-message own" key={message._id || message.id}>
-                <span>ME</span><div><strong>You <small>{new Date(message.createdAt || Date.now()).toLocaleTimeString()}</small></strong><p>{message.text}{message.emoji}</p><em>Sent · Read receipts enabled</em></div>
+                <span>ME</span><div><strong>You <small>{message.createdAt ? new Date(message.createdAt).toLocaleTimeString() : 'Just now'}</small></strong><p>{message.text}{message.emoji}</p><em>Sent · Read receipts enabled</em></div>
               </article>
             ))}
           </div>

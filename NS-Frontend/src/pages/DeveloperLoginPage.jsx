@@ -1,6 +1,7 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthContext, { getDashboardPath } from '../context/AuthContext';
+import AuthContext from '../context/AuthContext';
+import { getDashboardPath } from '../context/authRoutes';
 import { GoogleLogin } from "@react-oauth/google";
 import {
   ArrowLeft,
