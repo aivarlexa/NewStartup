@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Menu, X } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import BrandWordmark from './BrandWordmark'
 
 function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const navRef = useRef(null)
 
@@ -36,15 +37,39 @@ function Navbar() {
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false)
 
+  const isHomeActive = location.pathname === '/' && (!location.hash || location.hash === '#top')
+  const isServicesActive = location.hash === '#platform' || location.pathname === '/services'
+  const isInsightsActive = location.hash === '#chatbot'
+
+  const scrollToHash = (hash) => {
+    window.requestAnimationFrame(() => {
+      const targetElement = document.querySelector(hash)
+
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth' })
+      }
+    })
+  }
+
+  const handleHashNavigation = (hash) => {
+    if (location.pathname !== '/' || location.hash !== hash) {
+      navigate(`/${hash}`)
+      return
+    }
+
+    scrollToHash(hash)
+  }
+
   return (
     <nav className="topbar" aria-label="Primary navigation" ref={navRef}>
       <Link className="brand" to="/#top" aria-label="Varlexa AI home">
         <BrandWordmark className="nav-wordmark" alt="" />
       </Link>
       <div className="nav-links">
-        <Link className={location.hash === '#platform' ? 'is-active' : ''} to="/#platform">Services</Link>
+        <Link className={isHomeActive ? 'is-active' : ''} to="/#top" onClick={(event) => { event.preventDefault(); handleHashNavigation('#top') }}>Home</Link>
+        <Link className={isServicesActive ? 'is-active' : ''} to="/#platform" onClick={(event) => { event.preventDefault(); handleHashNavigation('#platform') }}>Services</Link>
         <Link className={location.pathname === '/about' ? 'is-active' : ''} to="/about">About</Link>
-        <Link className={location.hash === '#chatbot' ? 'is-active' : ''} to="/#chatbot">Insights</Link>
+        <Link className={isInsightsActive ? 'is-active' : ''} to="/#chatbot" onClick={(event) => { event.preventDefault(); handleHashNavigation('#chatbot') }}>Insights</Link>
         <Link className={location.pathname === '/contact' ? 'is-active' : ''} to="/contact">Contact</Link>
         <Link
           className={`nav-cta ${location.pathname === '/developer-login' ? 'is-active' : ''}`}
@@ -67,11 +92,11 @@ function Navbar() {
         className={`mobile-nav-panel ${isMobileMenuOpen ? 'is-open' : ''}`}
         id="mobile-navigation-menu"
       >
-        <Link to="/#top" onClick={closeMobileMenu}>Home</Link>
-        <Link className={location.hash === '#platform' ? 'is-active' : ''} to="/#platform" onClick={closeMobileMenu}>Services</Link>
+        <Link className={isHomeActive ? 'is-active' : ''} to="/#top" onClick={(event) => { event.preventDefault(); closeMobileMenu(); handleHashNavigation('#top') }}>Home</Link>
+        <Link className={isServicesActive ? 'is-active' : ''} to="/#platform" onClick={(event) => { event.preventDefault(); closeMobileMenu(); handleHashNavigation('#platform') }}>Services</Link>
         <Link className={location.pathname === '/about' ? 'is-active' : ''} to="/about" onClick={closeMobileMenu}>About</Link>
-        <Link className={location.hash === '#chatbot' ? 'is-active' : ''} to="/#chatbot" onClick={closeMobileMenu}>Insights</Link>
-        <Link className={location.pathname === '/contact' ? 'is-active' : ''} to="/contact" onClick={closeMobileMenu}>Connect With Us</Link>
+        <Link className={isInsightsActive ? 'is-active' : ''} to="/#chatbot" onClick={(event) => { event.preventDefault(); closeMobileMenu(); handleHashNavigation('#chatbot') }}>Insights</Link>
+        <Link className={location.pathname === '/contact' ? 'is-active' : ''} to="/contact" onClick={closeMobileMenu}>Contact</Link>
         <Link
           className={`mobile-nav-cta ${location.pathname === '/developer-login' ? 'is-active' : ''}`}
           to="/developer-login"
