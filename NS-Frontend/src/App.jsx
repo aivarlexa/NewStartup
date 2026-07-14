@@ -58,7 +58,9 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path = "/services" element={< Services/>} />
-          <Route path="/developer-login" element={<DeveloperLoginPage />} />
+          <Route path="/developer/login" element={<DeveloperLoginPage role="Developer" />} />
+          <Route path="/client/login" element={<DeveloperLoginPage role="Client" />} />
+          <Route path="/developer-login" element={<DeveloperLoginPage role="Developer" />} />
           <Route element={<ProtectedRoutes />}>
             <Route path="/developer-dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardOverview />} />
