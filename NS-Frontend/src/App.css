@@ -7577,3 +7577,283 @@ h3 {
     min-height: 0;
   }
 }
+
+/* Final all-page responsive sweep */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+.app-shell,
+.topbar,
+.brand,
+.nav-links,
+.mobile-nav-panel,
+.hero-copy,
+.hero-visual,
+.visual-stage,
+.section-block,
+.section-heading,
+.capability-grid,
+.capability-row,
+.capability-card,
+.capability-visual,
+.chat-copy,
+.chatbot,
+.chat-header,
+.chat-form,
+.page-shell,
+.page-heading,
+.contact-layout,
+.contact-form,
+.contact-details,
+.about-page,
+.about-section,
+.about-info-grid,
+.about-value-grid,
+.about-capabilities,
+.about-cta,
+.social-card-grid,
+.policy-panel,
+.role-modal,
+.role-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.brand,
+.status-brand,
+.chat-header,
+.contact-detail-item,
+.about-actions,
+.capability-tags,
+.hero-actions {
+  flex-wrap: wrap;
+}
+
+.hero-title,
+.hero-lede,
+.section-heading p,
+.capability-card h3,
+.capability-card p,
+.chat-copy h2,
+.chat-copy p,
+.message,
+.contact-heading p,
+.contact-form label,
+.contact-detail-item,
+.about-hero-copy p,
+.about-info-card p,
+.about-value-card p,
+.role-card p {
+  overflow-wrap: anywhere;
+}
+
+.contact-form input,
+.contact-form textarea,
+.contact-form select,
+.contact-form .dropdown-trigger,
+.contact-form .dropdown-menu,
+.chat-form input,
+.role-card button,
+.primary-action,
+.secondary-action {
+  max-width: 100%;
+}
+
+.role-modal-backdrop {
+  overflow-y: auto;
+}
+
+.role-modal {
+  max-height: calc(100svh - 40px);
+  overflow-y: auto;
+}
+
+@media (max-width: 1040px) {
+  .nav-links {
+    display: none;
+  }
+
+  .mobile-nav-toggle {
+    display: inline-grid;
+  }
+
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 820px) {
+  .hero-section {
+    min-height: auto;
+    align-items: start;
+  }
+
+  .hero-copy {
+    padding-right: 0;
+  }
+
+  .hero-lede {
+    max-width: none;
+  }
+
+  .hero-video-copy {
+    left: 16px;
+    right: 16px;
+    bottom: 22px;
+    max-width: none;
+  }
+
+  .hero-video-copy h2 {
+    font-size: clamp(1.7rem, 8vw, 2.75rem);
+    line-height: 1.12;
+  }
+
+  .hero-video-header {
+    left: 16px;
+    right: 16px;
+    max-width: calc(100% - 32px);
+  }
+
+  .chatbot-block,
+  .contact-layout,
+  .about-hero,
+  .about-intro {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-details,
+  .about-info-grid,
+  .about-value-grid,
+  .social-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-form .dropdown-menu {
+    max-height: min(320px, 52svh);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar {
+    width: calc(100% - 20px);
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .mobile-nav-panel {
+    max-height: calc(100svh - 76px);
+  }
+
+  .section-block,
+  .page-shell,
+  .about-page {
+    width: min(100% - 20px, 1180px);
+  }
+
+  .section-heading,
+  .page-heading {
+    gap: 12px;
+  }
+
+  .hero-section {
+    padding: 28px 10px 44px;
+  }
+
+  .hero-actions,
+  .about-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .primary-action,
+  .secondary-action,
+  .contact-submit,
+  .role-card button {
+    width: 100%;
+  }
+
+  .capability-card,
+  .chatbot,
+  .contact-form,
+  .contact-details,
+  .policy-panel,
+  .social-card,
+  .about-info-card,
+  .about-value-card,
+  .role-card {
+    padding: 16px;
+  }
+
+  .chat-header {
+    gap: 10px;
+  }
+
+  .chat-messages {
+    min-height: 230px;
+    max-height: 52svh;
+  }
+
+  .contact-detail-item {
+    align-items: start;
+  }
+
+  .role-modal-backdrop {
+    align-items: start;
+    padding: 12px;
+  }
+
+  .role-modal {
+    max-height: calc(100svh - 24px);
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .section-block,
+  .page-shell,
+  .about-page {
+    width: min(100% - 16px, 1180px);
+  }
+
+  .hero-title {
+    font-size: clamp(1.78rem, 11vw, 2.25rem);
+  }
+
+  .chat-form {
+    grid-template-columns: minmax(0, 1fr) 40px;
+  }
+
+  .chat-form button {
+    width: 40px;
+    min-width: 40px;
+  }
+
+  .contact-detail-item {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .contact-detail-icon {
+    width: 34px;
+    height: 34px;
+  }
+}
