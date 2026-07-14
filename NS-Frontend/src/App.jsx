@@ -30,6 +30,13 @@ import ProtectedRoutes from './components/ProtectedRoutes';
 import Services from './components/Services';
 import './App.css'
 
+function LegacyDeveloperDashboardRedirect() {
+  const location = useLocation()
+  const nextPath = location.pathname.replace('/developer-dashboard', '/developer/dashboard')
+
+  return <Navigate to={`${nextPath}${location.search}${location.hash}`} replace />
+}
+
 function App() {
   const location = useLocation()
   const isDashboardRoute = location.pathname.startsWith('/developer/dashboard') || location.pathname.startsWith('/client/dashboard') || location.pathname.startsWith('/developer-dashboard')
@@ -61,8 +68,9 @@ function App() {
           <Route path="/developer/login" element={<DeveloperLoginPage role="Developer" />} />
           <Route path="/client/login" element={<DeveloperLoginPage role="Client" />} />
           <Route path="/developer-login" element={<DeveloperLoginPage role="Developer" />} />
+          <Route path="/developer-dashboard/*" element={<LegacyDeveloperDashboardRedirect />} />
           <Route element={<ProtectedRoutes />}>
-            <Route path="/developer-dashboard" element={<DashboardLayout />}>
+            <Route path="/developer/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardOverview />} />
               <Route path="projects" element={<ProjectsPage />} />
               <Route path="project/:id" element={<ProjectDetailsPage />} />
