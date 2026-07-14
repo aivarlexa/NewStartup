@@ -19,6 +19,7 @@ import SocialPage from './pages/SocialPage'
 import { AuthProvider } from './context/AuthContext';
 import DeveloperLoginPage from './pages/DeveloperLoginPage';
 import ProtectedRoutes from './components/ProtectedRoutes';
+import Services from './components/Services';
 import './App.css'
 
 function App() {
@@ -52,6 +53,7 @@ function App() {
           <Route path="/social" element={<SocialPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path = "/services" element={< Services/>} />
           <Route path="/developer-login" element={<DeveloperLoginPage />} />
           <Route element={<ProtectedRoutes />}>
             <Route path="/developer-dashboard" element={<DashboardLayout />}>
