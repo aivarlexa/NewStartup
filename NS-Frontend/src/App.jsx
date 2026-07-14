@@ -24,9 +24,10 @@ import ClientSettingsPage from './pages/clientDashboard/ClientSettingsPage'
 import HomePage from './pages/HomePage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import SocialPage from './pages/SocialPage'
-import { AuthProvider } from './context/AuthContext'
-import DeveloperLoginPage from './pages/DeveloperLoginPage'
-import ProtectedRoutes from './components/ProtectedRoutes'
+import { AuthProvider } from './context/AuthContext';
+import DeveloperLoginPage from './pages/DeveloperLoginPage';
+import ProtectedRoutes from './components/ProtectedRoutes';
+import Services from './components/Services';
 import './App.css'
 
 function App() {
@@ -56,13 +57,10 @@ function App() {
           <Route path="/social" element={<SocialPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/developer-login" element={<Navigate to="/developer/login" replace />} />
-          <Route path="/developer/login" element={<DeveloperLoginPage role="Developer" />} />
-          <Route path="/client/login" element={<DeveloperLoginPage role="Client" />} />
-          <Route path="/developer-dashboard/*" element={<Navigate to="/developer/dashboard" replace />} />
-
-          <Route element={<ProtectedRoutes role="Developer" />}>
-            <Route path="/developer/dashboard" element={<DashboardLayout />}>
+          <Route path = "/services" element={< Services/>} />
+          <Route path="/developer-login" element={<DeveloperLoginPage />} />
+          <Route element={<ProtectedRoutes />}>
+            <Route path="/developer-dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardOverview />} />
               <Route path="projects" element={<ProjectsPage />} />
               <Route path="project/:id" element={<ProjectDetailsPage />} />

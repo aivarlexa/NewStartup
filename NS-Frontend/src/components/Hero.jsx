@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import varlexaLogo from '../assets/varlexa-logo.png'
 import varlexaMark from '../assets/varlexa-mark.png'
@@ -71,22 +71,49 @@ function neuralLinkPath([x1, y1], [x2, y2]) {
 // Intro sequence stages, in order. Each stage's duration lives in INTRO_TIMING.
 // mark -> pulse -> flare -> dial -> reveal -> done
 const INTRO_TIMING = {
-  mark: 1050, // logo + swipe-line + progress count
-  pulse: 550, // logo fades, single dot remains
-  flare: 780, // dot blooms into a lens flare
+  mark: 650, // logo + swipe-line + progress count
+  beam: 420, // logo fades, single dot remains
+  split: 260,
+  core: 280, // dot blooms into a lens flare
   reveal: 780, // whole overlay fades away to reveal the real hero
 }
 
-const DIAL_VIDEO_SRC = '/media/dial-video.mp4'
-const DIAL_VIDEO_VISIBLE_DELAY = 0
-const DIAL_VIDEO_PLAY_DURATION = 2700
-const DIAL_VIDEO_PLAYBACK_RATE = 1.5
-const DIAL_VIDEO_START_TIME = 1.15
-const DIAL_VIDEO_INTERVIEW_START_TIME = 9.2
-const DIAL_VIDEO_READY_TIME = DIAL_VIDEO_START_TIME + 0.08
-const DIAL_VIDEO_SKIP_RANGES = [
-  { start: 3.1, end: DIAL_VIDEO_INTERVIEW_START_TIME },
+const INTRO_PARTICLES = [
+  { id: 'p1', x: '-36%', y: '-42%', delay: '80ms', size: 2 },
+  { id: 'p2', x: '-26%', y: '30%', delay: '210ms', size: 1 },
+  { id: 'p3', x: '-12%', y: '-30%', delay: '340ms', size: 2 },
+  { id: 'p4', x: '8%', y: '36%', delay: '160ms', size: 1 },
+  { id: 'p5', x: '22%', y: '-38%', delay: '280ms', size: 2 },
+  { id: 'p6', x: '36%', y: '18%', delay: '430ms', size: 1 },
+  { id: 'p7', x: '44%', y: '-12%', delay: '520ms', size: 1 },
+  { id: 'p8', x: '-44%', y: '6%', delay: '470ms', size: 1 },
 ]
+
+const DIAL_VIDEO_SRC = '/media/dial-video.mp4'
+const DIAL_VIDEO_START_TIME = 0
+const DIAL_VIDEO_PLAYBACK_RATE = 1
+const DIAL_STAGE_DURATION = 1500
+
+let hasPlayedIntro = false
+
+function markIntroSeen() {
+  hasPlayedIntro = true
+}
+
+function getInitialIntroStage() {
+  if (typeof window === 'undefined') {
+    return 'mark'
+  }
+
+  const isSectionNavigation = Boolean(window.location.hash && window.location.hash !== '#top')
+  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+  if (prefersReducedMotion || isSectionNavigation || hasPlayedIntro) {
+    return 'done'
+  }
+
+  return 'mark'
+}
 
 function Hero() {
   const heroRef = useRef(null)
@@ -94,170 +121,101 @@ function Hero() {
   const centerVideoRef = useRef(null)
   const [isHeroVideoVisible, setIsHeroVideoVisible] = useState(false)
   const [isDialVideoPlaying, setIsDialVideoPlaying] = useState(false)
-  const [introStage, setIntroStage] = useState('mark')
-  const [introPercent, setIntroPercent] = useState(0)
+  const [introStage, setIntroStage] = useState(getInitialIntroStage)
+  const shouldPlayIntroRef = useRef(introStage !== 'done')
+
+  useLayoutEffect(() => {
+    if (introStage === 'done') {
+      document.documentElement.classList.remove('hero-intro-active')
+      document.body.classList.remove('hero-intro-active')
+      markIntroSeen()
+      return undefined
+    }
+
+    document.documentElement.classList.add('hero-intro-active')
+    document.body.classList.add('hero-intro-active')
+
+    return () => {
+      document.documentElement.classList.remove('hero-intro-active')
+      document.body.classList.remove('hero-intro-active')
+    }
+  }, [introStage])
 
   // Intro sequence: logo swipe -> loading dot -> lens flare -> dial -> reveal hero
   useEffect(() => {
+    if (!shouldPlayIntroRef.current) {
+      return undefined
+    }
+
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReducedMotion) {
-      setIntroStage('done')
-      return
+      return undefined
     }
 
-    let rafId
-    const startedAt = performance.now()
-    function tickProgress(now) {
-      const elapsed = now - startedAt
-      const percent = Math.min(100, Math.round((elapsed / INTRO_TIMING.mark) * 100))
-      setIntroPercent(percent)
-      if (percent < 100) {
-        rafId = requestAnimationFrame(tickProgress)
-      }
-    }
-    rafId = requestAnimationFrame(tickProgress)
-
-    const stageOrder = ['pulse', 'flare', 'dial']
+    const stageOrder = ['beam', 'split', 'core', 'dial']
     const stageDelays = [
       INTRO_TIMING.mark,
-      INTRO_TIMING.mark + INTRO_TIMING.pulse,
-      INTRO_TIMING.mark + INTRO_TIMING.pulse + INTRO_TIMING.flare,
+      INTRO_TIMING.mark + INTRO_TIMING.beam,
+      INTRO_TIMING.mark + INTRO_TIMING.beam + INTRO_TIMING.split,
+      INTRO_TIMING.mark + INTRO_TIMING.beam + INTRO_TIMING.split + INTRO_TIMING.core,
     ]
     const timers = stageOrder.map((stage, index) => setTimeout(() => setIntroStage(stage), stageDelays[index]))
 
     return () => {
-      cancelAnimationFrame(rafId)
       timers.forEach(clearTimeout)
     }
   }, [])
 
   useEffect(() => {
-    const videoElement = centerVideoRef.current
-    if (!videoElement) {
+    if (introStage !== 'dial') {
       return undefined
     }
 
-    videoElement.load()
-    return undefined
-  }, [])
-
-  useEffect(() => {
     const videoElement = centerVideoRef.current
-    if (!videoElement || introStage !== 'dial') {
-      return undefined
+    let isActive = true
+
+    const showVideo = () => {
+      if (isActive) {
+        setIsDialVideoPlaying(true)
+      }
     }
 
-    setIsDialVideoPlaying(false)
-
-    let hasPreparedVideo = false
-    let hasStartedVideo = false
-    let hasFinishedIntro = false
-    let hasShownVideo = false
-    const skippedRanges = new Set()
-    let startTimer
-    let revealTimer
-
-    const finishIntro = () => {
-      if (hasFinishedIntro) {
+    const startDialVideo = () => {
+      if (!videoElement || !isActive) {
         return
       }
 
-      hasFinishedIntro = true
-      setIntroStage('reveal')
-    }
-    const rewindVideo = () => {
       videoElement.pause()
       try {
         videoElement.currentTime = DIAL_VIDEO_START_TIME
       } catch {
-        // Metadata may still be loading; loadedmetadata retries the seek.
+        // Metadata can still be loading on first visit.
       }
       videoElement.playbackRate = DIAL_VIDEO_PLAYBACK_RATE
+      videoElement.play().then(showVideo).catch(showVideo)
     }
 
-    const showDialVideo = () => {
-      if (hasShownVideo) {
-        return
-      }
-
-      hasShownVideo = true
-      setIsDialVideoPlaying(true)
-    }
-
-    const scheduleReveal = (delay = DIAL_VIDEO_PLAY_DURATION) => {
-      clearTimeout(revealTimer)
-      revealTimer = setTimeout(finishIntro, delay)
-    }
-
-    const startVideo = () => {
-      if (hasStartedVideo) {
-        return
-      }
-
-      hasStartedVideo = true
-      videoElement.playbackRate = DIAL_VIDEO_PLAYBACK_RATE
-      scheduleReveal()
-      videoElement.play().catch(() => {})
-    }
-
-    const queueStartVideo = () => {
-      if (hasStartedVideo) {
-        return
-      }
-
-      clearTimeout(startTimer)
-      startTimer = setTimeout(startVideo, DIAL_VIDEO_VISIBLE_DELAY)
-    }
-
-    const handleTimeUpdate = () => {
-      if (videoElement.currentTime >= DIAL_VIDEO_READY_TIME) {
-        showDialVideo()
-      }
-
-      const skipIndex = DIAL_VIDEO_SKIP_RANGES.findIndex((range, index) => (
-        !skippedRanges.has(index) &&
-        videoElement.currentTime >= range.start &&
-        videoElement.currentTime < range.end
-      ))
-
-      if (skipIndex !== -1) {
-        skippedRanges.add(skipIndex)
-        videoElement.currentTime = DIAL_VIDEO_SKIP_RANGES[skipIndex].end
+    if (videoElement) {
+      videoElement.addEventListener('playing', showVideo, { once: true })
+      if (videoElement.readyState >= 1) {
+        startDialVideo()
+      } else {
+        videoElement.addEventListener('loadedmetadata', startDialVideo, { once: true })
+        videoElement.load()
       }
     }
 
-    const handleLoadedMetadata = () => {
-      if (hasPreparedVideo) {
-        return
-      }
-
-      hasPreparedVideo = true
-      rewindVideo()
-      clearTimeout(revealTimer)
-    }
-
-    videoElement.addEventListener('timeupdate', handleTimeUpdate)
-    videoElement.addEventListener('seeked', queueStartVideo)
-    videoElement.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true })
-    videoElement.addEventListener('ended', finishIntro, { once: true })
-
-    videoElement.src = DIAL_VIDEO_SRC
-    videoElement.load()
-    scheduleReveal(DIAL_VIDEO_VISIBLE_DELAY + DIAL_VIDEO_PLAY_DURATION)
-
-    if (videoElement.readyState >= 1) {
-      handleLoadedMetadata()
-    }
+    const revealTimer = window.setTimeout(() => setIntroStage('reveal'), DIAL_STAGE_DURATION)
 
     return () => {
-      clearTimeout(startTimer)
-      clearTimeout(revealTimer)
-      videoElement.pause()
+      isActive = false
+      window.clearTimeout(revealTimer)
+      if (videoElement) {
+        videoElement.pause()
+        videoElement.removeEventListener('playing', showVideo)
+        videoElement.removeEventListener('loadedmetadata', startDialVideo)
+      }
       setIsDialVideoPlaying(false)
-      videoElement.removeEventListener('timeupdate', handleTimeUpdate)
-      videoElement.removeEventListener('seeked', queueStartVideo)
-      videoElement.removeEventListener('ended', finishIntro)
-      videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata)
     }
   }, [introStage])
 
@@ -271,6 +229,10 @@ function Hero() {
   }, [introStage])
   // Lock page scroll on mount; unlock when intro finishes.
   useEffect(() => {
+    if (!shouldPlayIntroRef.current) {
+      return undefined
+    }
+
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReducedMotion) {
       return undefined
@@ -331,7 +293,6 @@ function Hero() {
     return undefined
   }, [introStage])
 
-
   useEffect(() => {
     function updateHeroVideo() {
       const heroElement = heroRef.current
@@ -389,14 +350,29 @@ function Hero() {
       {introStage !== 'done' && (
         <div className={`hero-intro stage-${introStage}`} aria-hidden="true">
           <div className="hero-intro-mark">
+            <span className="hero-intro-ambient" />
             <BrandWordmark className="intro-wordmark" alt="VARLEXA AI" />
-            <span className="hero-intro-swipe" />
+            <span className="intro-e-glow" />
+            <span className="intro-core" />
           </div>
-          <span className="hero-intro-dot" />
+          <span className="intro-particle-field">
+            {INTRO_PARTICLES.map((particle) => (
+              <span
+                key={particle.id}
+                className="intro-particle"
+                style={{
+                  '--particle-x': particle.x,
+                  '--particle-y': particle.y,
+                  '--particle-delay': particle.delay,
+                  '--particle-size': `${particle.size}px`,
+                }}
+              />
+            ))}
+          </span>
+          <span className="intro-beam intro-beam-main" />
+          <span className="intro-beam intro-beam-return" />
+          <span className="intro-beam-sparks" />
           <span className="hero-intro-flare-rays" />
-          {introStage === 'mark' && (
-            <span className="hero-intro-progress">{String(introPercent).padStart(2, '0')}</span>
-          )}
 
           <div className="hero-intro-dial-wrap">
             <div className="creator-dial">
@@ -447,7 +423,7 @@ function Hero() {
                 <path className="dial-arrow dial-arrow-inner" d="M210,85 l7,14 l-14,2 z" transform="rotate(270 210 210)" />
               </svg>
 
-              <div className="creator-dial-center">
+              <div className="creator-dial-center" aria-hidden="true">
                 <div className="lens-glass">
                   <video
                     className={`lens-video ${isDialVideoPlaying ? 'is-playing' : ''}`}
