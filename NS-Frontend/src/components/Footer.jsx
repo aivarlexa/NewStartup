@@ -54,8 +54,7 @@ function Footer() {
         <div className="footer-contact footer-reveal">
           <h3>Contact</h3>
           <a href="mailto:aivarlexa@gmail.com">aivarlexa@gmail.com</a>
-          <a href="tel:+919130067841">+91 9130 067841</a>
-          <span>Solapur, Maharashtra, India</span>
+          <span>Head Office: Pune, Maharashtra, India</span>
           <Link className="footer-action" to="/contact">Contact Us</Link>
         </div>
 
