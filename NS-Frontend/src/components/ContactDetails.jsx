@@ -1,6 +1,6 @@
 import { socialLinks } from '../data/siteData'
 import SocialIcon from './SocialIcon'
-import { Mail, MapPin, Phone } from 'lucide-react'
+import { Mail, MapPin } from 'lucide-react'
 
 function ContactDetails() {
   return (
@@ -9,15 +9,11 @@ function ContactDetails() {
       <span className="contact-detail-wave" aria-hidden="true"></span>
       <div className="contact-detail-item detail-email">
         <span className="contact-detail-icon"><Mail aria-hidden="true" /></span>
-        <a href="mailto:hello@varlexa.ai">hello@varlexa.ai</a>
-      </div>
-      <div className="contact-detail-item detail-phone">
-        <span className="contact-detail-icon"><Phone aria-hidden="true" /></span>
-        <a href="tel:+919130067841">+91 9130 067841</a>
+        <a href="mailto:aivarlexa@gmail.com">aivarlexa@gmail.com</a>
       </div>
       <div className="contact-detail-item detail-location">
         <span className="contact-detail-icon"><MapPin aria-hidden="true" /></span>
-        <span>Solapur, Maharashtra, India</span>
+        <span>Head Office: Pune, Maharashtra, India</span>
       </div>
       <span className="contact-social-divider" aria-hidden="true"></span>
       <div className="social-icons" aria-label="Contact social links">
