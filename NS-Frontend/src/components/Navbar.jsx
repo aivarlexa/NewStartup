@@ -42,6 +42,7 @@ function Navbar() {
   const isHomeActive = location.pathname === '/' && (!location.hash || location.hash === '#top')
   const isServicesActive = location.hash === '#platform' || location.pathname === '/services'
   const isInsightsActive = location.hash === '#chatbot'
+  const isLoginActive = location.pathname === '/developer-login' || location.pathname === '/developer/login' || location.pathname === '/client/login'
 
   const scrollToHash = (hash) => {
     window.requestAnimationFrame(() => {
@@ -62,6 +63,17 @@ function Navbar() {
     scrollToHash(hash)
   }
 
+  const openRoleModal = () => {
+    closeMobileMenu()
+    setIsRoleModalOpen(true)
+  }
+
+  const selectRole = (loginPath) => {
+    setIsRoleModalOpen(false)
+    closeMobileMenu()
+    navigate(loginPath)
+  }
+
   return (
     <>
     <nav className="topbar" aria-label="Primary navigation" ref={navRef}>
@@ -74,12 +86,9 @@ function Navbar() {
         <Link className={location.pathname === '/about' ? 'is-active' : ''} to="/about">About</Link>
         <Link className={isInsightsActive ? 'is-active' : ''} to="/#chatbot" onClick={(event) => { event.preventDefault(); handleHashNavigation('#chatbot') }}>Insights</Link>
         <Link className={location.pathname === '/contact' ? 'is-active' : ''} to="/contact">Contact</Link>
-        <Link
-          className={`nav-cta ${location.pathname === '/developer-login' ? 'is-active' : ''}`}
-          to="/developer-login"
-        >
-          Developer Login
-        </Link>
+        <button className={`nav-cta nav-login-button ${isLoginActive ? 'is-active' : ''}`} type="button" onClick={openRoleModal}>
+          Login
+        </button>
       </div>
       <button
         className="mobile-nav-toggle"
@@ -100,13 +109,9 @@ function Navbar() {
         <Link className={location.pathname === '/about' ? 'is-active' : ''} to="/about" onClick={closeMobileMenu}>About</Link>
         <Link className={isInsightsActive ? 'is-active' : ''} to="/#chatbot" onClick={(event) => { event.preventDefault(); closeMobileMenu(); handleHashNavigation('#chatbot') }}>Insights</Link>
         <Link className={location.pathname === '/contact' ? 'is-active' : ''} to="/contact" onClick={closeMobileMenu}>Contact</Link>
-        <Link
-          className={`mobile-nav-cta ${location.pathname === '/developer-login' ? 'is-active' : ''}`}
-          to="/developer-login"
-          onClick={closeMobileMenu}
-        >
-          Developer Login
-        </Link>
+        <button className={`mobile-nav-cta nav-login-button ${isLoginActive ? 'is-active' : ''}`} type="button" onClick={openRoleModal}>
+          Login
+        </button>
       </div>
     </nav>
     <RoleSelectionModal isOpen={isRoleModalOpen} onClose={() => setIsRoleModalOpen(false)} onSelect={selectRole} />
