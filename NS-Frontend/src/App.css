@@ -3062,23 +3062,31 @@ h3 {
     transform: translateY(0);
   }
 
-  .mobile-nav-panel a {
+  .mobile-nav-panel a,
+  .mobile-nav-panel button {
     display: flex;
     align-items: center;
     min-height: 46px;
+    width: 100%;
     border-radius: 8px;
     padding: 12px 14px;
+    border: 0;
+    background: transparent;
     color: var(--text-muted);
     font-size: 15px;
     font-weight: 650;
+    font-family: inherit;
     text-decoration: none;
+    cursor: pointer;
     transition:
       background-color 180ms ease,
       color 180ms ease;
   }
 
   .mobile-nav-panel a:hover,
-  .mobile-nav-panel a.is-active {
+  .mobile-nav-panel a.is-active,
+  .mobile-nav-panel button:hover,
+  .mobile-nav-panel button.is-active {
     background: rgba(255, 255, 255, 0.06);
     color: var(--text-strong);
   }
@@ -6941,7 +6949,8 @@ h3 {
 
 .nav-links a.is-active,
 .nav-cta.is-active,
-.mobile-nav-panel a.is-active {
+.mobile-nav-panel a.is-active,
+.mobile-nav-panel button.is-active {
   background: rgba(94, 247, 200, 0.1);
   color: var(--text-strong);
 }
