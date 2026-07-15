@@ -57,12 +57,7 @@ function DashboardLayout() {
   const canGoBack = location.pathname !== '/developer/dashboard';
 
   function handleBack() {
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-
-    navigate('/developer/dashboard');
+    navigate('/');
   }
 
   function handleLogout() {

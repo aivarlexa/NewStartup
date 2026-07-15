@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext, { getDashboardPath } from '../context/AuthContext';
 import { GoogleLogin } from "@react-oauth/google";
@@ -33,17 +33,18 @@ function DeveloperLoginPage({ role = 'Developer' }) {
   const [signupSuccess, setSignupSuccess] = useState('');
   const [signinNotice, setSigninNotice] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
-  const { login } = useContext(AuthContext);
+  const { login, token, user } = useContext(AuthContext);
   const navigate = useNavigate();
   const dashboardPath = getDashboardPath(role);
   const roleLabel = role.toLowerCase();
 
-  function handleBack() {
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
+  useEffect(() => {
+    if (!isSuccess && token && user?.role) {
+      navigate(getDashboardPath(user.role), { replace: true });
     }
+  }, [isSuccess, navigate, token, user?.role]);
 
+  function handleBack() {
     navigate('/');
   }
 
@@ -67,7 +68,7 @@ function DeveloperLoginPage({ role = 'Developer' }) {
         login({ name: 'Demo User', email, role: 'Developer' }, 'demo-token', rememberMe);
         setIsLoading(false);
         setIsSuccess(true);
-        window.setTimeout(() => navigate(dashboardPath), 1000);
+        window.setTimeout(() => navigate(dashboardPath, { replace: true }), 1000);
       }, 900);
       return;
     }
@@ -77,7 +78,7 @@ function DeveloperLoginPage({ role = 'Developer' }) {
       if (!data.success) throw new Error(data.message || 'Invalid email or password.');
       login(data.user, data.token, rememberMe);
       setIsSuccess(true);
-      window.setTimeout(() => navigate(getDashboardPath(data.user.role)), 700);
+      window.setTimeout(() => navigate(getDashboardPath(data.user.role), { replace: true }), 700);
     } catch (error) {
       setErrors({ form: getApiErrorMessage(error, error.message || 'An error occurred. Please try again later.') });
     } finally {
@@ -175,7 +176,7 @@ function DeveloperLoginPage({ role = 'Developer' }) {
       const { data } = await api.post('/auth/google', { token: credentialResponse.credential, role });
       if (data.success) {
         login(data.user, data.token, rememberMe);
-        navigate(getDashboardPath(data.user.role));
+        navigate(getDashboardPath(data.user.role), { replace: true });
       }
     } catch (error) {
       setErrors({ form: getApiErrorMessage(error, 'Google Login Failed') });

@@ -120,7 +120,7 @@ export const socialLinks = [
   
   {
     name: 'WhatsApp',
-    href: 'https://wa.me/919130067841',
+    href: 'https://wa.me/9270239116',
     icon: 'whatsapp',
     description: 'Quick business conversations and project discovery requests.',
   },

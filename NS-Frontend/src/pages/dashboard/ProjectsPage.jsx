@@ -68,7 +68,7 @@ function ProjectsPage() {
               <strong>{project.progress}%</strong>
             </div>
             <p>{project.developers.join(', ')}</p>
-            <Link className="dashboard-action-link" to={`/developer-dashboard/project/${project.id}`}>View Project</Link>
+            <Link className="dashboard-action-link" to={`/developer/dashboard/project/${project.id}`}>View Project</Link>
           </article>
         ))}
       </div>

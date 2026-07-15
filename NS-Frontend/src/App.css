@@ -43,6 +43,12 @@ html.intro-scroll-lock body {
   padding: 22px 0;
 }
 
+.hero-intro-active .topbar {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .brand,
 .nav-links a,
 .nav-cta,
@@ -268,10 +274,12 @@ h1 {
   }
 }
 /* =========================================================
-   Hero intro sequence (logo swipe -> loading dot -> lens flare -> dial -> reveal)
+   Hero intro sequence (centered logo -> energy beam -> core -> dial -> reveal)
    ========================================================= */
 
 .hero-intro {
+  --intro-e-offset-x: clamp(18px, 3.1vw, 42px);
+  --intro-e-offset-y: clamp(-5px, -0.35vw, -2px);
   position: fixed;
   inset: 0;
   z-index: 60;
@@ -282,6 +290,7 @@ h1 {
   background: #05070b;
   opacity: 1;
   visibility: visible;
+  isolation: isolate;
   transition: opacity 560ms ease, visibility 560ms ease;
 }
 
@@ -293,127 +302,335 @@ h1 {
 
 .hero-intro-mark {
   position: relative;
+  z-index: 4;
   display: grid;
   place-items: center;
-  opacity: 1;
-  transition: opacity 380ms ease;
+  opacity: 0;
+  transform: translate3d(0, 10px, 0) scale(0.985);
+  animation: introLogoFade 650ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 360ms ease, transform 360ms ease, filter 360ms ease;
 }
 
-.hero-intro.stage-pulse .hero-intro-mark,
-.hero-intro.stage-flare .hero-intro-mark,
+.hero-intro.stage-beam .hero-intro-mark,
+.hero-intro.stage-split .hero-intro-mark,
+.hero-intro.stage-core .hero-intro-mark {
+  opacity: 1;
+  filter:
+    drop-shadow(0 0 18px rgba(94, 247, 200, 0.22))
+    drop-shadow(0 0 34px rgba(179, 137, 255, 0.18));
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
 .hero-intro.stage-dial .hero-intro-mark,
 .hero-intro.stage-reveal .hero-intro-mark {
   opacity: 0;
+  visibility: hidden;
+  transition: none;
+  transform: translate3d(0, -4px, 0) scale(1.015);
 }
 
 .intro-wordmark {
+  position: relative;
+  z-index: 2;
   width: min(230px, 52vw);
   max-height: 78px;
 }
 
-.hero-intro-swipe {
+.hero-intro-ambient,
+.intro-e-glow,
+.intro-core {
   position: absolute;
-  top: 52%;
-  left: -14%;
-  width: 128%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #5ef7c8, #78a8ff, transparent);
-  box-shadow: 0 0 16px rgba(94, 247, 200, 0.5);
-  transform: translateX(-120%) translateY(-50%) rotate(-3deg);
-  animation: introSwipe 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
 }
 
-.hero-intro-progress {
-  position: absolute;
-  bottom: 88px;
-  color: rgba(226, 232, 240, 0.55);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.28em;
+.hero-intro-ambient {
+  z-index: 0;
+  width: min(430px, 72vw);
+  height: min(250px, 40vw);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 45% 50%, rgba(94, 247, 200, 0.14), transparent 42%),
+    radial-gradient(circle at 62% 46%, rgba(179, 137, 255, 0.16), transparent 45%);
+  filter: blur(18px);
+  opacity: 0.76;
+  transform: translate3d(0, 0, 0);
 }
 
-.hero-intro-dot {
-  position: relative;
+.intro-e-glow {
+  left: calc(50% + var(--intro-e-offset-x));
+  top: calc(50% + var(--intro-e-offset-y));
   z-index: 1;
-  width: 14px;
-  height: 14px;
+  width: clamp(34px, 5.4vw, 62px);
+  height: clamp(34px, 5.4vw, 62px);
   border-radius: 50%;
-  background: #0b0f16;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(94, 247, 200, 0.4) 18%, rgba(120, 168, 255, 0.24) 38%, transparent 72%);
+  filter: blur(9px);
   opacity: 0;
-  transform: scale(0.4);
-  transition: opacity 280ms ease, transform 280ms ease;
+  transform: translate(-50%, -50%) scale(0.72);
 }
 
-.hero-intro.stage-pulse .hero-intro-dot,
-.hero-intro.stage-flare .hero-intro-dot {
+.hero-intro.stage-beam .intro-e-glow,
+.hero-intro.stage-split .intro-e-glow,
+.hero-intro.stage-core .intro-e-glow {
+  animation: introEGlow 960ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.intro-core {
+  left: calc(50% + var(--intro-e-offset-x));
+  top: calc(50% + var(--intro-e-offset-y));
+  z-index: 5;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0 18%, #5ef7c8 30%, #78a8ff 54%, rgba(179, 137, 255, 0.08) 76%, transparent 100%);
+  box-shadow:
+    0 0 13px rgba(255, 255, 255, 0.82),
+    0 0 28px rgba(94, 247, 200, 0.56),
+    0 0 48px rgba(179, 137, 255, 0.42);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.4);
+}
+
+.hero-intro.stage-core .intro-core,
+.hero-intro.stage-dial .intro-core {
+  animation: introCorePulse 280ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.intro-particle-field {
+  position: absolute;
+  left: calc(50% + var(--intro-e-offset-x));
+  top: calc(50% + var(--intro-e-offset-y));
+  z-index: 3;
+  width: min(360px, 64vw);
+  height: min(220px, 46vw);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.hero-intro.stage-mark .intro-particle-field,
+.hero-intro.stage-beam .intro-particle-field,
+.hero-intro.stage-split .intro-particle-field,
+.hero-intro.stage-core .intro-particle-field {
   opacity: 1;
-  transform: scale(1);
 }
 
-.hero-intro.stage-flare .hero-intro-dot {
-  animation: introFlare 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.hero-intro.stage-dial .hero-intro-dot,
-.hero-intro.stage-reveal .hero-intro-dot {
+.intro-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--particle-size);
+  height: var(--particle-size);
+  border-radius: 50%;
+  background: rgba(225, 248, 255, 0.92);
+  box-shadow:
+    0 0 8px rgba(94, 247, 200, 0.64),
+    0 0 14px rgba(179, 137, 255, 0.32);
   opacity: 0;
+  transform: translate(var(--particle-x), var(--particle-y));
+  animation: introParticleFloat 1700ms ease-in-out var(--particle-delay) infinite alternate;
+}
+
+.intro-beam,
+.intro-beam-sparks,
+.hero-intro-flare-rays {
+  position: absolute;
+  left: calc(50% + var(--intro-e-offset-x));
+  top: calc(50% + var(--intro-e-offset-y));
+  pointer-events: none;
+}
+
+.intro-beam {
+  z-index: 5;
+  width: min(760px, 72vmax);
+  height: 5px;
+  border-radius: 999px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(94, 247, 200, 0.16) 11%, #5ef7c8 34%, #78a8ff 52%, #b389ff 70%, rgba(179, 137, 255, 0.18) 89%, transparent 100%);
+  box-shadow:
+    0 0 2px rgba(255, 255, 255, 0.95),
+    0 0 13px rgba(94, 247, 200, 0.8),
+    0 0 28px rgba(120, 168, 255, 0.54),
+    0 0 56px rgba(179, 137, 255, 0.42);
+  filter: saturate(1.3) blur(0.1px);
+  transform-origin: 50% 50%;
+}
+
+.intro-beam::before,
+.intro-beam::after {
+  content: '';
+  position: absolute;
+  inset: -13px 6%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(94, 247, 200, 0.24), rgba(120, 168, 255, 0.18), rgba(179, 137, 255, 0.2), transparent);
+  filter: blur(12px);
+  opacity: 0.8;
+}
+
+.intro-beam::after {
+  inset: 1px 18%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.94);
+  filter: blur(0);
+  opacity: 0.96;
+}
+
+.hero-intro.stage-beam .intro-beam-main {
+  animation: introBeamCross 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero-intro.stage-split .intro-beam-main {
+  animation: introBeamSplitForward 260ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.hero-intro.stage-split .intro-beam-return {
+  animation: introBeamSplitBackward 260ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.intro-beam-sparks {
+  z-index: 6;
+  width: min(440px, 48vw);
+  height: 90px;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 18% 44%, rgba(94, 247, 200, 0.85) 0 1px, transparent 2px),
+    radial-gradient(circle at 34% 58%, rgba(255, 255, 255, 0.72) 0 1px, transparent 2px),
+    radial-gradient(circle at 55% 38%, rgba(120, 168, 255, 0.74) 0 1px, transparent 2px),
+    radial-gradient(circle at 76% 52%, rgba(179, 137, 255, 0.78) 0 1px, transparent 2px);
+  filter: drop-shadow(0 0 8px rgba(94, 247, 200, 0.52));
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.hero-intro.stage-beam .intro-beam-sparks,
+.hero-intro.stage-split .intro-beam-sparks {
+  animation: introSparkDrift 680ms ease-out forwards;
 }
 
 .hero-intro-flare-rays {
-  position: absolute;
   inset: 0;
-  z-index: 0;
-  pointer-events: none;
+  left: 0;
+  top: 0;
+  z-index: 2;
   opacity: 0;
-}
-
-.hero-intro.stage-flare .hero-intro-flare-rays {
-  animation: introRayFade 760ms ease forwards;
   background:
-    linear-gradient(90deg, rgba(94, 247, 200, 0.4), transparent 38%, transparent 62%, rgba(120, 168, 255, 0.35)),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.55), transparent 42%);
+    linear-gradient(45deg, transparent 35%, rgba(94, 247, 200, 0.12) 47%, rgba(120, 168, 255, 0.12) 50%, rgba(179, 137, 255, 0.14) 53%, transparent 66%),
+    radial-gradient(circle at calc(50% + var(--intro-e-offset-x)) calc(50% + var(--intro-e-offset-y)), rgba(255, 255, 255, 0.22), transparent 28%);
+  mix-blend-mode: screen;
 }
 
-.hero-intro-caption {
-  position: absolute;
-  bottom: 88px;
-  margin: 0;
-  color: rgba(226, 232, 240, 0.55);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  opacity: 0;
-  transition: opacity 300ms ease;
+.hero-intro.stage-beam .hero-intro-flare-rays {
+  animation: introRayFade 420ms ease-out forwards;
 }
 
-.hero-intro.stage-pulse .hero-intro-caption,
-.hero-intro.stage-flare .hero-intro-caption,
-.hero-intro.stage-dial .hero-intro-caption {
-  opacity: 1;
+.hero-intro.stage-core .hero-intro-flare-rays {
+  animation: introCoreAtmosphere 280ms ease-out forwards;
 }
 
-@keyframes introSwipe {
-  to {
-    transform: translateX(120%) translateY(-50%) rotate(-3deg);
-  }
-}
-
-@keyframes introFlare {
+@keyframes introLogoFade {
   0% {
-    transform: scale(1);
-    filter: blur(0);
-  }
-  55% {
-    transform: scale(10);
-    filter: blur(3px);
-    box-shadow: 0 0 60px 30px rgba(255, 255, 255, 0.22);
+    opacity: 0;
+    filter: blur(7px);
+    transform: translate3d(0, 10px, 0) scale(0.985);
   }
   100% {
-    transform: scale(38);
-    filter: blur(12px);
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes introParticleFloat {
+  0% {
+    opacity: 0.18;
+    transform: translate(var(--particle-x), var(--particle-y)) scale(0.78);
+  }
+  100% {
+    opacity: 0.82;
+    transform: translate(var(--particle-x), calc(var(--particle-y) - 9px)) scale(1);
+  }
+}
+
+@keyframes introBeamCross {
+  0% {
     opacity: 0;
+    transform: translate(calc(-50% - 138vmax), calc(-50% + 138vmax)) rotate(-45deg) scaleX(0.84);
+  }
+  18%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) rotate(-45deg) scaleX(1);
+  }
+}
+
+@keyframes introBeamSplitForward {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) rotate(-45deg) scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + 38vmax), calc(-50% - 38vmax)) rotate(-45deg) scaleX(0.62);
+  }
+}
+
+@keyframes introBeamSplitBackward {
+  0% {
+    opacity: 0.78;
+    transform: translate(-50%, -50%) rotate(-45deg) scaleX(0.86);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% - 38vmax), calc(-50% + 38vmax)) rotate(-45deg) scaleX(0.58);
+  }
+}
+
+@keyframes introSparkDrift {
+  0% {
+    opacity: 0;
+    background-position: 0 0, 0 0, 0 0, 0 0;
+  }
+  35% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    background-position: 16px -8px, 28px 10px, 38px -12px, 52px 8px;
+  }
+}
+
+@keyframes introEGlow {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.72);
+  }
+  38% {
+    opacity: 0.96;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  100% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes introCorePulse {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.42);
+  }
+  54% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.32);
+  }
+  100% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -421,11 +638,25 @@ h1 {
   0% {
     opacity: 0;
   }
-  40% {
-    opacity: 1;
+  42% {
+    opacity: 0.92;
   }
   100% {
     opacity: 0;
+  }
+}
+
+@keyframes introCoreAtmosphere {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.42;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.04);
   }
 }
 
@@ -446,6 +677,7 @@ h1 {
 }
 
 .hero-intro.stage-dial .hero-intro-dial-wrap {
+  z-index: 7;
   opacity: 1;
   transform: scale(1);
 }
@@ -536,6 +768,7 @@ h1 {
 }
 
 .hero-intro-dial-wrap .creator-dial-center {
+  display: grid;
   inset: 30%;
 }
 
@@ -795,11 +1028,6 @@ h1 {
     width: min(180px, 58vw);
   }
 
-  .hero-intro-progress,
-  .hero-intro-caption {
-    bottom: 64px;
-  }
-
   .hero-intro-dial-wrap .creator-dial {
     width: min(96vmin, 720px);
   }
@@ -817,10 +1045,14 @@ h1 {
 @media (prefers-reduced-motion: reduce) {
   .hero-intro,
   .hero-intro-mark,
-  .hero-intro-swipe,
-  .hero-intro-dot,
+  .hero-intro-ambient,
+  .intro-e-glow,
+  .intro-core,
+  .intro-beam,
+  .intro-beam-sparks,
+  .intro-particle-field,
+  .intro-particle,
   .hero-intro-flare-rays,
-  .hero-intro-caption,
   .hero-intro-dial-wrap,
   .creator-dial-svg,
   .hero-intro-dial-wrap .creator-dial::before,
@@ -2830,23 +3062,31 @@ h3 {
     transform: translateY(0);
   }
 
-  .mobile-nav-panel a {
+  .mobile-nav-panel a,
+  .mobile-nav-panel button {
     display: flex;
     align-items: center;
     min-height: 46px;
+    width: 100%;
     border-radius: 8px;
     padding: 12px 14px;
+    border: 0;
+    background: transparent;
     color: var(--text-muted);
     font-size: 15px;
     font-weight: 650;
+    font-family: inherit;
     text-decoration: none;
+    cursor: pointer;
     transition:
       background-color 180ms ease,
       color 180ms ease;
   }
 
   .mobile-nav-panel a:hover,
-  .mobile-nav-panel a.is-active {
+  .mobile-nav-panel a.is-active,
+  .mobile-nav-panel button:hover,
+  .mobile-nav-panel button.is-active {
     background: rgba(255, 255, 255, 0.06);
     color: var(--text-strong);
   }
@@ -3459,11 +3699,6 @@ h3 {
     width: min(180px, 58vw);
   }
 
-  .hero-intro-progress,
-  .hero-intro-caption {
-    bottom: 64px;
-  }
-
   .creator-dial {
     width: min(560px, 90vw);
   }
@@ -3487,10 +3722,14 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   .hero-intro,
   .hero-intro-mark,
-  .hero-intro-swipe,
-  .hero-intro-dot,
+  .hero-intro-ambient,
+  .intro-e-glow,
+  .intro-core,
+  .intro-beam,
+  .intro-beam-sparks,
+  .intro-particle-field,
+  .intro-particle,
   .hero-intro-flare-rays,
-  .hero-intro-caption,
   .creator-dial-svg,
   .creator-dial-center {
     animation: none !important;
@@ -6710,7 +6949,8 @@ h3 {
 
 .nav-links a.is-active,
 .nav-cta.is-active,
-.mobile-nav-panel a.is-active {
+.mobile-nav-panel a.is-active,
+.mobile-nav-panel button.is-active {
   background: rgba(94, 247, 200, 0.1);
   color: var(--text-strong);
 }
@@ -7335,5 +7575,285 @@ h3 {
 
   .role-card p {
     min-height: 0;
+  }
+}
+
+/* Final all-page responsive sweep */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+.app-shell,
+.topbar,
+.brand,
+.nav-links,
+.mobile-nav-panel,
+.hero-copy,
+.hero-visual,
+.visual-stage,
+.section-block,
+.section-heading,
+.capability-grid,
+.capability-row,
+.capability-card,
+.capability-visual,
+.chat-copy,
+.chatbot,
+.chat-header,
+.chat-form,
+.page-shell,
+.page-heading,
+.contact-layout,
+.contact-form,
+.contact-details,
+.about-page,
+.about-section,
+.about-info-grid,
+.about-value-grid,
+.about-capabilities,
+.about-cta,
+.social-card-grid,
+.policy-panel,
+.role-modal,
+.role-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.brand,
+.status-brand,
+.chat-header,
+.contact-detail-item,
+.about-actions,
+.capability-tags,
+.hero-actions {
+  flex-wrap: wrap;
+}
+
+.hero-title,
+.hero-lede,
+.section-heading p,
+.capability-card h3,
+.capability-card p,
+.chat-copy h2,
+.chat-copy p,
+.message,
+.contact-heading p,
+.contact-form label,
+.contact-detail-item,
+.about-hero-copy p,
+.about-info-card p,
+.about-value-card p,
+.role-card p {
+  overflow-wrap: anywhere;
+}
+
+.contact-form input,
+.contact-form textarea,
+.contact-form select,
+.contact-form .dropdown-trigger,
+.contact-form .dropdown-menu,
+.chat-form input,
+.role-card button,
+.primary-action,
+.secondary-action {
+  max-width: 100%;
+}
+
+.role-modal-backdrop {
+  overflow-y: auto;
+}
+
+.role-modal {
+  max-height: calc(100svh - 40px);
+  overflow-y: auto;
+}
+
+@media (max-width: 1040px) {
+  .nav-links {
+    display: none;
+  }
+
+  .mobile-nav-toggle {
+    display: inline-grid;
+  }
+
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 820px) {
+  .hero-section {
+    min-height: auto;
+    align-items: start;
+  }
+
+  .hero-copy {
+    padding-right: 0;
+  }
+
+  .hero-lede {
+    max-width: none;
+  }
+
+  .hero-video-copy {
+    left: 16px;
+    right: 16px;
+    bottom: 22px;
+    max-width: none;
+  }
+
+  .hero-video-copy h2 {
+    font-size: clamp(1.7rem, 8vw, 2.75rem);
+    line-height: 1.12;
+  }
+
+  .hero-video-header {
+    left: 16px;
+    right: 16px;
+    max-width: calc(100% - 32px);
+  }
+
+  .chatbot-block,
+  .contact-layout,
+  .about-hero,
+  .about-intro {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-details,
+  .about-info-grid,
+  .about-value-grid,
+  .social-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-form .dropdown-menu {
+    max-height: min(320px, 52svh);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar {
+    width: calc(100% - 20px);
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .mobile-nav-panel {
+    max-height: calc(100svh - 76px);
+  }
+
+  .section-block,
+  .page-shell,
+  .about-page {
+    width: min(100% - 20px, 1180px);
+  }
+
+  .section-heading,
+  .page-heading {
+    gap: 12px;
+  }
+
+  .hero-section {
+    padding: 28px 10px 44px;
+  }
+
+  .hero-actions,
+  .about-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .primary-action,
+  .secondary-action,
+  .contact-submit,
+  .role-card button {
+    width: 100%;
+  }
+
+  .capability-card,
+  .chatbot,
+  .contact-form,
+  .contact-details,
+  .policy-panel,
+  .social-card,
+  .about-info-card,
+  .about-value-card,
+  .role-card {
+    padding: 16px;
+  }
+
+  .chat-header {
+    gap: 10px;
+  }
+
+  .chat-messages {
+    min-height: 230px;
+    max-height: 52svh;
+  }
+
+  .contact-detail-item {
+    align-items: start;
+  }
+
+  .role-modal-backdrop {
+    align-items: start;
+    padding: 12px;
+  }
+
+  .role-modal {
+    max-height: calc(100svh - 24px);
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .section-block,
+  .page-shell,
+  .about-page {
+    width: min(100% - 16px, 1180px);
+  }
+
+  .hero-title {
+    font-size: clamp(1.78rem, 11vw, 2.25rem);
+  }
+
+  .chat-form {
+    grid-template-columns: minmax(0, 1fr) 40px;
+  }
+
+  .chat-form button {
+    width: 40px;
+    min-width: 40px;
+  }
+
+  .contact-detail-item {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .contact-detail-icon {
+    width: 34px;
+    height: 34px;
   }
 }
