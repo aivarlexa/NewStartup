@@ -58,7 +58,7 @@ function getGoogleCalendarConfig(settings = {}) {
     clientSecret: getEnv("GOOGLE_CLIENT_SECRET"),
     redirectUri: getEnv(
       "GOOGLE_REDIRECT_URI",
-      "http://localhost:5000/api/bookings/google/callback"
+      "http://localhost:3000/api/bookings/google/callback"
     ),
     calendarId: getEnv("GOOGLE_CALENDAR_ID", "primary"),
     adminEmail:

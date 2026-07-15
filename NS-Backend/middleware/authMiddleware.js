@@ -22,7 +22,17 @@ async function getUserFromRequest(req) {
   }
 
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  return User.findById(decoded.userId).select("name email role avatar phone companyName address website linkedin bio preferredTechnologies");
+  
+  // FALLBACK CHECK: Match both decoded.userId and decoded.id
+  const userIdToFind = decoded.userId || decoded.id;
+
+  if (!userIdToFind) {
+    return null;
+  }
+
+  return User.findById(userIdToFind).select(
+    "name email role avatar phone companyName address website linkedin bio preferredTechnologies"
+  );
 }
 
 async function requireAuth(req, res, next) {
@@ -45,7 +55,6 @@ function requireRole(...roles) {
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ success: false, message: "You do not have access to this area." });
     }
-
     next();
   };
 }
