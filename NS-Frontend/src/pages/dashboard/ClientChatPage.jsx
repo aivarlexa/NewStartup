@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { CalendarDays, ListPlus, Send, Smile, Paperclip } from 'lucide-react'
+import { CalendarDays, ListPlus, Send } from 'lucide-react'
 import { io } from 'socket.io-client'
 import AuthContext from '../../context/AuthContext'
 import api, { getApiErrorMessage } from '../../services/api'
@@ -12,6 +12,10 @@ function ClientChatPage() {
   const [input, setInput] = useState('')
   const [status, setStatus] = useState('')
   const [typingName, setTypingName] = useState('')
+  const [onlineDeveloperIds, setOnlineDeveloperIds] = useState([])
+  
+  // WhatsApp-style background message counter state matrix
+  const [unreadCounts, setUnreadCounts] = useState({})
   
   const socketRef = useRef(null)
   const typingTimerRef = useRef(null)
@@ -50,7 +54,11 @@ function ClientChatPage() {
     if (!token || !selectedClient) return
 
     api.get(`/messages/${conversationKey}`)
-      .then(({ data }) => setMessages(data.messages || []))
+      .then(({ data }) => {
+        setMessages(data.messages || [])
+        // Clear WhatsApp badge count locally once the channel conversation is focused open
+        setUnreadCounts((prev) => ({ ...prev, [selectedClient]: 0 }))
+      })
       .catch(() => setMessages([]))
   }, [selectedClient, conversationKey, token])
 
@@ -72,6 +80,11 @@ function ClientChatPage() {
       setStatus('Realtime chat is temporarily offline.')
     })
     
+    // Listen for live array broadcast of online developer/user IDs
+    socket.on('developers:online_list', (ids) => {
+      setOnlineDeveloperIds(ids || [])
+    })
+    
     socket.on('typing:start', ({ user: typingUser }) => {
       if (typingUser?.id !== currentUserId) {
         setTypingName(typingUser?.name || 'Client')
@@ -81,17 +94,34 @@ function ClientChatPage() {
     socket.on('typing:stop', () => setTypingName(''))
     
     socket.on('message:new', (message) => {
-      setMessages((current) => {
-        const messageId = message?._id || message?.id
-        if (messageId && current.some((item) => (item._id || item.id) === messageId)) {
-          return current
+      const senderId = typeof message.sender === 'object' 
+        ? message.sender?._id || message.sender?.id 
+        : message.sender
+      const msgClientId = message.client || senderId
+
+      // Check if the incoming message belongs to the active conversation window
+      if (String(msgClientId) === String(selectedClient)) {
+        setMessages((current) => {
+          const messageId = message?._id || message?.id
+          if (messageId && current.some((item) => (item._id || item.id) === messageId)) {
+            return current
+          }
+          return [...current, message]
+        })
+      } else {
+        // WhatsApp Notification Badge Increment Trigger Rules
+        if (senderId && String(senderId) !== String(currentUserId)) {
+          setUnreadCounts((prev) => ({
+            ...prev,
+            [msgClientId]: (prev[msgClientId] || 0) + 1
+          }))
         }
-        return [...current, message]
-      })
+      }
     })
 
     return () => {
       socket.off('connect_error')
+      socket.off('developers:online_list')
       socket.off('typing:start')
       socket.off('typing:stop')
       socket.off('message:new')
@@ -99,7 +129,7 @@ function ClientChatPage() {
       socketRef.current = null
       if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current)
     }
-  }, [token, currentUserId])
+  }, [token, currentUserId, selectedClient])
 
   // 4. Handle Room Channels Switching
   useEffect(() => {
@@ -168,19 +198,57 @@ function ClientChatPage() {
 
       <div className="chat-workspace client-chat-layout">
         <aside className="chat-side-panel">
-          {clients.map((client) => (
-            <button 
-              className={selectedClient === client._id ? 'active' : ''} 
-              type="button" 
-              key={client._id} 
-              onClick={() => setSelectedClient(client._id)}
-            >
-              <span>{client.name}</span>
-              <small>{client.companyName || 'Workspace Client'}</small>
-              {/* Stray instruction comment line deleted completely from here */}
-              <em>{client.email}</em>
-            </button>
-          ))}
+          {clients.map((client) => {
+            const targetClientIdStr = String(client._id || client.id || '').trim().toLowerCase();
+            
+            // Robust lowercased item validation prevents type mapping status discrepancies
+            const isOnline = onlineDeveloperIds.some(
+              (onlineId) => String(onlineId).trim().toLowerCase() === targetClientIdStr
+            );
+            
+            const badgeCount = unreadCounts[client._id] || 0;
+
+            return (
+              <button 
+                className={`${selectedClient === client._id ? 'active' : ''} ${isOnline ? 'online-user' : 'offline-user'}`} 
+                type="button" 
+                key={client._id} 
+                onClick={() => setSelectedClient(client._id)}
+                style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', textAlign: 'left' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <span style={{ fontWeight: '600' }}>{client.name}</span>
+                  
+                  {/* WhatsApp-Style Circular Counter Notification Badge Element */}
+                  {badgeCount > 0 && (
+                    <span style={{
+                      background: '#22c55e',
+                      color: '#ffffff',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      borderRadius: '50%',
+                      padding: '2px 6px',
+                      minWidth: '18px',
+                      height: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    }}>
+                      {badgeCount}
+                    </span>
+                  )}
+                </div>
+                
+                <small style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                  <span className={`status-dot ${isOnline ? 'active-green' : 'inactive-gray'}`}></span>
+                  {isOnline ? 'Online' : 'Offline'} · Active Channel
+                </small>
+                <small>{client.companyName || 'Workspace Client'}</small>
+                <em>{client.email}</em>
+              </button>
+            )
+          })}
           {clients.length === 0 && <p className="no-data-msg">No active clients assigned.</p>}
         </aside>
 

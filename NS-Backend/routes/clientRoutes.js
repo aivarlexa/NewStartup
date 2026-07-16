@@ -64,29 +64,43 @@ function normalizeNotification(notification) {
 // Global protection middleware for client routes
 router.use(requireAuth, requireRole("Client"));
 
+// 1. DYNAMIC SUMMARY DISPATCH ENGINE (Fixes the Unread Message Counter Bug)
 router.get("/summary", async (req, res) => {
-  const userId = req.user._id || req.user.id;
+  try {
+    const userId = req.user._id || req.user.id;
 
-  const [requirements, unreadMessages, upcomingMeetings, notifications] = await Promise.all([
-    Requirement.find({ client: userId }).sort({ updatedAt: -1 }).lean(),
-    Message.countDocuments({ client: userId, seenBy: { $ne: userId } }),
-    ClientMeeting.countDocuments({ client: userId, status: "Scheduled" }),
-    Notification.find({ user: userId }).sort({ createdAt: -1 }).limit(6).lean(),
-  ]);
+    // Concurrently gather counts to maximize query performance
+    const [requirements, unreadMessages, upcomingMeetings, notifications] = await Promise.all([
+      Requirement.find({ client: userId }).sort({ updatedAt: -1 }).lean(),
+      
+      // FIX: Only count messages where the client is NOT the sender AND hasn't seen it yet
+      Message.countDocuments({ 
+        client: userId, 
+        sender: { $ne: userId }, // Must be sent by a Developer
+        seenBy: { $ne: userId }  // Client has not marked it read
+      }),
+      
+      ClientMeeting.countDocuments({ client: userId, status: "Scheduled" }),
+      Notification.find({ user: userId }).sort({ createdAt: -1 }).limit(6).lean(),
+    ]);
 
-  res.json({
-    success: true,
-    summary: {
-      activeProjects: requirements.filter((item) => ["Open", "Assigned"].includes(item.status)).length,
-      pendingRequests: requirements.filter((item) => item.status === "Pending").length,
-      completedProjects: requirements.filter((item) => item.status === "Completed").length,
-      unreadMessages,
-      upcomingMeetings,
-      recentNotifications: notifications.filter((item) => !item.read).length,
-    },
-    latestActivity: requirements.slice(0, 5).map((item) => `${item.projectTitle} is ${item.status}`),
-    notifications: notifications.map(normalizeNotification),
-  });
+    res.json({
+      success: true,
+      summary: {
+        activeProjects: requirements.filter((item) => ["Open", "Assigned"].includes(item.status)).length,
+        pendingRequests: requirements.filter((item) => item.status === "Pending").length,
+        completedProjects: requirements.filter((item) => item.status === "Completed").length,
+        unreadMessages,
+        upcomingMeetings,
+        recentNotifications: notifications.filter((item) => !item.read).length,
+      },
+      latestActivity: requirements.slice(0, 5).map((item) => `${item.projectTitle} is ${item.status}`),
+      notifications: notifications.map(normalizeNotification),
+    });
+  } catch (error) {
+    console.error("Summary processing failure:", error.message);
+    res.status(500).json({ success: false, message: "Internal server error gathering summary metrics." });
+  }
 });
 
 router.get("/requirements", async (req, res) => {
@@ -144,6 +158,7 @@ router.get("/messages", async (req, res) => {
   res.json({ success: true, messages });
 });
 
+// SYNCED CHAT ROUTE DISPATCH SYSTEM
 router.post("/messages", async (req, res) => {
   const userId = req.user._id || req.user.id;
   if (!req.body.text && !req.body.emoji && !req.body.attachments?.length) {
@@ -170,12 +185,23 @@ router.post("/messages", async (req, res) => {
     read: true,
   });
 
+  // Populate message sender info cleanly before sending out down the socket line
+  const populatedMessage = await Message.findById(message._id)
+    .populate("sender", "name role")
+    .lean();
+
   const io = req.app.get("io");
   if (io) {
-    io.to(`conversation:${message.conversationKey}`).emit("message:new", message);
+    // 1. Emit directly to focused window channel room 
+    io.to(`conversation:${message.conversationKey}`).emit("message:new", populatedMessage);
+
+    // 2. WHATSAPP STYLE SYNC LAYER: Send to developer's explicit background room channel
+    if (developerId) {
+      io.to(`user:${developerId}`).emit("message:new", populatedMessage);
+    }
   }
 
-  res.status(201).json({ success: true, message });
+  res.status(201).json({ success: true, message: populatedMessage });
 });
 
 router.get("/meetings", async (req, res) => {

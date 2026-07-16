@@ -22,7 +22,7 @@ router.get("/requirements", async (req, res) => {
   }
 });
 
-// 2. RESTORED: Active Clients Search Handler (Resolves the chat sidebar 404!)
+// 2. Active Clients Search Handler (Resolves the chat sidebar 404!)
 router.get("/clients", async (req, res) => {
   try {
     const clients = await User.find({ role: "Client" })
@@ -40,16 +40,13 @@ router.get("/clients", async (req, res) => {
 // 3. Dynamic Self-Profile Serialization Channel
 router.get("/profile", async (req, res) => {
   try {
-    // Dynamic Fallback Check: Safely evaluate both _id and id shapes
     const targetUserId = req.user._id || req.user.id;
-
     const developer = await User.findById(targetUserId).select("-password").lean();
 
     if (!developer) {
       return res.status(404).json({ success: false, message: "Developer profile not found" });
     }
 
-    // Map your database fields to match the frontend state expectations cleanly
     res.json({
       success: true,
       profile: {
@@ -64,12 +61,72 @@ router.get("/profile", async (req, res) => {
         linkedin: developer.linkedin || "",
         bio: developer.bio || "",
         preferredTechnologies: developer.preferredTechnologies || [],
+        avatar: developer.avatar || "",
         settings: developer.settings || {}
       }
     });
   } catch (error) {
     console.error("Profile fetch processing failure:", error.message);
     res.status(500).json({ success: false, message: "Server error fetching profile details" });
+  }
+});
+
+// 4. Update Developer Profile Data Channel (Fixes the frontend PUT 404/500!)
+router.put("/profile", async (req, res) => {
+  try {
+    const targetUserId = req.user._id || req.user.id;
+
+    // Strict whitelist control over incoming developer body payload modifications
+    const allowedFields = [
+      "name",
+      "phone",
+      "address",
+      "website",
+      "linkedin",
+      "bio",
+      "preferredTechnologies",
+      "avatar"
+    ];
+
+    const updates = {};
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    // Execute atomic document update step mapping directly onto verified user IDs
+    const updatedDeveloper = await User.findByIdAndUpdate(
+      targetUserId,
+      { $set: updates },
+      { returnDocument: "after", runValidators: true }
+    ).select("-password").lean();
+
+    if (!updatedDeveloper) {
+      return res.status(404).json({ success: false, message: "Developer profile record not found." });
+    }
+
+    res.json({
+      success: true,
+      profile: {
+        id: updatedDeveloper._id,
+        name: updatedDeveloper.name,
+        role: updatedDeveloper.role || "Developer",
+        email: updatedDeveloper.email,
+        phone: updatedDeveloper.phone || "",
+        companyName: updatedDeveloper.companyName || "",
+        address: updatedDeveloper.address || "",
+        website: updatedDeveloper.website || "",
+        linkedin: updatedDeveloper.linkedin || "",
+        bio: updatedDeveloper.bio || "",
+        preferredTechnologies: updatedDeveloper.preferredTechnologies || [],
+        avatar: updatedDeveloper.avatar || "",
+        settings: updatedDeveloper.settings || {}
+      }
+    });
+  } catch (error) {
+    console.error("Profile update processing failure:", error.message);
+    res.status(500).json({ success: false, message: "Server error saving profile updates." });
   }
 });
 

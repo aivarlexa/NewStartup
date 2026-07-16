@@ -15,6 +15,9 @@ function ClientChatWithDevelopersPage() {
   const [typingName, setTypingName] = useState('')
   const [onlineDeveloperIds, setOnlineDeveloperIds] = useState([])
   
+  // WhatsApp-style background message counter state matrix
+  const [unreadCounts, setUnreadCounts] = useState({})
+  
   const socketRef = useRef(null)
   const typingTimerRef = useRef(null)
   const messagesEndRef = useRef(null)
@@ -34,7 +37,7 @@ function ClientChatWithDevelopersPage() {
     scrollToBottom()
   }, [messages])
 
-  // 1. Load active Developer Accounts list (Filters for Developers only on backend)
+  // 1. Load active Developer Accounts list
   useEffect(() => {
     if (!token) return
 
@@ -47,12 +50,16 @@ function ClientChatWithDevelopersPage() {
       .catch(() => setDevelopers([]))
   }, [token])
 
-  // 2. Load historical chat conversations using the dynamic path parameter layout
+  // 2. Load historical chat conversations
   useEffect(() => {
     if (!token || !selectedDeveloper) return
 
     api.get(`/messages/${conversationKey}`)
-      .then(({ data }) => setMessages(data.messages || []))
+      .then(({ data }) => {
+        setMessages(data.messages || [])
+        // Clear WhatsApp badge count locally once the channel conversation is focused open
+        setUnreadCounts((prev) => ({ ...prev, [selectedDeveloper]: 0 }))
+      })
       .catch(() => setMessages([]))
   }, [selectedDeveloper, conversationKey, token])
 
@@ -73,7 +80,7 @@ function ClientChatWithDevelopersPage() {
     
     // Listen for live array broadcast of online developer IDs
     socket.on('developers:online_list', (ids) => {
-      setOnlineDeveloperIds(ids)
+      setOnlineDeveloperIds(ids || [])
     })
 
     socket.on('typing:start', ({ user: typingUser }) => {
@@ -85,13 +92,30 @@ function ClientChatWithDevelopersPage() {
     socket.on('typing:stop', () => setTypingName(''))
     
     socket.on('message:new', (message) => {
-      setMessages((current) => {
-        const messageId = message?._id || message?.id
-        if (messageId && current.some((item) => (item._id || item.id) === messageId)) {
-          return current
+      const senderId = typeof message.sender === 'object' 
+        ? message.sender?._id || message.sender?.id 
+        : message.sender
+      const msgDeveloperId = message.developer || senderId
+
+      // Check if the incoming message belongs to the active conversation window
+      if (String(msgDeveloperId) === String(selectedDeveloper)) {
+        setMessages((current) => {
+          const messageId = message?._id || message?.id
+          if (messageId && current.some((item) => (item._id || item.id) === messageId)) {
+            return current
+          }
+          return [...current, message]
+        })
+      } else {
+        // WhatsApp Notification Badge Increment Trigger Rules
+        // Increment badge if the message is from a background developer channel and not yourself
+        if (senderId && String(senderId) !== String(currentUserId)) {
+          setUnreadCounts((prev) => ({
+            ...prev,
+            [msgDeveloperId]: (prev[msgDeveloperId] || 0) + 1
+          }))
         }
-        return [...current, message]
-      })
+      }
     })
 
     return () => {
@@ -104,7 +128,7 @@ function ClientChatWithDevelopersPage() {
       socketRef.current = null
       if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current)
     }
-  }, [token, currentUserId])
+  }, [token, currentUserId, selectedDeveloper])
 
   // 4. Handle Room Channels Switching
   useEffect(() => {
@@ -178,7 +202,14 @@ function ClientChatWithDevelopersPage() {
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search developers..." />
           </div>
           {filteredDevelopers.map((developer) => {
-            const isOnline = onlineDeveloperIds.includes(String(developer._id || developer.id));
+            const targetDevIdStr = String(developer._id || developer.id || '').trim().toLowerCase();
+            
+            // FIX: Robust lowercased item validation prevents type mapping status discrepancies
+            const isOnline = onlineDeveloperIds.some(
+              (onlineId) => String(onlineId).trim().toLowerCase() === targetDevIdStr
+            );
+            
+            const badgeCount = unreadCounts[developer._id] || 0;
 
             return (
               <button 
@@ -186,9 +217,33 @@ function ClientChatWithDevelopersPage() {
                 type="button" 
                 key={developer._id} 
                 onClick={() => setSelectedDeveloper(developer._id)}
+                style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', textAlign: 'left' }}
               >
-                <span>{developer.name}</span>
-                <small>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <span style={{ fontWeight: '600' }}>{developer.name}</span>
+                  
+                  {/* WhatsApp-Style Circular Counter Notification Badge Element */}
+                  {badgeCount > 0 && (
+                    <span style={{
+                      background: '#22c55e',
+                      color: '#ffffff',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      borderRadius: '50%',
+                      padding: '2px 6px',
+                      minWidth: '18px',
+                      height: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    }}>
+                      {badgeCount}
+                    </span>
+                  )}
+                </div>
+                
+                <small style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                   <span className={`status-dot ${isOnline ? 'active-green' : 'inactive-gray'}`}></span>
                   {isOnline ? 'Online' : 'Offline'} · Active Channel
                 </small>

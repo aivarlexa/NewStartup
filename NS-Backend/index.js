@@ -69,6 +69,18 @@ app.get("/api/notifications", requireAuth, async (req, res) => {
   }
 });
 
+// NEW: Role-Agnostic Profile Sync Route (Resolves Cross-Role 403 Crashes)
+app.get("/api/profile/me", requireAuth, async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+    res.json({ success: true, profile: req.user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error resolving identity context." });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("HI");
 });
@@ -78,9 +90,9 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/insights", insightsRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/client", clientRoutes);
-app.use("/api/developer", developerRoutes);
-app.use("/api/messages", messageRoutes); 
+app.use("/api/client", clientRoutes);       // Enforces requireRole("Client")
+app.use("/api/developer", developerRoutes); // Enforces requireRole("Developer")
+app.use("/api/messages", messageRoutes);
 
 // 4. ERROR LOGGER LEAVES LAST
 app.use(errorHandler);
@@ -88,9 +100,15 @@ app.use(errorHandler);
 // WEB SOCKET LAYER
 const io = new Server(server, { cors: { origin: allowedOrigins, credentials: true } });
 const activeDevelopers = new Set();
+const activeClients = new Set(); // 👈 Track online clients securely
 
-function broadcastDeveloperCount(ioInstance) {
+// FIX: Combined broadcast engine maps all online footprints to the same event channel matrix
+function broadcastOnlineStatus(ioInstance) {
   ioInstance.emit("developers:count_update", activeDevelopers.size);
+  ioInstance.emit("developers:online_list", [
+    ...Array.from(activeDevelopers),
+    ...Array.from(activeClients) // 👈 Emit all online developer and client IDs together
+  ]);
 }
 
 io.use(async (socket, next) => {
@@ -131,12 +149,17 @@ io.use(async (socket, next) => {
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.user.name} (${socket.user.role})`);
 
+  // FIX: Route identity records to their accurate global tracking arrays
   if (socket.user.role === "Developer") {
     activeDevelopers.add(socket.user.id);
-    broadcastDeveloperCount(io);
+  } else if (socket.user.role === "Client") {
+    activeClients.add(socket.user.id); // 👈 Track online clients
   }
 
-  socket.emit("developers:count_update", activeDevelopers.size);
+  // Push immediate synchronization broadcast
+  broadcastOnlineStatus(io);
+
+  // Join self personal notification room pipeline channel
   socket.join(`user:${socket.user.id}`);
 
   socket.on("conversation:join", (conversationKey) => {
@@ -172,7 +195,15 @@ io.on("connection", (socket) => {
       const populatedMessage = await Message.findById(newMessage._id)
         .populate("sender", "name role");
 
+      // 1. Emit to active chat room window view channel
       io.to(`conversation:${conversationKey}`).emit("message:new", populatedMessage);
+
+      // 2. WHATSAPP BACKGROUND NOTIFICATION BADGE PUMP:
+      const recipientId = socket.user.role === "Client" ? developer : client;
+      if (recipientId) {
+        io.to(`user:${recipientId}`).emit("message:new", populatedMessage);
+      }
+      
     } catch (error) {
       console.error("Failed to process message:", error.message);
       socket.emit("message:error", { error: "Message could not be saved." });
@@ -180,6 +211,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    // FIX: Symmetrical teardown of active developer and client connections on socket drop
     if (socket.user.role === "Developer") {
       const matchingSockets = Array.from(io.sockets.sockets.values()).filter(
         (s) => s.user?.id === socket.user.id
@@ -187,9 +219,19 @@ io.on("connection", (socket) => {
       
       if (matchingSockets.length === 0) {
         activeDevelopers.delete(socket.user.id);
-        broadcastDeveloperCount(io);
+      }
+    } else if (socket.user.role === "Client") {
+      const matchingSockets = Array.from(io.sockets.sockets.values()).filter(
+        (s) => s.user?.id === socket.user.id
+      );
+      
+      if (matchingSockets.length === 0) {
+        activeClients.delete(socket.user.id); // 👈 Remove client on true disconnect
       }
     }
+
+    // Refresh active status indicators down to the layout templates
+    broadcastOnlineStatus(io);
     console.log(`User disconnected: ${socket.user.name}`);
   });
 });
