@@ -9,6 +9,7 @@ function ClientProfilePage() {
   const [profile, setProfile] = useState(initialProfile)
   const [message, setMessage] = useState('')
 
+// ✅ FIXED CODE
   useEffect(() => {
     api.get('/client/profile').then(({ data }) => setProfile({ ...initialProfile, ...data.profile, preferredTechnologies: (data.profile.preferredTechnologies || []).join(', ') })).catch(() => {})
   }, [])

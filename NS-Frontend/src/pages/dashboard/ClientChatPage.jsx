@@ -45,24 +45,32 @@ function ClientChatPage() {
       .catch(() => setClients([]))
   }, [token])
 
-  // 2. Load historical chat conversations
+  // 2. Load historical chat conversations via the dynamic conversationKey path
   useEffect(() => {
     if (!token || !selectedClient) return
 
-    api.get('/messages', { params: { clientId: selectedClient } })
+    api.get(`/messages/${conversationKey}`)
       .then(({ data }) => setMessages(data.messages || []))
       .catch(() => setMessages([]))
-  }, [selectedClient, token])
+  }, [selectedClient, conversationKey, token])
 
   // 3. Setup Authenticated Socket Connections
   useEffect(() => {
     if (!token) return undefined
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
-    const socket = io(socketUrl, { auth: { token }, transports: ['websocket'] })
+    
+    const socket = io(socketUrl, { 
+      auth: { token }, 
+      transports: ['websocket'],
+      forceNew: true 
+    })
     socketRef.current = socket
 
-    socket.on('connect_error', () => setStatus('Realtime chat is temporarily offline.'))
+    socket.on('connect_error', (err) => {
+      console.error("Socket Connection Error:", err.message)
+      setStatus('Realtime chat is temporarily offline.')
+    })
     
     socket.on('typing:start', ({ user: typingUser }) => {
       if (typingUser?.id !== currentUserId) {
@@ -83,6 +91,10 @@ function ClientChatPage() {
     })
 
     return () => {
+      socket.off('connect_error')
+      socket.off('typing:start')
+      socket.off('typing:stop')
+      socket.off('message:new')
       socket.disconnect()
       socketRef.current = null
       if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current)
@@ -132,8 +144,10 @@ function ClientChatPage() {
     setStatus('')
     
     try {
-      await api.post('/messages', { 
-        clientId: selectedClient, 
+      // FIX: Corrected target endpoint to explicitly map the dynamic path parameter
+      await api.post(`/messages/${conversationKey}`, { 
+        client: selectedClient, 
+        developer: currentUserId,
         text: input.trim() 
       })
 
@@ -155,7 +169,7 @@ function ClientChatPage() {
 
       <div className="chat-workspace client-chat-layout">
         <aside className="chat-side-panel">
-          {clients.map((client, index) => (
+          {clients.map((client) => (
             <button 
               className={selectedClient === client._id ? 'active' : ''} 
               type="button" 

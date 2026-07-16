@@ -17,6 +17,8 @@ const developerRoutes = require("./routes/developerRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const errorHandler = require("./middleware/errorHandler");
 const { getClientOrigin } = require("./config/env");
+const Notification = require("./models/Notification");
+const { requireAuth } = require("./middleware/authMiddleware");
 
 const app = express();
 const server = http.createServer(app);
@@ -47,21 +49,50 @@ const corsOptions = {
   credentials: true,
 };
 
+// 1. GLOBAL MIDDLEWARES FIRST
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsOptions));
 
-const io = new Server(server, { cors: { origin: allowedOrigins, credentials: true } });
+// 2. GLOBAL INLINE API ENTRANCES
+app.get("/api/notifications", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const notifications = await Notification.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
 
-// Track unique online developers globally
+    res.json({ success: true, notifications });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get("/", (req, res) => {
+  res.send("HI");
+});
+
+// 3. FEATURE ROUTER ROUTING MODULES
+app.use("/api/contact", contactRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/insights", insightsRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/client", clientRoutes);
+app.use("/api/developer", developerRoutes);
+app.use("/api/messages", messageRoutes); 
+
+// 4. ERROR LOGGER LEAVES LAST
+app.use(errorHandler);
+
+// WEB SOCKET LAYER
+const io = new Server(server, { cors: { origin: allowedOrigins, credentials: true } });
 const activeDevelopers = new Set();
 
 function broadcastDeveloperCount(ioInstance) {
   ioInstance.emit("developers:count_update", activeDevelopers.size);
 }
 
-// Socket authentication middleware
-// Socket authentication middleware
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth?.token;
@@ -76,8 +107,6 @@ io.use(async (socket, next) => {
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // CATCH-ALL: Check decoded.userId OR decoded.id to match your controller payload
     const userIdToFind = decoded.userId || decoded.id;
     
     if (!userIdToFind) {
@@ -99,20 +128,15 @@ io.use(async (socket, next) => {
   }
 });
 
-// SINGLE io.on("connection") block handling all events cleanly
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.user.name} (${socket.user.role})`);
 
-  // 1. Manage Developer Availability Count
   if (socket.user.role === "Developer") {
     activeDevelopers.add(socket.user.id);
     broadcastDeveloperCount(io);
   }
 
-  // Send initial count immediately to the connected client
   socket.emit("developers:count_update", activeDevelopers.size);
-
-  // 2. Room Join Management
   socket.join(`user:${socket.user.id}`);
 
   socket.on("conversation:join", (conversationKey) => {
@@ -121,7 +145,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 3. Typing Status Broadcasting
   socket.on("typing:start", (conversationKey) => {
     socket.to(`conversation:${conversationKey}`).emit("typing:start", { user: socket.user });
   });
@@ -130,7 +153,6 @@ io.on("connection", (socket) => {
     socket.to(`conversation:${conversationKey}`).emit("typing:stop", { user: socket.user });
   });
 
-  // 4. Real-Time Messaging & MongoDB Persistence
   socket.on("message:new", async ({ conversationKey, text, client, developer, attachments }) => {
     if (!conversationKey || (!text && !attachments?.length)) return;
 
@@ -157,7 +179,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 5. Clean Disconnect Handling
   socket.on("disconnect", () => {
     if (socket.user.role === "Developer") {
       const matchingSockets = Array.from(io.sockets.sockets.values()).filter(
@@ -174,21 +195,6 @@ io.on("connection", (socket) => {
 });
 
 app.set("io", io);
-
-app.get("/", (req, res) => {
-  res.send("HI");
-});
-
-// API Routes
-app.use("/api/contact", contactRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/insights", insightsRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/client", clientRoutes);
-app.use("/api/developer", developerRoutes);
-app.use("/api/messages", messageRoutes); 
-
-app.use(errorHandler);
 
 server.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);

@@ -13,12 +13,15 @@ function ClientChatWithDevelopersPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [typingName, setTypingName] = useState('')
+  const [onlineCount, setOnlineCount] = useState(0)
+  
   const socketRef = useRef(null)
   const typingTimerRef = useRef(null)
   const messagesEndRef = useRef(null)
 
   const currentUserId = user?.id || user?._id || ''
 
+  // Symmetrical conversation key mapping matching the backend: clientId:developerId
   const conversationKey = useMemo(() => {
     return `${currentUserId}:${selectedDeveloper || 'general'}`
   }, [selectedDeveloper, currentUserId])
@@ -31,7 +34,7 @@ function ClientChatWithDevelopersPage() {
     scrollToBottom()
   }, [messages])
 
-  // 1. Load Developer list (Gated by active token validation)
+  // 1. Load active Developer Accounts list
   useEffect(() => {
     if (!token) return
 
@@ -42,27 +45,38 @@ function ClientChatWithDevelopersPage() {
         setSelectedDeveloper(list[0]?._id || '')
       })
       .catch(() => setDevelopers([]))
-  }, [token]) // Re-run cleanly the moment token mounts in memory
+  }, [token])
 
-  // 2. Load historical messages (Gated by token and developer selection)
+  // 2. Load historical chat conversations
   useEffect(() => {
     if (!token || !selectedDeveloper) return
 
     api.get('/client/messages', { params: { developerId: selectedDeveloper } })
       .then(({ data }) => setMessages(data.messages || []))
       .catch(() => setMessages([]))
-  }, [selectedDeveloper, token]) // Added token check to clear race conditions
+  }, [selectedDeveloper, token])
 
-  // 3. WebSocket Connection Lifecycle Handler
+  // 3. Setup Authenticated Socket Connections
   useEffect(() => {
     if (!token) return undefined
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
-    const socket = io(socketUrl, { auth: { token }, transports: ['websocket'] })
+    
+    // Added forceNew to cleanly cycle headers on re-authentications
+    const socket = io(socketUrl, { 
+      auth: { token }, 
+      transports: ['websocket'],
+      forceNew: true 
+    })
     socketRef.current = socket
 
     socket.on('connect_error', () => setStatus('Realtime chat is temporarily unavailable.'))
     
+    // Live metrics update channel for available devs counts
+    socket.on('developers:count_update', (count) => {
+      setOnlineCount(count)
+    })
+
     socket.on('typing:start', ({ user: typingUser }) => {
       if (typingUser?.id !== currentUserId) {
         setTypingName(typingUser?.name || 'Developer')
@@ -82,13 +96,19 @@ function ClientChatWithDevelopersPage() {
     })
 
     return () => {
+      // Robust event listener unmounting layer
+      socket.off('connect_error')
+      socket.off('developers:count_update')
+      socket.off('typing:start')
+      socket.off('typing:stop')
+      socket.off('message:new')
       socket.disconnect()
       socketRef.current = null
       if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current)
     }
   }, [token, currentUserId])
 
-  // Room connection context router
+  // 4. Handle Room Channels Switching
   useEffect(() => {
     const socket = socketRef.current
     if (!socket || !selectedDeveloper) return undefined
@@ -101,7 +121,7 @@ function ClientChatWithDevelopersPage() {
     }
   }, [conversationKey, selectedDeveloper])
 
-  // Real-time keystroke tracking management
+  // 5. Typing metrics broadcast
   useEffect(() => {
     const socket = socketRef.current
     if (!socket || !selectedDeveloper) return undefined
@@ -125,6 +145,7 @@ function ClientChatWithDevelopersPage() {
   const filteredDevelopers = useMemo(() => developers.filter((dev) => dev.name?.toLowerCase().includes(search.toLowerCase())), [developers, search])
   const activeDeveloper = developers.find((dev) => dev._id === selectedDeveloper)
 
+  // 6. API Post Request Delivery Transaction
   async function sendMessage(event) {
     event.preventDefault()
     if (!input.trim() || !token) return
@@ -155,12 +176,20 @@ function ClientChatWithDevelopersPage() {
       <div className="chat-workspace client-chat-layout">
         <aside className="chat-side-panel">
           <div className="dashboard-search">
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search developers" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search developers..." />
           </div>
-          {filteredDevelopers.map((developer, index) => (
-            <button className={selectedDeveloper === developer._id ? 'active' : ''} type="button" key={developer._id} onClick={() => setSelectedDeveloper(developer._id)}>
+          {filteredDevelopers.map((developer) => (
+            <button 
+              className={selectedDeveloper === developer._id ? 'active' : ''} 
+              type="button" 
+              key={developer._id} 
+              onClick={() => setSelectedDeveloper(developer._id)}
+            >
               <span>{developer.name}</span>
-              <small>{index % 2 === 0 ? 'Online' : 'Offline'} · Active Channel</small>
+              <small>Active Channel</small>
+              {developer.preferredTechnologies?.length > 0 && (
+                <em className="tech-stack-indicator">{developer.preferredTechnologies.join(', ')}</em>
+              )}
               <em>{developer.email}</em>
             </button>
           ))}
@@ -169,8 +198,10 @@ function ClientChatWithDevelopersPage() {
 
         <section className="chat-main-panel client-main-panel">
           <div className="chat-room-header">
-            <span>{typingName ? `${typingName} is typing...` : activeDeveloper ? 'Connected' : 'Select a developer'}</span>
-            <strong>{activeDeveloper?.name || 'Developer Chat'}</strong>
+            <div>
+              <span>{typingName ? `${typingName} is typing...` : activeDeveloper ? 'Connected' : 'Select a developer'}</span>
+              <strong>{activeDeveloper?.name || 'Developer Workspace'}</strong>
+            </div>
           </div>
           
           <div className="dashboard-chat-messages">
@@ -206,10 +237,14 @@ function ClientChatWithDevelopersPage() {
         <aside className="chat-info-panel">
           <h2>Conversation Context</h2>
           <p>History is securely stored inside MongoDB. Typing metrics and connection layers are running live.</p>
+          <div className="online-tracker-badge">
+            <span className="pulse-dot"></span>
+            <small>{onlineCount} Developers Live Online</small>
+          </div>
         </aside>
       </div>
     </div>
   )
 }
 
-export default ClientChatWithDevelopersPage
+export default ClientChatWithDevelopersPage;

@@ -217,7 +217,7 @@ router.patch("/meetings/:id", async (req, res) => {
   const meeting = await ClientMeeting.findOneAndUpdate(
     { _id: req.params.id, client: userId },
     { $set: req.body },
-    { new: true, runValidators: true }
+    { returnDocument: "after", runValidators: true }
   );
 
   if (!meeting) return res.status(404).json({ success: false, message: "Meeting not found." });
@@ -236,7 +236,11 @@ router.get("/notifications", async (req, res) => {
 
 router.patch("/notifications/:id/read", async (req, res) => {
   const userId = req.user._id || req.user.id;
-  const notification = await Notification.findOneAndUpdate({ _id: req.params.id, user: userId }, { read: true }, { new: true });
+  const notification = await Notification.findOneAndUpdate(
+    { _id: req.params.id, user: userId }, 
+    { read: true }, 
+    { returnDocument: "after" }
+  );
   if (!notification) return res.status(404).json({ success: false, message: "Notification not found." });
   res.json({ success: true, notification: normalizeNotification(notification) });
 });
@@ -258,7 +262,11 @@ router.put("/profile", async (req, res) => {
   allowed.forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(req.body, key)) updates[key] = key === "preferredTechnologies" ? splitList(req.body[key]) : req.body[key];
   });
-  const user = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true }).select("name email role avatar phone companyName address website linkedin bio preferredTechnologies settings");
+  const user = await User.findByIdAndUpdate(
+    userId, 
+    updates, 
+    { returnDocument: "after", runValidators: true }
+  ).select("name email role avatar phone companyName address website linkedin bio preferredTechnologies settings");
   res.json({ success: true, profile: user });
 });
 
@@ -268,7 +276,11 @@ router.get("/settings", (req, res) => {
 
 router.put("/settings", async (req, res) => {
   const userId = req.user._id || req.user.id;
-  const user = await User.findByIdAndUpdate(userId, { settings: req.body }, { new: true, runValidators: true }).select("settings");
+  const user = await User.findByIdAndUpdate(
+    userId, 
+    { settings: req.body }, 
+    { returnDocument: "after", runValidators: true }
+  ).select("settings");
   res.json({ success: true, settings: user.settings });
 });
 
