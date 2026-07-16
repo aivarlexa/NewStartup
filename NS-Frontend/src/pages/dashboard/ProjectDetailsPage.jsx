@@ -14,8 +14,8 @@ function ProjectDetailsPage() {
           <p>{project.client} · {project.type}</p>
         </div>
         <div className="dashboard-heading-actions">
-          <Link to="/developer-dashboard/client-chat">Open Client Chat</Link>
-          <Link to="/developer-dashboard/meetings">Schedule Meeting</Link>
+          <Link to="/developer/dashboard/client-chat">Open Client Chat</Link>
+          <Link to="/developer/dashboard/meetings">Schedule Meeting</Link>
         </div>
       </div>
 

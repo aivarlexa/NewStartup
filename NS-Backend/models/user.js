@@ -97,4 +97,5 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("User", userSchema);
+// Bulletproof pattern: Check if the model exists before compiling a new one
+module.exports = mongoose.models.User || mongoose.model("User", userSchema);

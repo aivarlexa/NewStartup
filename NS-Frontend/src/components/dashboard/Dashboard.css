@@ -46,6 +46,38 @@
   text-transform: uppercase;
 }
 
+.dev-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-right: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #64748b;
+}
+
+.status-dot.online {
+  background-color: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+}
+
+.online-dev-badge {
+  background-color: #22c55e;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: auto;
+}
+
 .dashboard-auth-card h1,
 .dashboard-page-heading h1 {
   margin: 0;
@@ -1436,5 +1468,223 @@
   .client-form-grid.compact,
   .client-profile-panel {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Final all-device responsive sweep */
+.developer-dashboard *,
+.dashboard-auth * {
+  box-sizing: border-box;
+}
+
+.developer-dashboard {
+  width: 100%;
+  overflow-x: clip;
+}
+
+.dashboard-page,
+.dashboard-page-heading,
+.dashboard-header,
+.dashboard-header-left,
+.dashboard-header-actions,
+.dashboard-heading-actions,
+.dashboard-project-top,
+.dashboard-meeting-card,
+.past-meeting-card,
+.client-form-panel,
+.client-form-grid,
+.client-summary-grid,
+.client-profile-panel,
+.nested-settings-panel,
+.client-toggle-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-heading-actions,
+.dashboard-header-actions,
+.dashboard-project-top,
+.dashboard-meeting-card div:last-child,
+.past-meeting-card div:last-child {
+  flex-wrap: wrap;
+}
+
+.dashboard-search input,
+.dashboard-filters select,
+.dashboard-modal input,
+.dashboard-modal select,
+.dashboard-modal textarea,
+.dashboard-chat-form input,
+.client-form-grid input,
+.client-form-grid select,
+.client-form-grid textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-chat-messages,
+.chat-main-panel,
+.ai-chat-panel {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.dashboard-modal-backdrop {
+  align-items: start;
+  overflow-y: auto;
+}
+
+.client-toggle-row {
+  gap: 14px;
+}
+
+.client-toggle-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .dashboard-header {
+    min-height: auto;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .dashboard-header > div:nth-of-type(2) {
+    min-width: 0;
+  }
+
+  .dashboard-page-heading.split {
+    align-items: stretch;
+  }
+
+  .dashboard-heading-actions {
+    width: 100%;
+  }
+
+  .dashboard-heading-actions > * {
+    flex: 1 1 180px;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-sidebar {
+    width: min(300px, 88vw);
+    padding: 18px 14px;
+  }
+
+  .dashboard-content {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .dashboard-auth {
+    padding: 16px;
+  }
+
+  .dashboard-auth-card {
+    padding: 22px;
+  }
+
+  .dashboard-page-heading {
+    gap: 10px;
+  }
+
+  .dashboard-page-heading h1 {
+    line-height: 1.08;
+  }
+
+  .dashboard-panel,
+  .dashboard-project-card,
+  .dashboard-summary-card,
+  .dashboard-meeting-card,
+  .past-meeting-card,
+  .chat-side-panel,
+  .chat-main-panel,
+  .chat-info-panel {
+    padding: 16px;
+  }
+
+  .chat-main-panel,
+  .ai-chat-panel {
+    min-height: min(620px, calc(100svh - 150px));
+  }
+
+  .dashboard-chat-messages {
+    max-height: calc(100svh - 300px);
+  }
+
+  .dashboard-chat-message {
+    gap: 10px;
+  }
+
+  .dashboard-chat-message div,
+  .ai-message {
+    padding: 12px;
+  }
+
+  .dashboard-modal-backdrop {
+    padding: 12px;
+  }
+
+  .dashboard-modal {
+    max-height: calc(100svh - 24px);
+    border-radius: 14px;
+  }
+
+  .client-toggle-row {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-content {
+    padding: 16px 10px 24px;
+  }
+
+  .dashboard-header {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .dashboard-icon-button,
+  .dashboard-notification-button,
+  .dashboard-chat-form button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .dashboard-back-button {
+    min-height: 40px;
+    padding: 0 11px;
+  }
+
+  .dashboard-panel,
+  .dashboard-project-card,
+  .dashboard-summary-card,
+  .dashboard-meeting-card,
+  .past-meeting-card,
+  .chat-side-panel,
+  .chat-main-panel,
+  .chat-info-panel {
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .dashboard-chat-message {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .dashboard-chat-message > span {
+    width: 30px;
+    height: 30px;
+    font-size: 0.68rem;
+  }
+
+  .dashboard-project-meta span,
+  .developer-chip-row span,
+  .file-stack span {
+    border-radius: 10px;
+    overflow-wrap: anywhere;
   }
 }

@@ -13,63 +13,124 @@ function ClientChatWithDevelopersPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [typingName, setTypingName] = useState('')
+  const [onlineDeveloperIds, setOnlineDeveloperIds] = useState([])
+  
+  // WhatsApp-style background message counter state matrix
+  const [unreadCounts, setUnreadCounts] = useState({})
+  
   const socketRef = useRef(null)
   const typingTimerRef = useRef(null)
+  const messagesEndRef = useRef(null)
 
+  const currentUserId = user?.id || user?._id || ''
+
+  // Symmetrical conversation key mapping matching the backend: clientId:developerId
   const conversationKey = useMemo(() => {
-    const clientId = user?.id || user?._id || 'client'
-    return `${clientId}:${selectedDeveloper || 'general'}`
-  }, [selectedDeveloper, user])
+    return `${currentUserId}:${selectedDeveloper || 'general'}`
+  }, [selectedDeveloper, currentUserId])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   useEffect(() => {
-    api.get('/client/developers').then(({ data }) => {
-      const list = data.developers || []
-      setDevelopers(list)
-      setSelectedDeveloper(list[0]?._id || '')
-    }).catch(() => setDevelopers([]))
-  }, [])
+    scrollToBottom()
+  }, [messages])
 
+  // 1. Load active Developer Accounts list
   useEffect(() => {
-    if (!selectedDeveloper) return
-    api.get('/client/messages', { params: { developerId: selectedDeveloper } })
-      .then(({ data }) => setMessages(data.messages || []))
+    if (!token) return
+
+    api.get('/client/developers')
+      .then(({ data }) => {
+        const list = data.developers || []
+        setDevelopers(list)
+        setSelectedDeveloper(list[0]?._id || '')
+      })
+      .catch(() => setDevelopers([]))
+  }, [token])
+
+  // 2. Load historical chat conversations
+  useEffect(() => {
+    if (!token || !selectedDeveloper) return
+
+    api.get(`/messages/${conversationKey}`)
+      .then(({ data }) => {
+        setMessages(data.messages || [])
+        // Clear WhatsApp badge count locally once the channel conversation is focused open
+        setUnreadCounts((prev) => ({ ...prev, [selectedDeveloper]: 0 }))
+      })
       .catch(() => setMessages([]))
-  }, [selectedDeveloper])
+  }, [selectedDeveloper, conversationKey, token])
 
+  // 3. Setup Authenticated Socket Connections
   useEffect(() => {
     if (!token) return undefined
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
-    const socket = io(socketUrl, { auth: { token }, transports: ['websocket'] })
+    
+    const socket = io(socketUrl, { 
+      auth: { token }, 
+      transports: ['websocket'],
+      forceNew: true 
+    })
     socketRef.current = socket
 
     socket.on('connect_error', () => setStatus('Realtime chat is temporarily unavailable.'))
+    
+    // Listen for live array broadcast of online developer IDs
+    socket.on('developers:online_list', (ids) => {
+      setOnlineDeveloperIds(ids || [])
+    })
+
     socket.on('typing:start', ({ user: typingUser }) => {
-      if (typingUser?.id !== user?.id) {
+      if (typingUser?.id !== currentUserId) {
         setTypingName(typingUser?.name || 'Developer')
       }
     })
+    
     socket.on('typing:stop', () => setTypingName(''))
+    
     socket.on('message:new', (message) => {
-      setMessages((current) => {
-        const messageId = message?._id || message?.id
-        if (messageId && current.some((item) => (item._id || item.id) === messageId)) {
-          return current
-        }
+      const senderId = typeof message.sender === 'object' 
+        ? message.sender?._id || message.sender?.id 
+        : message.sender
+      const msgDeveloperId = message.developer || senderId
 
-        return [...current, message]
-      })
+      // Check if the incoming message belongs to the active conversation window
+      if (String(msgDeveloperId) === String(selectedDeveloper)) {
+        setMessages((current) => {
+          const messageId = message?._id || message?.id
+          if (messageId && current.some((item) => (item._id || item.id) === messageId)) {
+            return current
+          }
+          return [...current, message]
+        })
+      } else {
+        // WhatsApp Notification Badge Increment Trigger Rules
+        // Increment badge if the message is from a background developer channel and not yourself
+        if (senderId && String(senderId) !== String(currentUserId)) {
+          setUnreadCounts((prev) => ({
+            ...prev,
+            [msgDeveloperId]: (prev[msgDeveloperId] || 0) + 1
+          }))
+        }
+      }
     })
 
     return () => {
+      socket.off('connect_error')
+      socket.off('developers:online_list')
+      socket.off('typing:start')
+      socket.off('typing:stop')
+      socket.off('message:new')
       socket.disconnect()
       socketRef.current = null
-      if (typingTimerRef.current) {
-        window.clearTimeout(typingTimerRef.current)
-      }
+      if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current)
     }
-  }, [token, user?.id])
+  }, [token, currentUserId, selectedDeveloper])
 
+  // 4. Handle Room Channels Switching
   useEffect(() => {
     const socket = socketRef.current
     if (!socket || !selectedDeveloper) return undefined
@@ -82,47 +143,43 @@ function ClientChatWithDevelopersPage() {
     }
   }, [conversationKey, selectedDeveloper])
 
+  // 5. Typing metrics broadcast
   useEffect(() => {
     const socket = socketRef.current
     if (!socket || !selectedDeveloper) return undefined
 
-    if (typingTimerRef.current) {
-      window.clearTimeout(typingTimerRef.current)
-    }
+    if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current)
 
     if (input.trim()) {
       socket.emit('typing:start', conversationKey)
       typingTimerRef.current = window.setTimeout(() => {
         socket.emit('typing:stop', conversationKey)
-      }, 700)
+      }, 1000)
     } else {
       socket.emit('typing:stop', conversationKey)
     }
 
     return () => {
-      if (typingTimerRef.current) {
-        window.clearTimeout(typingTimerRef.current)
-      }
+      if (typingTimerRef.current) window.clearTimeout(typingTimerRef.current)
     }
   }, [conversationKey, input, selectedDeveloper])
 
-  const filteredDevelopers = useMemo(() => developers.filter((developer) => developer.name?.toLowerCase().includes(search.toLowerCase())), [developers, search])
-  const activeDeveloper = developers.find((developer) => developer._id === selectedDeveloper)
+  const filteredDevelopers = useMemo(() => developers.filter((dev) => dev.name?.toLowerCase().includes(search.toLowerCase())), [developers, search])
+  const activeDeveloper = developers.find((dev) => dev._id === selectedDeveloper)
 
+  // 6. API Post Request Delivery Transaction
   async function sendMessage(event) {
     event.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || !token) return
     setStatus('')
+    
     try {
-      const { data } = await api.post('/client/messages', { developerId: selectedDeveloper, text: input.trim() })
-      setMessages((current) => {
-        const messageId = data.message?._id || data.message?.id
-        if (messageId && current.some((item) => (item._id || item.id) === messageId)) {
-          return current
-        }
-
-        return [...current, data.message]
+      await api.post(`/messages/${conversationKey}`, { 
+        client: currentUserId,
+        developer: selectedDeveloper, 
+        text: input.trim() 
       })
+
       setInput('')
       setTypingName('')
       socketRef.current?.emit('typing:stop', conversationKey)
@@ -133,26 +190,130 @@ function ClientChatWithDevelopersPage() {
 
   return (
     <div className="dashboard-page dashboard-reveal">
-      <div className="dashboard-page-heading"><p className="dashboard-kicker">Messages</p><h1>Chat with Developers</h1>{status && <p>{status}</p>}</div>
+      <div className="dashboard-page-heading">
+        <p className="dashboard-kicker">Messages</p>
+        <h1>Chat with Developers</h1>
+        {status && <p className="chat-error-banner">{status}</p>}
+      </div>
+      
       <div className="chat-workspace client-chat-layout">
         <aside className="chat-side-panel">
-          <div className="dashboard-search"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search developers" /></div>
-          {filteredDevelopers.map((developer, index) => (
-            <button className={selectedDeveloper === developer._id ? 'active' : ''} type="button" key={developer._id} onClick={() => setSelectedDeveloper(developer._id)}>
-              <span>{developer.name}</span><small>{index % 2 === 0 ? 'Online' : 'Offline'} · Latest conversation</small><em>{developer.email}</em>{index === 0 && <strong>2</strong>}
-            </button>
-          ))}
-          {filteredDevelopers.length === 0 && <p>No developers found.</p>}
-        </aside>
-        <section className="chat-main-panel client-main-panel">
-          <div className="chat-room-header"><span>{typingName ? `${typingName} is typing...` : activeDeveloper ? 'Connected' : 'Select a developer'}</span><strong>{activeDeveloper?.name || 'Developer Chat'}</strong></div>
-          <div className="dashboard-chat-messages">
-            {messages.map((message) => (
-              <article className="dashboard-chat-message own" key={message._id || message.id}>
-                <span>ME</span><div><strong>You <small>{message.createdAt ? new Date(message.createdAt).toLocaleTimeString() : 'Just now'}</small></strong><p>{message.text}{message.emoji}</p><em>Sent · Read receipts enabled</em></div>
-              </article>
-            ))}
+          <div className="dashboard-search">
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search developers..." />
           </div>
+          {filteredDevelopers.map((developer) => {
+            const targetDevIdStr = String(developer._id || developer.id || '').trim().toLowerCase();
+            
+            // FIX: Robust lowercased item validation prevents type mapping status discrepancies
+            const isOnline = onlineDeveloperIds.some(
+              (onlineId) => String(onlineId).trim().toLowerCase() === targetDevIdStr
+            );
+            
+            const badgeCount = unreadCounts[developer._id] || 0;
+
+            return (
+              <button 
+                className={`${selectedDeveloper === developer._id ? 'active' : ''} ${isOnline ? 'online-user' : 'offline-user'}`} 
+                type="button" 
+                key={developer._id} 
+                onClick={() => setSelectedDeveloper(developer._id)}
+                style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', textAlign: 'left' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <span style={{ fontWeight: '600' }}>{developer.name}</span>
+                  
+                  {/* WhatsApp-Style Circular Counter Notification Badge Element */}
+                  {badgeCount > 0 && (
+                    <span style={{
+                      background: '#22c55e',
+                      color: '#ffffff',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      borderRadius: '50%',
+                      padding: '2px 6px',
+                      minWidth: '18px',
+                      height: '18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    }}>
+                      {badgeCount}
+                    </span>
+                  )}
+                </div>
+                
+                <small style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                  <span className={`status-dot ${isOnline ? 'active-green' : 'inactive-gray'}`}></span>
+                  {isOnline ? 'Online' : 'Offline'} · Active Channel
+                </small>
+                {developer.preferredTechnologies?.length > 0 && (
+                  <em className="tech-stack-indicator">{developer.preferredTechnologies.join(', ')}</em>
+                )}
+                <em>{developer.email}</em>
+              </button>
+            )
+          })}
+          {filteredDevelopers.length === 0 && <p className="no-data-msg">No developers found.</p>}
+        </aside>
+
+        <section className="chat-main-panel client-main-panel">
+          <div className="chat-room-header">
+            <div>
+              <span>{typingName ? `${typingName} is typing...` : activeDeveloper ? 'Connected' : 'Select a developer'}</span>
+              <strong>{activeDeveloper?.name || 'Developer Workspace'}</strong>
+            </div>
+          </div>
+          
+          <div className="dashboard-chat-messages">
+            {(() => {
+              let lastDateStr = '';
+
+              return messages.map((message) => {
+                const messageSenderId = typeof message.sender === 'object' 
+                  ? message.sender?._id || message.sender?.id 
+                  : message.sender;
+                const isOwnMessage = messageSenderId === currentUserId;
+                const senderDisplayName = isOwnMessage ? 'You' : (activeDeveloper?.name || 'Developer');
+
+                const messageDate = new Date(message.createdAt || Date.now());
+                const currentDateStr = messageDate.toLocaleDateString([], { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                });
+
+                const showDateDivider = currentDateStr !== lastDateStr;
+                lastDateStr = currentDateStr;
+
+                return (
+                  <div key={message._id || message.id || Math.random()}>
+                    {showDateDivider && (
+                      <div className="chat-date-divider">
+                        <span>{currentDateStr}</span>
+                      </div>
+                    )}
+
+                    <article className={`dashboard-chat-message ${isOwnMessage ? 'own' : 'incoming'}`}>
+                      <span>{senderDisplayName.slice(0, 2).toUpperCase()}</span>
+                      <div>
+                        <strong>
+                          {senderDisplayName}{' '}
+                          <small>
+                            {messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </small>
+                        </strong>
+                        <p>{message.text}</p>
+                      </div>
+                    </article>
+                  </div>
+                );
+              });
+            })()}
+            <div ref={messagesEndRef} />
+          </div>
+
           <form className="dashboard-chat-form" onSubmit={sendMessage}>
             <button type="button" aria-label="Add emoji"><Smile size={18} /></button>
             <button type="button" aria-label="Share file"><Paperclip size={18} /></button>
@@ -160,10 +321,18 @@ function ClientChatWithDevelopersPage() {
             <button type="submit" aria-label="Send message"><Send size={18} /></button>
           </form>
         </section>
-        <aside className="chat-info-panel"><h2>Conversation</h2><p>History is stored permanently. File, image, emoji, seen, and typing states are represented in the API contract.</p><span className="typing-indicator">Developer typing</span></aside>
+
+        <aside className="chat-info-panel">
+          <h2>Conversation Context</h2>
+          <p>History is securely stored inside MongoDB. Typing metrics and connection layers are running live.</p>
+          <div className="online-tracker-badge">
+            <span className="pulse-dot"></span>
+            <small>{onlineDeveloperIds.length} Developers Live Online</small>
+          </div>
+        </aside>
       </div>
     </div>
   )
 }
 
-export default ClientChatWithDevelopersPage
+export default ClientChatWithDevelopersPage;

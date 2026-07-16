@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { Bell, CalendarDays, ClipboardList, LayoutDashboard, LogOut, Menu, MessageCircle, Settings, User, X } from 'lucide-react'
+import { io } from 'socket.io-client' 
 import AuthContext from '../../context/AuthContext'
 import api from '../../services/api'
 import BrandWordmark from '../BrandWordmark'
@@ -17,18 +18,49 @@ const clientNav = [
 ]
 
 function ClientDashboardLayout() {
-  const { user, logout } = useContext(AuthContext)
+  const { user, token, logout } = useContext(AuthContext) // 1. Pull dynamic token from context
   const navigate = useNavigate()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [onlineDevCount, setOnlineDevCount] = useState(0) 
 
   useEffect(() => {
     document.body.classList.add('dashboard-mode')
-    api.get('/client/notifications')
-      .then(({ data }) => setUnreadCount((data.notifications || []).filter((item) => !item.read).length))
-      .catch(() => setUnreadCount(0))
     return () => document.body.classList.remove('dashboard-mode')
   }, [])
+
+  // 2. HTTP Fetch: Watch the token state and attach Authorization headers explicitly
+  useEffect(() => {
+    if (!token) return
+
+    api.get('/client/notifications', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(({ data }) => setUnreadCount((data.notifications || []).filter((item) => !item.read).length))
+      .catch(() => setUnreadCount(0))
+  }, [token])
+
+  // 3. WebSockets: Manage connection cleanly using context state and strict connection options
+  useEffect(() => {
+    if (!token) return undefined
+
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
+    
+    // Using strict websocket transports prevents polling conflicts with the Chat page instance
+    const socket = io(socketUrl, {
+      auth: { token },
+      transports: ['websocket'],
+      upgrade: false
+    })
+
+    socket.on('developers:count_update', (count) => {
+      setOnlineDevCount(count)
+    })
+
+    return () => {
+      socket.disconnect()
+    }
+  }, [token])
 
   function handleLogout() {
     logout()
@@ -51,6 +83,9 @@ function ClientDashboardLayout() {
               <NavLink className={({ isActive }) => `dashboard-nav-link ${isActive ? 'active' : ''}`} end={item.end} key={item.label} to={item.to} onClick={() => setIsSidebarOpen(false)}>
                 <Icon size={18} />
                 <span>{item.label}</span>
+                {item.label === 'Chat with Developers' && onlineDevCount > 0 && (
+                  <span className="online-dev-badge">{onlineDevCount} Online</span>
+                )}
               </NavLink>
             )
           })}
@@ -70,6 +105,11 @@ function ClientDashboardLayout() {
             <strong>Varlexa AI Workspace</strong>
           </div>
           <div className="dashboard-header-actions">
+            <div className="dev-status-indicator">
+              <span className={`status-dot ${onlineDevCount > 0 ? 'online' : 'offline'}`}></span>
+              <small>{onlineDevCount} {onlineDevCount === 1 ? 'Developer' : 'Developers'} Available</small>
+            </div>
+
             <NavLink className="dashboard-notification-button" to="/client/dashboard/notifications" aria-label="Open notifications">
               <Bell size={18} />
               {unreadCount > 0 && <span>{unreadCount}</span>}

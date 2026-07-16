@@ -2625,3 +2625,164 @@
 .forgot-password:hover {
   color: #f7fafc;
 }
+
+/* Final responsive sweep for login and signup */
+.login-page,
+.login-stage,
+.login-dark-panel,
+.login-cyan-panel,
+.login-form-shell,
+.login-card,
+.signup-card,
+.input-group,
+.secure-badge,
+.status-panel,
+.cyan-panel-content {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.login-page {
+  overflow-x: clip;
+}
+
+.login-stage {
+  width: min(1180px, calc(100% - 32px));
+}
+
+.login-card h1,
+.signup-card h1,
+.login-card p,
+.signup-card p,
+.secure-badge,
+.status-panel,
+.cyan-panel-content h2,
+.cyan-panel-content p {
+  overflow-wrap: anywhere;
+}
+
+.input-group input,
+.input-group select,
+.login-button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 1020px) {
+  .login-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .login-dark-panel,
+  .login-cyan-panel {
+    min-height: auto;
+  }
+
+  .login-cyan-panel {
+    order: -1;
+  }
+
+  .cyan-panel-content {
+    max-width: none;
+  }
+
+  .network-mesh {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 860px) {
+  .login-page {
+    min-height: 100svh;
+    padding: 14px;
+  }
+
+  .login-stage {
+    width: 100%;
+  }
+
+  .login-dark-panel,
+  .login-cyan-panel {
+    padding: 20px;
+  }
+
+  .login-form-shell {
+    width: 100%;
+  }
+
+  .login-brand-header {
+    gap: 12px;
+  }
+
+  .login-options {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .network-mesh {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .login-page {
+    padding: 10px;
+  }
+
+  .login-stage {
+    border-radius: 20px;
+  }
+
+  .login-dark-panel,
+  .login-cyan-panel {
+    padding: 16px;
+  }
+
+  .login-brand-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .login-card h1,
+  .signup-card h1 {
+    font-size: clamp(2rem, 13vw, 3rem);
+    letter-spacing: -0.035em;
+  }
+
+  .input-group input,
+  .input-group select,
+  .login-button {
+    min-height: 48px;
+  }
+
+  .secure-badge,
+  .status-panel {
+    grid-template-columns: 34px minmax(0, 1fr);
+    padding: 12px;
+  }
+
+  .cyan-panel-content h2 {
+    font-size: clamp(2rem, 12vw, 3rem);
+  }
+}
+
+@media (max-width: 380px) {
+  .login-page {
+    padding: 8px;
+  }
+
+  .login-dark-panel,
+  .login-cyan-panel {
+    padding: 14px;
+  }
+
+  .login-back-button {
+    min-height: 38px;
+    padding: 0 11px;
+  }
+
+  .secure-label {
+    max-width: 100%;
+  }
+}
