@@ -13,7 +13,7 @@ function ClientChatWithDevelopersPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
   const [typingName, setTypingName] = useState('')
-  const [onlineCount, setOnlineCount] = useState(0)
+  const [onlineDeveloperIds, setOnlineDeveloperIds] = useState([])
   
   const socketRef = useRef(null)
   const typingTimerRef = useRef(null)
@@ -34,7 +34,7 @@ function ClientChatWithDevelopersPage() {
     scrollToBottom()
   }, [messages])
 
-  // 1. Load active Developer Accounts list
+  // 1. Load active Developer Accounts list (Filters for Developers only on backend)
   useEffect(() => {
     if (!token) return
 
@@ -47,14 +47,14 @@ function ClientChatWithDevelopersPage() {
       .catch(() => setDevelopers([]))
   }, [token])
 
-  // 2. Load historical chat conversations
+  // 2. Load historical chat conversations using the dynamic path parameter layout
   useEffect(() => {
     if (!token || !selectedDeveloper) return
 
-    api.get('/client/messages', { params: { developerId: selectedDeveloper } })
+    api.get(`/messages/${conversationKey}`)
       .then(({ data }) => setMessages(data.messages || []))
       .catch(() => setMessages([]))
-  }, [selectedDeveloper, token])
+  }, [selectedDeveloper, conversationKey, token])
 
   // 3. Setup Authenticated Socket Connections
   useEffect(() => {
@@ -62,7 +62,6 @@ function ClientChatWithDevelopersPage() {
 
     const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
     
-    // Added forceNew to cleanly cycle headers on re-authentications
     const socket = io(socketUrl, { 
       auth: { token }, 
       transports: ['websocket'],
@@ -72,9 +71,9 @@ function ClientChatWithDevelopersPage() {
 
     socket.on('connect_error', () => setStatus('Realtime chat is temporarily unavailable.'))
     
-    // Live metrics update channel for available devs counts
-    socket.on('developers:count_update', (count) => {
-      setOnlineCount(count)
+    // Listen for live array broadcast of online developer IDs
+    socket.on('developers:online_list', (ids) => {
+      setOnlineDeveloperIds(ids)
     })
 
     socket.on('typing:start', ({ user: typingUser }) => {
@@ -96,9 +95,8 @@ function ClientChatWithDevelopersPage() {
     })
 
     return () => {
-      // Robust event listener unmounting layer
       socket.off('connect_error')
-      socket.off('developers:count_update')
+      socket.off('developers:online_list')
       socket.off('typing:start')
       socket.off('typing:stop')
       socket.off('message:new')
@@ -152,8 +150,9 @@ function ClientChatWithDevelopersPage() {
     setStatus('')
     
     try {
-      await api.post('/client/messages', { 
-        developerId: selectedDeveloper, 
+      await api.post(`/messages/${conversationKey}`, { 
+        client: currentUserId,
+        developer: selectedDeveloper, 
         text: input.trim() 
       })
 
@@ -178,21 +177,28 @@ function ClientChatWithDevelopersPage() {
           <div className="dashboard-search">
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search developers..." />
           </div>
-          {filteredDevelopers.map((developer) => (
-            <button 
-              className={selectedDeveloper === developer._id ? 'active' : ''} 
-              type="button" 
-              key={developer._id} 
-              onClick={() => setSelectedDeveloper(developer._id)}
-            >
-              <span>{developer.name}</span>
-              <small>Active Channel</small>
-              {developer.preferredTechnologies?.length > 0 && (
-                <em className="tech-stack-indicator">{developer.preferredTechnologies.join(', ')}</em>
-              )}
-              <em>{developer.email}</em>
-            </button>
-          ))}
+          {filteredDevelopers.map((developer) => {
+            const isOnline = onlineDeveloperIds.includes(String(developer._id || developer.id));
+
+            return (
+              <button 
+                className={`${selectedDeveloper === developer._id ? 'active' : ''} ${isOnline ? 'online-user' : 'offline-user'}`} 
+                type="button" 
+                key={developer._id} 
+                onClick={() => setSelectedDeveloper(developer._id)}
+              >
+                <span>{developer.name}</span>
+                <small>
+                  <span className={`status-dot ${isOnline ? 'active-green' : 'inactive-gray'}`}></span>
+                  {isOnline ? 'Online' : 'Offline'} · Active Channel
+                </small>
+                {developer.preferredTechnologies?.length > 0 && (
+                  <em className="tech-stack-indicator">{developer.preferredTechnologies.join(', ')}</em>
+                )}
+                <em>{developer.email}</em>
+              </button>
+            )
+          })}
           {filteredDevelopers.length === 0 && <p className="no-data-msg">No developers found.</p>}
         </aside>
 
@@ -205,24 +211,51 @@ function ClientChatWithDevelopersPage() {
           </div>
           
           <div className="dashboard-chat-messages">
-            {messages.map((message) => {
-              const messageSenderId = typeof message.sender === 'object' ? message.sender?._id || message.sender?.id : message.sender;
-              const isOwnMessage = messageSenderId === currentUserId;
-              const senderDisplayName = isOwnMessage ? 'You' : (activeDeveloper?.name || 'Developer');
+            {(() => {
+              let lastDateStr = '';
 
-              return (
-                <article 
-                  className={`dashboard-chat-message ${isOwnMessage ? 'own' : 'incoming'}`} 
-                  key={message._id || message.id}
-                >
-                  <span>{senderDisplayName.slice(0, 2).toUpperCase()}</span>
-                  <div>
-                    <strong>{senderDisplayName} <small>{new Date(message.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></strong>
-                    <p>{message.text}</p>
+              return messages.map((message) => {
+                const messageSenderId = typeof message.sender === 'object' 
+                  ? message.sender?._id || message.sender?.id 
+                  : message.sender;
+                const isOwnMessage = messageSenderId === currentUserId;
+                const senderDisplayName = isOwnMessage ? 'You' : (activeDeveloper?.name || 'Developer');
+
+                const messageDate = new Date(message.createdAt || Date.now());
+                const currentDateStr = messageDate.toLocaleDateString([], { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                });
+
+                const showDateDivider = currentDateStr !== lastDateStr;
+                lastDateStr = currentDateStr;
+
+                return (
+                  <div key={message._id || message.id || Math.random()}>
+                    {showDateDivider && (
+                      <div className="chat-date-divider">
+                        <span>{currentDateStr}</span>
+                      </div>
+                    )}
+
+                    <article className={`dashboard-chat-message ${isOwnMessage ? 'own' : 'incoming'}`}>
+                      <span>{senderDisplayName.slice(0, 2).toUpperCase()}</span>
+                      <div>
+                        <strong>
+                          {senderDisplayName}{' '}
+                          <small>
+                            {messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </small>
+                        </strong>
+                        <p>{message.text}</p>
+                      </div>
+                    </article>
                   </div>
-                </article>
-              )
-            })}
+                );
+              });
+            })()}
             <div ref={messagesEndRef} />
           </div>
 
@@ -239,7 +272,7 @@ function ClientChatWithDevelopersPage() {
           <p>History is securely stored inside MongoDB. Typing metrics and connection layers are running live.</p>
           <div className="online-tracker-badge">
             <span className="pulse-dot"></span>
-            <small>{onlineCount} Developers Live Online</small>
+            <small>{onlineDeveloperIds.length} Developers Live Online</small>
           </div>
         </aside>
       </div>

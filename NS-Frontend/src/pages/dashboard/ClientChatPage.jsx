@@ -144,7 +144,6 @@ function ClientChatPage() {
     setStatus('')
     
     try {
-      // FIX: Corrected target endpoint to explicitly map the dynamic path parameter
       await api.post(`/messages/${conversationKey}`, { 
         client: selectedClient, 
         developer: currentUserId,
@@ -178,6 +177,7 @@ function ClientChatPage() {
             >
               <span>{client.name}</span>
               <small>{client.companyName || 'Workspace Client'}</small>
+              {/* Stray instruction comment line deleted completely from here */}
               <em>{client.email}</em>
             </button>
           ))}
@@ -193,24 +193,51 @@ function ClientChatPage() {
           </div>
           
           <div className="dashboard-chat-messages">
-            {messages.map((message) => {
-              const messageSenderId = typeof message.sender === 'object' ? message.sender?._id || message.sender?.id : message.sender;
-              const isOwnMessage = messageSenderId === currentUserId;
-              const senderDisplayName = isOwnMessage ? 'You' : (activeClient?.name || 'Client');
+            {(() => {
+              let lastDateStr = '';
 
-              return (
-                <article 
-                  className={`dashboard-chat-message ${isOwnMessage ? 'own' : 'incoming'}`} 
-                  key={message._id || message.id}
-                >
-                  <span>{senderDisplayName.slice(0, 2).toUpperCase()}</span>
-                  <div>
-                    <strong>{senderDisplayName} <small>{new Date(message.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></strong>
-                    <p>{message.text}</p>
+              return messages.map((message) => {
+                const messageSenderId = typeof message.sender === 'object' 
+                  ? message.sender?._id || message.sender?.id 
+                  : message.sender;
+                const isOwnMessage = messageSenderId === currentUserId;
+                const senderDisplayName = isOwnMessage ? 'You' : (activeClient?.name || 'Client');
+
+                const messageDate = new Date(message.createdAt || Date.now());
+                const currentDateStr = messageDate.toLocaleDateString([], { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                });
+
+                const showDateDivider = currentDateStr !== lastDateStr;
+                lastDateStr = currentDateStr;
+
+                return (
+                  <div key={message._id || message.id || Math.random()}>
+                    {showDateDivider && (
+                      <div className="chat-date-divider">
+                        <span>{currentDateStr}</span>
+                      </div>
+                    )}
+
+                    <article className={`dashboard-chat-message ${isOwnMessage ? 'own' : 'incoming'}`}>
+                      <span>{senderDisplayName.slice(0, 2).toUpperCase()}</span>
+                      <div>
+                        <strong>
+                          {senderDisplayName}{' '}
+                          <small>
+                            {messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </small>
+                        </strong>
+                        <p>{message.text}</p>
+                      </div>
+                    </article>
                   </div>
-                </article>
-              )
-            })}
+                );
+              });
+            })()}
             <div ref={messagesEndRef} />
           </div>
 
