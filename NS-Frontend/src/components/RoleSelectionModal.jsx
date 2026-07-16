@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { BriefcaseBusiness, Code2, X } from 'lucide-react'
+import { BriefcaseBusiness, Code2, ShieldCheck, X } from 'lucide-react'
 
 const ROLE_CARDS = [
   {
@@ -15,6 +15,13 @@ const ROLE_CARDS = [
     description: 'I want to work on client projects.',
     action: 'Continue as Developer',
     to: '/developer/login',
+  },
+  {
+    role: 'Admin',
+    icon: ShieldCheck,
+    description: 'I want to manage clients, developers, projects, and reports.',
+    action: 'Continue as Admin',
+    to: '/admin/login',
   },
 ]
 

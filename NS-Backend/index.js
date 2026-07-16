@@ -18,7 +18,9 @@ const messageRoutes = require("./routes/messageRoutes");
 const errorHandler = require("./middleware/errorHandler");
 const { getClientOrigin } = require("./config/env");
 const Notification = require("./models/Notification");
-const { requireAuth } = require("./middleware/authMiddleware");
+const {  requireAuth, requireRole } = require("./middleware/authMiddleware");
+const adminRoutes = require("./routes/adminRoutes");
+
 
 const app = express();
 const server = http.createServer(app);
@@ -90,9 +92,10 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/insights", insightsRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/client", clientRoutes);       // Enforces requireRole("Client")
-app.use("/api/developer", developerRoutes); // Enforces requireRole("Developer")
-app.use("/api/messages", messageRoutes);
+app.use("/api/client", clientRoutes);
+app.use("/api/developer", developerRoutes);
+app.use("/api/messages", messageRoutes); 
+app.use("/api/admin", adminRoutes);
 
 // 4. ERROR LOGGER LEAVES LAST
 app.use(errorHandler);

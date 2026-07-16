@@ -14,12 +14,36 @@ function getStoredUser() {
   }
 }
 
-export function getDashboardPath(role) {
-  return role === 'Client' ? '/client/dashboard' : '/developer/dashboard';
-}
+export const getDashboardPath = (role) => {
+  switch (role) {
+    case "Admin":
+      return "/admin/dashboard";
 
-export function getLoginPath(role) {
-  return role === 'Client' ? '/client/login' : '/developer/login';
+    case "Developer":
+      return "/developer/dashboard";
+
+    case "Client":
+      return "/client/dashboard";
+
+    default:
+      return "/";
+  }
+};
+
+export const getLoginPath = (role) => {
+  switch (role) {
+    case "Admin":
+      return "/admin/login";
+
+    case "Developer":
+      return "/developer/login";
+
+    case "Client":
+      return "/client/login";
+
+    default:
+      return "/";
+  }
 }
 
 export const AuthProvider = ({ children }) => {

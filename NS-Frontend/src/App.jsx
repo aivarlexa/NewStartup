@@ -28,6 +28,23 @@ import { AuthProvider } from './context/AuthContext';
 import DeveloperLoginPage from './pages/DeveloperLoginPage';
 import ProtectedRoutes from './components/ProtectedRoutes';
 import Services from './components/Services';
+import AdminLayout from '../Layouts/adminLayout'
+import AdminLogin from './pages/Admin/Login'
+import Dashboard from './pages/Admin/Dashboard'
+import {
+  CalendarPage,
+  ClientsPage,
+  DevelopersPage,
+  FileManagerPage,
+  InvoicesPage,
+  MessagesPage,
+  NotificationsPage,
+  ProjectRequestsPage,
+  ProjectsPage as AdminProjectsPage,
+  ReportsPage,
+  SettingsPage,
+  TasksPage,
+} from './pages/Admin/AdminModulePage'
 import './App.css'
 
 function LegacyDeveloperDashboardRedirect() {
@@ -39,8 +56,8 @@ function LegacyDeveloperDashboardRedirect() {
 
 function App() {
   const location = useLocation()
-  const isDashboardRoute = location.pathname.startsWith('/developer/dashboard') || location.pathname.startsWith('/client/dashboard') || location.pathname.startsWith('/developer-dashboard')
-  const isLoginRoute = location.pathname === '/developer/login' || location.pathname === '/client/login' || location.pathname === '/developer-login'
+  const isDashboardRoute = location.pathname.startsWith('/developer/dashboard') || location.pathname.startsWith('/client/dashboard') || location.pathname.startsWith('/developer-dashboard') || location.pathname.startsWith('/admin')
+  const isLoginRoute = location.pathname === '/developer/login' || location.pathname === '/client/login' || location.pathname === '/developer-login' || location.pathname === '/admin/login'
 
   useEffect(() => {
     if (location.hash) {
@@ -80,6 +97,35 @@ function App() {
               <Route path="ai-assistant" element={<AIAssistantPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
+          </Route>
+
+          <Route path="/admin/login" element={<AdminLogin />} />
+
+          <Route element={<ProtectedRoutes role="Admin" />}>
+
+            <Route element={<AdminLayout />}>
+
+              <Route
+                path="/admin/dashboard"
+                element={<Dashboard />}
+              />
+              <Route path="/admin/clients" element={<ClientsPage />} />
+              <Route path="/admin/developers" element={<DevelopersPage />} />
+              <Route path="/admin/projects" element={<AdminProjectsPage />} />
+              <Route path="/admin/project-requests" element={<ProjectRequestsPage />} />
+              <Route path="/admin/teams" element={<DevelopersPage />} />
+              <Route path="/admin/tasks" element={<TasksPage />} />
+              <Route path="/admin/calendar" element={<CalendarPage />} />
+              <Route path="/admin/messages" element={<MessagesPage />} />
+              <Route path="/admin/reports" element={<ReportsPage />} />
+              <Route path="/admin/invoices" element={<InvoicesPage />} />
+              <Route path="/admin/ai-analytics" element={<ReportsPage />} />
+              <Route path="/admin/files" element={<FileManagerPage />} />
+              <Route path="/admin/notifications" element={<NotificationsPage />} />
+              <Route path="/admin/settings" element={<SettingsPage />} />
+
+            </Route>
+
           </Route>
 
           <Route element={<ProtectedRoutes role="Client" />}>

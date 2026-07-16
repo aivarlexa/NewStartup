@@ -104,6 +104,55 @@ const login = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({
+      email: String(email).trim().toLowerCase(),
+    });
+
+    if (!user || !user.password) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password.",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password.",
+      });
+    }
+
+    // IMPORTANT: Match your stored role exactly
+    if (user.role !== "Admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin account required.",
+      });
+    }
+
+    const token = generateToken(user._id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin login successful.",
+      token,
+      user: normalizeUser(user),
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
 
 const forgotPassword = async (req, res) => {
   const { email, role } = req.body;
@@ -121,6 +170,7 @@ const forgotPassword = async (req, res) => {
     message: "If an account exists, password reset instructions will be sent to that email.",
   });
 };
+
 
 const googleLogin = async (req, res) => {
   try {
@@ -159,4 +209,4 @@ const googleLogin = async (req, res) => {
   }
 };
 
-module.exports = { register, login, forgotPassword, googleLogin };
+module.exports = { register, login,adminLogin, forgotPassword, googleLogin };
