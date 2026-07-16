@@ -49,34 +49,27 @@ async function requireAuth(req, res, next) {
     return res.status(401).json({ success: false, message: "Invalid or expired token." });
   }
 }
-
 function requireRole(...roles) {
+  const allowedRoles = roles.map((role) => String(role || "").toLowerCase());
+
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ success: false, message: "You do not have access to this area." });
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
     }
+
+    const userRole = String(req.user.role || "").toLowerCase();
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied.",
+      });
+    }
+
     next();
   };
 }
 
-async function requireAdmin(req, res, next) {
-  try {
-    const user = await getUserFromRequest(req);
-
-    if (!user) {
-      return res.status(401).json({ success: false, message: "Admin authentication required." });
-    }
-
-    const adminRoles = ["Business Owner", "Project Manager", "Developer"];
-    if (!adminRoles.includes(user.role)) {
-      return res.status(403).json({ success: false, message: "Admin access required." });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    return res.status(401).json({ success: false, message: "Invalid or expired token." });
-  }
-}
-
-module.exports = { requireAdmin, requireAuth, requireRole };
+module.exports = { requireAuth, requireRole };
