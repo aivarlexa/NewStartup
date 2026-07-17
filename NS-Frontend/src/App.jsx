@@ -83,6 +83,7 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path = "/services" element={< Services/>} />
           <Route path="/developer/login" element={<DeveloperLoginPage role="Developer" />} />
+          <Route path="/developer/chat" element={< ClientChatPage/>} />
           <Route path="/client/login" element={<DeveloperLoginPage role="Client" />} />
           <Route path="/developer-login" element={<DeveloperLoginPage role="Developer" />} />
           <Route path="/developer-dashboard/*" element={<LegacyDeveloperDashboardRedirect />} />

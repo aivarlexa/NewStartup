@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import api, { getApiErrorMessage } from '../../services/api'
 
 const initialForm = {
-  projectTitle: '', category: '', description: '', skillsRequired: '', technologyStack: '', budget: '', deadline: '', priority: 'Medium', projectType: '', experienceRequired: '', attachments: '', additionalNotes: '',
+  projectTitle: '', companyName: '', category: '', description: '', skillsRequired: '', technologyStack: '', budget: '', deadline: '', priority: 'Medium', projectType: '', experienceRequired: '', attachments: '', additionalNotes: '',
 }
 
 function ClientRequirementsPage() {
@@ -44,6 +44,7 @@ function ClientRequirementsPage() {
       </div>
       <section className="dashboard-panel client-form-panel">
         <div className="client-form-grid">
+          <input name="companyName" value={form.companyName} onChange={updateField} placeholder="Company Name" />
           <input name="projectTitle" value={form.projectTitle} onChange={updateField} placeholder="Project Title" />
           <input name="category" value={form.category} onChange={updateField} placeholder="Category" />
           <textarea name="description" value={form.description} onChange={updateField} placeholder="Description" />
