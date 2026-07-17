@@ -44,6 +44,7 @@ import {
   ReportsPage,
   SettingsPage,
   TasksPage,
+  TeamsPage,
 } from './pages/Admin/AdminModulePage'
 import './App.css'
 
@@ -114,7 +115,7 @@ function App() {
               <Route path="/admin/developers" element={<DevelopersPage />} />
               <Route path="/admin/projects" element={<AdminProjectsPage />} />
               <Route path="/admin/project-requests" element={<ProjectRequestsPage />} />
-              <Route path="/admin/teams" element={<DevelopersPage />} />
+              <Route path="/admin/teams" element={<TeamsPage />} />
               <Route path="/admin/tasks" element={<TasksPage />} />
               <Route path="/admin/calendar" element={<CalendarPage />} />
               <Route path="/admin/messages" element={<MessagesPage />} />

@@ -18,7 +18,7 @@ router.use(requireAuth, requireRole("Admin"));
 // 1. Existing Dashboard Entry point
 router.get("/dashboard", getDashboard);
 
-// 2. NEW: GET /api/admin/analytics-summary -> FIXES YOUR 404 DATA ERROR
+// 2. GET /api/admin/analytics-summary -> Fetch dashboard analysis metrics
 router.get("/analytics-summary", async (req, res) => {
   try {
     // Aggregate data sets directly out of your main database collections
@@ -85,15 +85,119 @@ router.get("/developers", async (req, res) => {
 });
 
 // 5. GET /api/admin/projects -> Fetch all project records for the Kanban grid layout mapping
+// 5. UPDATED: GET /api/admin/projects -> Robust deep population engine layer
 router.get("/projects", async (req, res) => {
   try {
     const projects = await Requirement.find({})
-      .populate("client", "name companyName")
+      .populate({
+        path: "client",
+        select: "name companyName email",
+        model: "User"
+      })
+      .populate({
+        path: "team",
+        select: "name email availability preferredTechnologies status",
+        model: "User"
+      })
+      .populate({
+        path: "lead",
+        select: "name email",
+        model: "User"
+      })
       .lean();
 
     res.json({ success: true, projects });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error fetching ongoing project tracks." });
+    console.error("Critical population sequence mapping fault:", error);
+    res.status(500).json({ success: false, message: "Error compiling structural project logs configuration." });
+  }
+});
+
+// 6. PATCH /api/admin/projects/:id/status -> Receive the project structural status ticks
+router.patch("/projects/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+    const updatedProject = await Requirement.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status } },
+      { new: true }
+    );
+    res.json({ success: true, project: updatedProject });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error setting application state validation flags." });
+  }
+});
+
+// 7. FIXES YOUR CLIENT SELECTION BUG: PATCH /api/admin/clients/:clientId/status
+router.patch("/clients/:clientId/status", async (req, res) => {
+  try {
+    const { clientId } = req.params;
+    const { status } = req.body; // Expects "Active" or "Suspended"
+
+    if (!["Active", "Suspended"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status parameter value." });
+    }
+
+    const updatedClient = await User.findByIdAndUpdate(
+      clientId,
+      { $set: { status: status } },
+      { new: true }
+    );
+
+    if (!updatedClient) {
+      return res.status(404).json({ success: false, message: "Client profile document not found." });
+    }
+
+    res.json({ success: true, message: "Client status updated successfully.", client: updatedClient });
+  } catch (error) {
+    console.error("Client status update engine failure:", error.message);
+    res.status(500).json({ success: false, message: "Server database state transition update failure." });
+  }
+});
+
+// 8. DELETE /api/admin/clients/:clientId -> Permanently remove a client profile
+router.delete("/clients/:clientId", async (req, res) => {
+  try {
+    const { clientId } = req.params;
+
+    const deletedClient = await User.findByIdAndDelete(clientId);
+
+    if (!deletedClient) {
+      return res.status(404).json({ success: false, message: "Client profile document not found." });
+    }
+
+    res.json({ success: true, message: "Client document scrubbed successfully." });
+  } catch (error) {
+    console.error("Client deletion engine failure:", error.message);
+    res.status(500).json({ success: false, message: "Server database engine removal fault." });
+  }
+});
+
+// PUT /api/admin/projects/:id/assign -> Save developer team allocations
+router.put("/projects/:id/assign", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { team, lead } = req.body; // Expects array of IDs and a single Lead ID string
+
+    const updatedProject = await Requirement.findByIdAndUpdate(
+      id,
+      { 
+        $set: { 
+          team: team, 
+          lead: lead 
+        } 
+      },
+      { new: true }
+    );
+
+    if (!updatedProject) {
+      return res.status(404).json({ success: false, message: "Project document registry entry missing." });
+    }
+
+    res.json({ success: true, message: "Team sync assignment saved successfully.", project: updatedProject });
+  } catch (error) {
+    console.error("Assignment updates engine failure:", error.message);
+    res.status(500).json({ success: false, message: "Server database write allocation fault occurred." });
   }
 });
 
