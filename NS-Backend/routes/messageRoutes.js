@@ -1,36 +1,22 @@
 const express = require("express");
 const router = express.Router();
 const Message = require("../models/Message");
+const User = require("../models/user"); // 👑 FIX 1: Explicitly import the User model to resolve crashes!
 const { requireAuth } = require("../middleware/authMiddleware");
 
 // Enforce auth context globally across the message sub-routes matrix
 router.use(requireAuth);
 
-// 1. Fetch historical conversation messages sorted chronologically
-router.get("/:conversationKey", async (req, res, next) => {
-  try {
-    const { conversationKey } = req.params;
-
-    const messages = await Message.find({ conversationKey })
-      .populate("sender", "name role")
-      .sort({ createdAt: 1 });
-
-    res.json({ success: true, messages });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET /api/messages/users -> Fetches the chat sidebar list for Clients/Developers
+// 1. GET /api/messages/chat-directory -> Fetches the sidebar user roster for Clients/Developers
 router.get("/chat-directory", async (req, res) => {
   try {
-    // 1. Fetch standard users (e.g., developers see clients, clients see developers)
+    // Fetch standard users (e.g., developers see clients, clients see developers)
     const targetRole = req.user.role === "Client" ? "Developer" : "Client";
     const normalUsers = await User.find({ role: targetRole, status: "Active" })
       .select("name email companyName status")
       .lean();
 
-    // 2. Fetch the system Admin account context explicitly
+    // Fetch the system Admin account context explicitly
     const adminUser = await User.findOne({ role: "Admin" })
       .select("name email status")
       .lean();
@@ -49,12 +35,14 @@ router.get("/chat-directory", async (req, res) => {
 
     res.json({ success: true, users: responseDirectory });
   } catch (error) {
+    console.error("Chat directory compilation failure:", error);
     res.status(500).json({ success: false, message: "Error compiling chat directory." });
   }
 });
 
-// POST /api/messages/team_channel_:projectId -> Saves and broadcasts channel team chats
-router.post("/messages/team_channel_:projectId", async (req, res) => {
+// 2. POST /api/messages/team_channel_:projectId -> Saves and broadcasts channel team chats
+// 👑 FIX 2: Fixed sub-path suffix mapping layout to eliminate duplicate /messages patterns
+router.post("/team_channel_:projectId", async (req, res) => {
   try {
     const userId = req.user._id || req.user.id;
     const { projectId } = req.params;
@@ -89,8 +77,8 @@ router.post("/messages/team_channel_:projectId", async (req, res) => {
   }
 });
 
-// GET /api/messages/team_channel_:projectId -> Loads historical message lines inside the room
-router.get("/messages/team_channel_:projectId", async (req, res) => {
+// 3. GET /api/messages/team_channel_:projectId -> Loads historical message lines inside the room
+router.get("/team_channel_:projectId", async (req, res) => {
   try {
     const { projectId } = req.params;
     const messages = await Message.find({ conversationKey: `team_channel_${projectId}` })
@@ -104,7 +92,22 @@ router.get("/messages/team_channel_:projectId", async (req, res) => {
   }
 });
 
-// 2. HTTP Fallback Endpoint to Post a New Message
+// 4. GET /api/messages/:conversationKey -> Fetch historical conversation messages sorted chronologically
+router.get("/:conversationKey", async (req, res, next) => {
+  try {
+    const { conversationKey } = req.params;
+
+    const messages = await Message.find({ conversationKey })
+      .populate("sender", "name role")
+      .sort({ createdAt: 1 });
+
+    res.json({ success: true, messages });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 5. POST /api/messages/:conversationKey -> HTTP Fallback Endpoint to Post a New Message
 router.post("/:conversationKey", async (req, res, next) => {
   try {
     const { conversationKey } = req.params;
@@ -139,7 +142,7 @@ router.post("/:conversationKey", async (req, res, next) => {
   }
 });
 
-// 3. Mark messages as read for a specific conversation
+// 6. POST /api/messages/:conversationKey/seen -> Mark messages as read for a specific conversation
 router.post("/:conversationKey/seen", async (req, res, next) => {
   try {
     const { conversationKey } = req.params;
