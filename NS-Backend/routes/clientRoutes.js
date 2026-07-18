@@ -310,4 +310,55 @@ router.put("/settings", async (req, res) => {
   res.json({ success: true, settings: user.settings });
 });
 
+// POST /api/admin/messages/:userId -> Dispatches an outbound message utilizing unified socket rooms
+router.post("/messages/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { text } = req.body;
+
+    if (!text || text.trim() === "") {
+      return res.status(400).json({ success: false, message: "Message content body cannot be empty." });
+    }
+
+    // 1. Fetch target user profile details to determine role routing assignments
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: "Recipient workspace user instance not found." });
+    }
+
+    // 2. Map properties strictly matching your Schema keys
+    const targetKey = buildConversationKey(userId); // admin_${userId}
+    const messagePayload = {
+      conversationKey: targetKey,
+      sender: req.user._id, // Logged-in Admin document ref
+      text: text,
+      seenBy: [req.user._id]
+    };
+
+    if (targetUser.role === "Client") {
+      messagePayload.client = targetUser._id;
+    } else if (targetUser.role === "Developer") {
+      messagePayload.developer = targetUser._id;
+    }
+
+    const newMessage = new Message(messagePayload);
+    await newMessage.save();
+
+    // 3. REAL-TIME MULTICAST BROADCAST SYNC LAYER
+    const io = req.app.get("io");
+    if (io) {
+      // Emit down the live conversational room stream context channel
+      io.to(`conversation:${targetKey}`).emit("message:new", newMessage);
+      
+      // Push an alert notification target down onto the user's specific backchannel listener
+      io.to(`user:${userId}`).emit("message:new", newMessage);
+    }
+
+    res.status(201).json({ success: true, message: newMessage });
+  } catch (error) {
+    console.error("Post message route error:", error);
+    res.status(500).json({ success: false, message: "Failed to persist outgoing conversation entry context." });
+  }
+});
+
 module.exports = router;

@@ -24,10 +24,19 @@ function ClientChatWithDevelopersPage() {
 
   const currentUserId = user?.id || user?._id || ''
 
-  // Symmetrical conversation key mapping matching the backend: clientId:developerId
+  // Determine if the current focused conversation is the system admin card
+  const isViewingAdmin = useMemo(() => {
+    const selectedItem = developers.find(d => d._id === selectedDeveloper)
+    return selectedItem?.isSystemAdmin === true
+  }, [selectedDeveloper, developers])
+
+  // Symmetrical conversation key mapping calculation
   const conversationKey = useMemo(() => {
+    if (isViewingAdmin) {
+      return `admin_${currentUserId}`
+    }
     return `${currentUserId}:${selectedDeveloper || 'general'}`
-  }, [selectedDeveloper, currentUserId])
+  }, [selectedDeveloper, currentUserId, isViewingAdmin])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -37,15 +46,28 @@ function ClientChatWithDevelopersPage() {
     scrollToBottom()
   }, [messages])
 
-  // 1. Load active Developer Accounts list
+  // 1. Load active Developer Accounts list + Inject Admin at top
   useEffect(() => {
     if (!token) return
 
     api.get('/client/developers')
       .then(({ data }) => {
         const list = data.developers || []
-        setDevelopers(list)
-        setSelectedDeveloper(list[0]?._id || '')
+        
+        // Explicitly inject the Administrator account node context at the front of the roster array loop
+        const injectedList = [
+          {
+            _id: 'system_admin_ref',
+            name: 'System Administrator (Varlexa)',
+            email: 'admin@varlexa.com',
+            preferredTechnologies: ['Varlexa Support Core'],
+            isSystemAdmin: true
+          },
+          ...list
+        ]
+        
+        setDevelopers(injectedList)
+        setSelectedDeveloper(injectedList[0]?._id || '')
       })
       .catch(() => setDevelopers([]))
   }, [token])
@@ -54,14 +76,18 @@ function ClientChatWithDevelopersPage() {
   useEffect(() => {
     if (!token || !selectedDeveloper) return
 
-    api.get(`/messages/${conversationKey}`)
+    // If viewing the Admin, target the admin messages endpoint namespace, otherwise standard threads
+    const fetchUrl = isViewingAdmin
+      ? `/admin/messages/${currentUserId}`
+      : `/messages/${conversationKey}`
+
+    api.get(fetchUrl)
       .then(({ data }) => {
         setMessages(data.messages || [])
-        // Clear WhatsApp badge count locally once the channel conversation is focused open
         setUnreadCounts((prev) => ({ ...prev, [selectedDeveloper]: 0 }))
       })
       .catch(() => setMessages([]))
-  }, [selectedDeveloper, conversationKey, token])
+  }, [selectedDeveloper, conversationKey, token, isViewingAdmin, currentUserId])
 
   // 3. Setup Authenticated Socket Connections
   useEffect(() => {
@@ -78,14 +104,13 @@ function ClientChatWithDevelopersPage() {
 
     socket.on('connect_error', () => setStatus('Realtime chat is temporarily unavailable.'))
     
-    // Listen for live array broadcast of online developer IDs
     socket.on('developers:online_list', (ids) => {
       setOnlineDeveloperIds(ids || [])
     })
 
     socket.on('typing:start', ({ user: typingUser }) => {
       if (typingUser?.id !== currentUserId) {
-        setTypingName(typingUser?.name || 'Developer')
+        setTypingName(typingUser?.name || 'User')
       }
     })
     
@@ -95,10 +120,14 @@ function ClientChatWithDevelopersPage() {
       const senderId = typeof message.sender === 'object' 
         ? message.sender?._id || message.sender?.id 
         : message.sender
-      const msgDeveloperId = message.developer || senderId
 
-      // Check if the incoming message belongs to the active conversation window
-      if (String(msgDeveloperId) === String(selectedDeveloper)) {
+      // Identify context matching channels cleanly
+      let incomingMatchId = message.developer || senderId
+      if (message.conversationKey && message.conversationKey.startsWith('admin_')) {
+        incomingMatchId = 'system_admin_ref'
+      }
+
+      if (String(incomingMatchId) === String(selectedDeveloper)) {
         setMessages((current) => {
           const messageId = message?._id || message?.id
           if (messageId && current.some((item) => (item._id || item.id) === messageId)) {
@@ -107,12 +136,10 @@ function ClientChatWithDevelopersPage() {
           return [...current, message]
         })
       } else {
-        // WhatsApp Notification Badge Increment Trigger Rules
-        // Increment badge if the message is from a background developer channel and not yourself
         if (senderId && String(senderId) !== String(currentUserId)) {
           setUnreadCounts((prev) => ({
             ...prev,
-            [msgDeveloperId]: (prev[msgDeveloperId] || 0) + 1
+            [incomingMatchId]: (prev[incomingMatchId] || 0) + 1
           }))
         }
       }
@@ -174,11 +201,19 @@ function ClientChatWithDevelopersPage() {
     setStatus('')
     
     try {
-      await api.post(`/messages/${conversationKey}`, { 
-        client: currentUserId,
-        developer: selectedDeveloper, 
-        text: input.trim() 
-      })
+      if (isViewingAdmin) {
+        // Direct transactional execution targeting admin storage endpoints
+        await api.post(`/admin/messages/${currentUserId}`, { 
+          text: input.trim() 
+        })
+      } else {
+        // Standard operational client-to-developer mapping logic
+        await api.post(`/messages/${conversationKey}`, { 
+          client: currentUserId,
+          developer: selectedDeveloper, 
+          text: input.trim() 
+        })
+      }
 
       setInput('')
       setTypingName('')
@@ -192,20 +227,19 @@ function ClientChatWithDevelopersPage() {
     <div className="dashboard-page dashboard-reveal">
       <div className="dashboard-page-heading">
         <p className="dashboard-kicker">Messages</p>
-        <h1>Chat with Developers</h1>
+        <h1>Chat Workspace</h1>
         {status && <p className="chat-error-banner">{status}</p>}
       </div>
       
       <div className="chat-workspace client-chat-layout">
         <aside className="chat-side-panel">
           <div className="dashboard-search">
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search developers..." />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search directory..." />
           </div>
           {filteredDevelopers.map((developer) => {
             const targetDevIdStr = String(developer._id || developer.id || '').trim().toLowerCase();
             
-            // FIX: Robust lowercased item validation prevents type mapping status discrepancies
-            const isOnline = onlineDeveloperIds.some(
+            const isOnline = developer.isSystemAdmin || onlineDeveloperIds.some(
               (onlineId) => String(onlineId).trim().toLowerCase() === targetDevIdStr
             );
             
@@ -217,12 +251,20 @@ function ClientChatWithDevelopersPage() {
                 type="button" 
                 key={developer._id} 
                 onClick={() => setSelectedDeveloper(developer._id)}
-                style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', textAlign: 'left' }}
+                style={{ 
+                  position: 'relative', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  width: '100%', 
+                  textAlign: 'left',
+                  borderLeft: developer.isSystemAdmin ? '3px solid #f59e0b' : 'none' 
+                }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                  <span style={{ fontWeight: '600' }}>{developer.name}</span>
+                  <span style={{ fontWeight: '600', color: developer.isSystemAdmin ? '#f59e0b' : 'inherit' }}>
+                    {developer.name}
+                  </span>
                   
-                  {/* WhatsApp-Style Circular Counter Notification Badge Element */}
                   {badgeCount > 0 && (
                     <span style={{
                       background: '#22c55e',
@@ -245,7 +287,7 @@ function ClientChatWithDevelopersPage() {
                 
                 <small style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                   <span className={`status-dot ${isOnline ? 'active-green' : 'inactive-gray'}`}></span>
-                  {isOnline ? 'Online' : 'Offline'} · Active Channel
+                  {developer.isSystemAdmin ? 'System Node' : isOnline ? 'Online' : 'Offline'}
                 </small>
                 {developer.preferredTechnologies?.length > 0 && (
                   <em className="tech-stack-indicator">{developer.preferredTechnologies.join(', ')}</em>
@@ -254,14 +296,14 @@ function ClientChatWithDevelopersPage() {
               </button>
             )
           })}
-          {filteredDevelopers.length === 0 && <p className="no-data-msg">No developers found.</p>}
+          {filteredDevelopers.length === 0 && <p className="no-data-msg">No entries found.</p>}
         </aside>
 
         <section className="chat-main-panel client-main-panel">
           <div className="chat-room-header">
             <div>
-              <span>{typingName ? `${typingName} is typing...` : activeDeveloper ? 'Connected' : 'Select a developer'}</span>
-              <strong>{activeDeveloper?.name || 'Developer Workspace'}</strong>
+              <span>{typingName ? `${typingName} is typing...` : activeDeveloper ? 'Connected' : 'Select a conversation'}</span>
+              <strong>{activeDeveloper?.name || 'Communication Channel'}</strong>
             </div>
           </div>
           
@@ -273,8 +315,18 @@ function ClientChatWithDevelopersPage() {
                 const messageSenderId = typeof message.sender === 'object' 
                   ? message.sender?._id || message.sender?.id 
                   : message.sender;
+                
+                // Message alignment constraints matching message context specifications
                 const isOwnMessage = messageSenderId === currentUserId;
-                const senderDisplayName = isOwnMessage ? 'You' : (activeDeveloper?.name || 'Developer');
+                
+                let senderDisplayName = 'Developer';
+                if (isOwnMessage) {
+                  senderDisplayName = 'You';
+                } else if (isViewingAdmin || (!message.client && !message.developer)) {
+                  senderDisplayName = 'Admin';
+                } else if (activeDeveloper) {
+                  senderDisplayName = activeDeveloper.name;
+                }
 
                 const messageDate = new Date(message.createdAt || Date.now());
                 const currentDateStr = messageDate.toLocaleDateString([], { 
@@ -295,7 +347,11 @@ function ClientChatWithDevelopersPage() {
                       </div>
                     )}
 
-                    <article className={`dashboard-chat-message ${isOwnMessage ? 'own' : 'incoming'}`}>
+                    <article className={`dashboard-chat-message ${isOwnMessage ? 'own' : 'incoming'}`}
+                      style={{
+                        borderLeft: senderDisplayName === 'Admin' ? '3px solid #f59e0b' : 'inherit'
+                      }}
+                    >
                       <span>{senderDisplayName.slice(0, 2).toUpperCase()}</span>
                       <div>
                         <strong>
@@ -317,7 +373,7 @@ function ClientChatWithDevelopersPage() {
           <form className="dashboard-chat-form" onSubmit={sendMessage}>
             <button type="button" aria-label="Add emoji"><Smile size={18} /></button>
             <button type="button" aria-label="Share file"><Paperclip size={18} /></button>
-            <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Message developer..." />
+            <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Type your response message payload..." />
             <button type="submit" aria-label="Send message"><Send size={18} /></button>
           </form>
         </section>
@@ -327,7 +383,7 @@ function ClientChatWithDevelopersPage() {
           <p>History is securely stored inside MongoDB. Typing metrics and connection layers are running live.</p>
           <div className="online-tracker-badge">
             <span className="pulse-dot"></span>
-            <small>{onlineDeveloperIds.length} Developers Live Online</small>
+            <small>{onlineDeveloperIds.length} Engineers Live Online</small>
           </div>
         </aside>
       </div>

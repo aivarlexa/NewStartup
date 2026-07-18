@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react"; // 👈 Ensure useRef is here
 import {
   BarChart3,
   CalendarDays,
@@ -143,7 +143,7 @@ export const ClientsPage = () => {
   const handleAddClientSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await api.post("/admin/clients", formData);
+      const { data } = await api.post("/clients", formData);
       if (data.success) {
         alert("Client workspace profile registered successfully.");
         // Dynamically insert the new card into the client state loop layout instantly
@@ -752,10 +752,216 @@ export const TeamsPage = () => {
   );
 };
 
+// --- 7. MESSAGES MODULE (ADMIN INTER-ROLE SYSTEM COMMUNICATION) ---
+export const MessagesPage = () => {
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingChat, setLoadingChat] = useState(false);
+  const [error, setError] = useState("");
+
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Fetch all potential conversation targets (Clients & Developers)
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const [{ data: clientData }, { data: devData }] = await Promise.all([
+          api.get("/admin/clients"),
+          api.get("/admin/developers")
+        ]);
+        
+        const combined = [
+          ...(clientData.clients || []).map(u => ({ ...u, type: "Client" })),
+          ...(devData.developers || []).map(u => ({ ...u, type: "Developer" }))
+        ];
+        setUsers(combined);
+      } catch (err) {
+        setError(getApiErrorMessage(err, "Failed to compile messaging directory roster."));
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // Fetch message thread whenever a target profile user is selected
+  useEffect(() => {
+    if (!selectedUser) return;
+    const fetchChatThread = async () => {
+      try {
+        setLoadingChat(true);
+        const { data } = await api.get(`/admin/messages/${selectedUser._id}`);
+        setMessages(data.messages || []);
+      } catch (err) {
+        console.error("Chat parsing failure:", err);
+      } finally {
+        setLoadingChat(false);
+      }
+    };
+    fetchChatThread();
+  }, [selectedUser]);
+
+  // Submit messaging text context directly onto server routes
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedUser) return;
+
+    try {
+      const { data } = await api.post(`/admin/messages/${selectedUser._id}`, {
+        text: newMessage
+      });
+      if (data.success) {
+        setMessages(prev => [...prev, data.message]);
+        setNewMessage("");
+      }
+    } catch (err) {
+      alert(getApiErrorMessage(err, "Failed to transmit text body payload structure."));
+    }
+  };
+
+
+  return (
+    <PageShell 
+      title="Messaging Board" 
+      subtitle="Secure communication pipeline routing matrix logs across active ecosystem user instances."
+      loading={loadingUsers}
+      error={error}
+    >
+      <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "1.25rem", height: "600px", marginTop: "1rem" }}>
+        
+        {/* LEFT DIRECTORY COLUMN */}
+        <div style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: "8px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ padding: "1rem", borderBottom: "1px solid #21262d" }}>
+            <h3 style={{ fontSize: "0.9rem", color: "#c9d1d9", margin: 0 }}>Active Core Directories</h3>
+          </div>
+          <div style={{ flexGrow: 1, overflowY: "auto", padding: "0.5rem" }}>
+            {users.map(u => (
+              <div 
+                key={u._id}
+                onClick={() => setSelectedUser(u)}
+                style={{
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  background: selectedUser?._id === u._id ? "#1f6feb" : "transparent",
+                  color: selectedUser?._id === u._id ? "#fff" : "#c9d1d9",
+                  marginBottom: "4px",
+                  transition: "background 0.2s"
+                }}
+              >
+                <div style={{ fontWeight: "600", fontSize: "0.85rem" }}>{u.name}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", opacity: 0.8, marginTop: "2px" }}>
+                  <span>{u.companyName || "Independent"}</span>
+                  <span style={{ color: selectedUser?._id === u._id ? "#fff" : u.type === "Client" ? "#a78bfa" : "#58a6ff" }}>
+                    {u.type}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT CONVERSATION PANE CONTAINER */}
+        <div style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: "8px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {selectedUser ? (
+            <>
+              {/* Active Conversation Title Header */}
+              <div style={{ padding: "1rem", borderBottom: "1px solid #21262d", background: "#161b22", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <h4 style={{ margin: 0, color: "#f0f6fc", fontSize: "0.95rem" }}>{selectedUser.name}</h4>
+                  <p style={{ margin: 0, fontSize: "0.75rem", color: "#8b949e" }}>{selectedUser.email}</p>
+                </div>
+                <Pill tone={selectedUser.type === "Client" ? "amber" : "cyan"}>{selectedUser.type}</Pill>
+              </div>
+
+{/* Chat Messages Scrolling Context */}
+<div style={{ flexGrow: 1, overflowY: "auto", padding: "1.25rem", display: "flex", flexDirection: "column", gap: "10px", background: "#090d13" }}>
+  {loadingChat ? (
+    <p style={{ color: "#8b949e", fontStyle: "italic", textAlign: "center" }}>Loading communication logs...</p>
+  ) : messages.length === 0 ? (
+    <p style={{ color: "#8b949e", fontStyle: "italic", textAlign: "center", marginTop: "2rem" }}>No structural message thread recorded. Start a new interaction line below.</p>
+  ) : (
+    <>
+      {messages.map((m) => {
+        // Extract the raw sender ID string regardless of whether it's populated or an object ID
+        const senderIdStr = String(m.sender?._id || m.sender || "");
+        const targetUserIdStr = String(selectedUser?._id || selectedUser?.id || "");
+
+        // 👑 CORRECT CHECK: If the sender ID matches the active Client/Developer ID, it's incoming (left). 
+        // Otherwise, it was sent by You/Admin (right).
+        const isAdminSender = senderIdStr !== targetUserIdStr; 
+        
+        return (
+          <div 
+            key={m._id || m.id || Math.random()} 
+            style={{
+              alignSelf: isAdminSender ? "flex-end" : "flex-start",
+              background: isAdminSender ? "#1f6feb" : "#21262d",
+              color: "#f0f6fc",
+              padding: "8px 12px",
+              borderRadius: isAdminSender ? "12px 12px 0 12px" : "12px 12px 12px 0",
+              maxWidth: "65%",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              transition: "transform 0.2s ease"
+            }}
+          >
+            <p style={{ margin: 0, fontSize: "0.85rem", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.text}</p>
+            <small style={{ fontSize: "0.65rem", display: "block", textAlign: "right", marginTop: "4px", opacity: 0.7 }}>
+              {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just Now"}
+            </small>
+          </div>
+        );
+      })}
+      
+      <div ref={messagesEndRef} />
+    </>
+  )}
+</div>
+
+              {/* Input Action Form Tray */}
+              <form onSubmit={handleSendMessage} style={{ padding: "1rem", background: "#161b22", borderTop: "1px solid #21262d", display: "flex", gap: "10px" }}>
+                <input 
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder={`Type an analytical response tracking line to ${selectedUser.name}...`}
+                  style={{ flexGrow: 1, padding: "10px", background: "#0d1117", border: "1px solid #30363d", color: "#f0f6fc", borderRadius: "6px", outline: "none" }}
+                />
+                <button 
+                  type="submit" 
+                  className="admin-action-button admin-action-primary" 
+                  style={{ padding: "0 1.25rem", cursor: "pointer" }}
+                  disabled={!newMessage.trim()}
+                >
+                  Send
+                </button>
+              </form>
+            </>
+          ) : (
+            <div style={{ flexGrow: 1, display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", color: "#8b949e" }}>
+              <MessageSquare size={48} style={{ opacity: 0.3, marginBottom: "12px" }} />
+              <p style={{ margin: 0, fontSize: "0.9rem" }}>Select a target workspace account instance context directory to initialize secure chat routing links.</p>
+            </div>
+          )}
+        </div>
+
+      </div>
+    </PageShell>
+  );
+};
+
 export const TasksPage = () => <PageShell title="Task Management"><p>Task assignments mapping available...</p></PageShell>;
 export const CalendarPage = () => <PageShell title="Calendar View"><p>Loading tracking timeline grid engine...</p></PageShell>;
 export const NotificationsPage = () => <PageShell title="Notifications Updates"><p>Live context alert parameters active...</p></PageShell>;
-export const MessagesPage = () => <PageShell title="Messaging Board"><p>Secure context thread communication channels linked...</p></PageShell>;
+
 export const InvoicesPage = () => <PageShell title="Invoices Management"><p>PDF compilation matrices active...</p></PageShell>;
 export const FileManagerPage = () => <PageShell title="Secure File Manager"><p>S3 Bucket object key validation links online...</p></PageShell>;
 export const SettingsPage = () => <PageShell title="Roles & Audit Security"><p>System authentication matrices operational...</p></PageShell>;

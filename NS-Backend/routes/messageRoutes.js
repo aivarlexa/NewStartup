@@ -21,13 +21,44 @@ router.get("/:conversationKey", async (req, res, next) => {
   }
 });
 
+// GET /api/messages/users -> Fetches the chat sidebar list for Clients/Developers
+router.get("/chat-directory", async (req, res) => {
+  try {
+    // 1. Fetch standard users (e.g., developers see clients, clients see developers)
+    const targetRole = req.user.role === "Client" ? "Developer" : "Client";
+    const normalUsers = await User.find({ role: targetRole, status: "Active" })
+      .select("name email companyName status")
+      .lean();
+
+    // 2. Fetch the system Admin account context explicitly
+    const adminUser = await User.findOne({ role: "Admin" })
+      .select("name email status")
+      .lean();
+
+    const responseDirectory = [...normalUsers];
+
+    // Inject the Admin at the front of the list if it exists
+    if (adminUser) {
+      responseDirectory.unshift({
+        ...adminUser,
+        name: "System Administrator (Varlexa)",
+        companyName: "Internal Management",
+        isSystemAdmin: true // Flag to identify admin on frontend layout panels
+      });
+    }
+
+    res.json({ success: true, users: responseDirectory });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error compiling chat directory." });
+  }
+});
+
 // 2. HTTP Fallback Endpoint to Post a New Message
 router.post("/:conversationKey", async (req, res, next) => {
   try {
     const { conversationKey } = req.params;
     const { text, client, developer, attachments } = req.body;
     const userId = req.user._id || req.user.id;
-
     if (!text && !attachments?.length) {
       return res.status(400).json({ success: false, message: "Message cannot be empty." });
     }
