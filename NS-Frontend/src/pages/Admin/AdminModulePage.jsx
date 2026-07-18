@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react"; // 👈 Ensure useRef is here
+import { useEffect, useState, useRef, useMemo } from "react"; // 👈 Ensure useRef is here
 import {
   BarChart3,
   CalendarDays,
@@ -958,9 +958,178 @@ export const MessagesPage = () => {
   );
 };
 
+// --- 8. NOTIFICATIONS MODULE (ADMIN WORKSPACE ALERTS) ---
+export const NotificationsPage = () => {
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState("All"); // Options: "All", "Unread", "Read"
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get("/admin/notifications");
+      setNotifications(data.notifications || []);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to fetch workspace system alerts."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    // Optimistic UI state update
+    setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+    try {
+      await api.patch(`/admin/notifications/${id}/read`);
+    } catch (err) {
+      console.error("Failed to mark alert as read:", err);
+      // Revert if API fails
+      fetchNotifications();
+    }
+  };
+
+  const handleClearNotification = async (id) => {
+    setNotifications(prev => prev.filter(n => n._id !== id));
+    try {
+      await api.delete(`/admin/notifications/${id}`);
+    } catch (err) {
+      console.error("Failed to scrub alert document instance:", err);
+      fetchNotifications();
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    try {
+      await api.post("/admin/notifications/mark-all-read");
+    } catch (err) {
+      console.error("Failed to bundle patch system alerts:", err);
+      fetchNotifications();
+    }
+  };
+
+  const filteredNotifications = useMemo(() => {
+    return notifications.filter(n => {
+      if (filter === "Unread") return !n.read;
+      if (filter === "Read") return n.read;
+      return true;
+    });
+  }, [notifications, filter]);
+
+  return (
+    <PageShell
+      title="Notifications Updates"
+      subtitle="Monitor ecosystem log telemetry, client submissions, and project lane updates live."
+      loading={loading}
+      error={error}
+      action={
+        notifications.some(n => !n.read) && (
+          <ActionButton tone="ghost" onClick={handleMarkAllRead}>
+            Mark All as Read
+          </ActionButton>
+        )
+      }
+    >
+      <div style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: '8px', overflow: 'hidden', marginTop: "1rem" }}>
+        
+        {/* Controls and Filter Header Tab Matrix */}
+        <div style={{ padding: "1rem", borderBottom: "1px solid #21262d", background: "#161b22", display: "flex", gap: "8px" }}>
+          {["All", "Unread", "Read"].map((type) => (
+            <button
+              key={type}
+              onClick={() => setFilter(type)}
+              style={{
+                background: filter === type ? "#1f6feb" : "#21262d",
+                color: "#f0f6fc",
+                border: "1px solid #30363d",
+                padding: "6px 14px",
+                borderRadius: "4px",
+                fontSize: "0.8rem",
+                cursor: "pointer",
+                fontWeight: "600",
+                transition: "background 0.2s"
+              }}
+            >
+              {type} ({type === "All" ? notifications.length : type === "Unread" ? notifications.filter(n => !n.read).length : notifications.filter(n => n.read).length})
+            </button>
+          ))}
+        </div>
+
+        {/* Dynamic Notification Row Lists */}
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {filteredNotifications.length === 0 ? (
+            <div style={{ padding: "3rem", textAlign: "center", color: "#8b949e", fontStyle: "italic" }}>
+              No real-time system tracking metrics found matching filter bounds.
+            </div>
+          ) : (
+            filteredNotifications.map((notif) => (
+              <div
+                key={notif._id}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr auto",
+                  gap: "1rem",
+                  padding: "1.25rem 1.5rem",
+                  borderBottom: "1px solid #21262d",
+                  background: notif.read ? "transparent" : "rgba(31, 111, 235, 0.03)",
+                  transition: "background 0.2s",
+                  alignItems: "center"
+                }}
+              >
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    {!notif.read && (
+                      <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#1f6feb", display: "inline-block" }} />
+                    )}
+                    <strong style={{ color: "#f0f6fc", fontSize: "0.9rem" }}>{notif.title}</strong>
+                    <Pill tone={
+                      notif.type === "Project Updates" ? "cyan" : 
+                      notif.type === "New Message" ? "green" : "amber"
+                    }>
+                      {notif.type || "System Log"}
+                    </Pill>
+                  </div>
+                  <p style={{ margin: "4px 0 0 0", color: "#c9d1d9", fontSize: "0.85rem", opacity: notif.read ? 0.7 : 1 }}>
+                    {notif.message}
+                  </p>
+                  <span style={{ fontSize: "0.72rem", color: "#8b949e", display: "block", marginTop: "6px" }}>
+                    {new Date(notif.createdAt).toLocaleString()}
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", gap: "8px" }}>
+                  {!notif.read && (
+                    <button
+                      onClick={() => handleMarkAsRead(notif._id)}
+                      style={{ background: "#161b22", border: "1px solid #30363d", color: "#58a6ff", padding: "4px 10px", borderRadius: "4px", fontSize: "0.75rem", cursor: "pointer" }}
+                    >
+                      Mark Read
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleClearNotification(notif._id)}
+                    style={{ background: "transparent", border: "none", color: "#f85149", padding: "4px 8px", borderRadius: "4px", fontSize: "0.75rem", cursor: "pointer" }}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </PageShell>
+  );
+};
+
 export const TasksPage = () => <PageShell title="Task Management"><p>Task assignments mapping available...</p></PageShell>;
 export const CalendarPage = () => <PageShell title="Calendar View"><p>Loading tracking timeline grid engine...</p></PageShell>;
-export const NotificationsPage = () => <PageShell title="Notifications Updates"><p>Live context alert parameters active...</p></PageShell>;
+
 
 export const InvoicesPage = () => <PageShell title="Invoices Management"><p>PDF compilation matrices active...</p></PageShell>;
 export const FileManagerPage = () => <PageShell title="Secure File Manager"><p>S3 Bucket object key validation links online...</p></PageShell>;

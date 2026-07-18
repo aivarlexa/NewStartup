@@ -176,4 +176,39 @@ router.put("/profile", async (req, res) => {
   }
 });
 
+// =========================================================================
+//  🛠️ DEVELOPER ASSIGNED PROJECTS CHANNEL (Fixes Team Chat 404)
+// =========================================================================
+
+// GET /api/developer/projects -> Fetches all active project channels a developer belongs to
+router.get("/projects", async (req, res) => {
+  try {
+    const developerId = req.user._id || req.user.id;
+
+    // Find all projects where this developer is part of the team array OR is designated as the lead
+    const assignedProjects = await Requirement.find({
+      $or: [
+        { team: developerId },
+        { lead: developerId }
+      ]
+    })
+    .populate({
+      path: "client",
+      select: "name companyName email",
+      model: "User"
+    })
+    .populate({
+      path: "lead",
+      select: "name email",
+      model: "User"
+    })
+    .lean();
+
+    res.json({ success: true, projects: assignedProjects || [] });
+  } catch (error) {
+    console.error("Developer projects query sequence fault:", error.message);
+    res.status(500).json({ success: false, message: "Error compiling assigned team project matrices." });
+  }
+});
+
 module.exports = router;

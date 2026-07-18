@@ -71,6 +71,8 @@ app.get("/api/notifications", requireAuth, async (req, res) => {
   }
 });
 
+
+
 // NEW: Role-Agnostic Profile Sync Route (Resolves Cross-Role 403 Crashes)
 app.get("/api/profile/me", requireAuth, async (req, res) => {
   try {

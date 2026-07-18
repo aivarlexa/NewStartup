@@ -53,6 +53,57 @@ router.get("/chat-directory", async (req, res) => {
   }
 });
 
+// POST /api/messages/team_channel_:projectId -> Saves and broadcasts channel team chats
+router.post("/messages/team_channel_:projectId", async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const { projectId } = req.params;
+    const { text } = req.body;
+
+    if (!text || text.trim() === "") {
+      return res.status(400).json({ success: false, message: "Message content cannot be blank." });
+    }
+
+    // Map payload explicitly following your unified Message collection layout requirements
+    const channelMessage = await Message.create({
+      conversationKey: `team_channel_${projectId}`,
+      sender: userId,
+      text: text.trim(),
+      seenBy: [userId]
+    });
+
+    const populatedMessage = await Message.findById(channelMessage._id)
+      .populate("sender", "name role")
+      .lean();
+
+    const io = req.app.get("io");
+    if (io) {
+      // Broadcast live to everyone tuned into the active project channel room
+      io.to(`conversation:team_channel_${projectId}`).emit("message:new", populatedMessage);
+    }
+
+    res.status(201).json({ success: true, message: populatedMessage });
+  } catch (error) {
+    console.error("Channel communication error:", error);
+    res.status(500).json({ success: false, message: "Server error broadcasting team message." });
+  }
+});
+
+// GET /api/messages/team_channel_:projectId -> Loads historical message lines inside the room
+router.get("/messages/team_channel_:projectId", async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const messages = await Message.find({ conversationKey: `team_channel_${projectId}` })
+      .sort({ createdAt: 1 })
+      .populate("sender", "name role")
+      .lean();
+
+    res.json({ success: true, messages: messages || [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching channel logs." });
+  }
+});
+
 // 2. HTTP Fallback Endpoint to Post a New Message
 router.post("/:conversationKey", async (req, res, next) => {
   try {

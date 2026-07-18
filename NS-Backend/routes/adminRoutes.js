@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require("../models/user");
 const Requirement = require("../models/Requirement");
 const Message = require("../models/Message");
+const Notification = require("../models/Notification");
 
 const buildConversationKey = (userId) => `admin_${userId}`;
 
@@ -189,6 +190,71 @@ router.post("/messages/:userId", async (req, res) => {
     res.status(201).json({ success: true, message: newMessage });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to persist conversation entry context." });
+  }
+});
+
+// =========================================================================
+//  🔔 ADMINISTRATIVE SYSTEM TELEMETRY ALERTS ENDPOINTS
+// =========================================================================
+
+// GET /api/admin/notifications
+router.get("/notifications", async (req, res) => {
+  try {
+    const notifications = await Notification.find({ // 👈 Changed to Notification
+      $or: [
+        { user: req.user._id },
+        { targetRole: "Admin" },
+        { user: { $exists: false } }
+      ]
+    })
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+
+    res.json({ success: true, notifications: notifications || [] });
+  } catch (error) {
+    console.error("Fetch admin notifications error:", error);
+    res.status(500).json({ success: false, message: "Error compiling system telemetry notifications." });
+  }
+});
+
+// PATCH /api/admin/notifications/:id/read
+router.patch("/notifications/:id/read", async (req, res) => {
+  try {
+    const updated = await Notification.findByIdAndUpdate( // 👈 Changed to Notification
+      req.params.id,
+      { $set: { read: true } },
+      { new: true }
+    );
+    res.json({ success: true, notification: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to mark system alert context as read." });
+  }
+});
+
+// POST /api/admin/notifications/mark-all-read
+router.post("/notifications/mark-all-read", async (req, res) => {
+  try {
+    await Notification.updateMany( // 👈 Changed to Notification
+      { 
+        $or: [ { user: req.user._id }, { targetRole: "Admin" } ],
+        read: false 
+      },
+      { $set: { read: true } }
+    );
+    res.json({ success: true, message: "All administrative notification logs flagged read." });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Bulk patch validation error." });
+  }
+});
+
+// DELETE /api/admin/notifications/:id
+router.delete("/notifications/:id", async (req, res) => {
+  try {
+    await Notification.findByIdAndDelete(req.params.id); // 👈 Changed to Notification
+    res.json({ success: true, message: "Notification context discarded clean." });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to delete target alert registry node." });
   }
 });
 
