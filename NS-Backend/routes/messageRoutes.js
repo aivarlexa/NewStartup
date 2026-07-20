@@ -3,6 +3,7 @@ const router = express.Router();
 const Message = require("../models/Message");
 const User = require("../models/user"); // 👑 FIX 1: Explicitly import the User model to resolve crashes!
 const { requireAuth } = require("../middleware/authMiddleware");
+const Notification = require("../models/Notification");
 
 // Enforce auth context globally across the message sub-routes matrix
 router.use(requireAuth);
@@ -108,35 +109,57 @@ router.get("/:conversationKey", async (req, res, next) => {
 });
 
 // 5. POST /api/messages/:conversationKey -> HTTP Fallback Endpoint to Post a New Message
+// Inside POST /:conversationKey in messageRoutes.js
 router.post("/:conversationKey", async (req, res, next) => {
   try {
     const { conversationKey } = req.params;
-    const { text, client, developer, attachments } = req.body;
-    const userId = req.user._id || req.user.id;
-    if (!text && !attachments?.length) {
-      return res.status(400).json({ success: false, message: "Message cannot be empty." });
-    }
+    const { text, client, developer } = req.body;
+    const senderId = req.user._id || req.user.id;
 
     const newMessage = await Message.create({
       conversationKey,
-      client: client || null,
-      developer: developer || null,
-      sender: userId,
+      client,
+      developer,
+      sender: senderId,
       text: text || "",
-      attachments: attachments || [],
-      seenBy: [userId],
+      seenBy: [senderId],
     });
 
-    const populatedMessage = await Message.findById(newMessage._id)
-      .populate("sender", "name role");
+    // 1. Recipient Notification (Client/Developer)
+    const recipientId = String(senderId) === String(client) ? developer : client;
+    if (recipientId) {
+      const notification = await Notification.create({
+        user: recipientId,
+        type: "New Message",
+        title: "New Message Received",
+        message: text.length > 50 ? `${text.substring(0, 50)}...` : text,
+        link: "/developer/dashboard/client-chat",
+        read: false,
+      });
 
-    // Optional: Emit to socket connections if socket server is bound globally
-    const io = req.app.get("io");
-    if (io) {
-      io.to(`conversation:${conversationKey}`).emit("message:new", populatedMessage);
+      const io = req.app.get("io");
+      if (io) {
+        io.to(`user:${recipientId}`).emit("notification:new", notification);
+      }
     }
 
-    res.status(201).json({ success: true, message: populatedMessage });
+    // 2. Admin System Alert Notification
+    if (req.user.role !== "Admin") {
+      const adminNotif = await Notification.create({
+        targetRole: "Admin",
+        type: "New Message",
+        title: `New Message from ${req.user.name || "User"}`,
+        message: text.length > 50 ? `${text.substring(0, 50)}...` : text,
+        read: false,
+      });
+
+      const io = req.app.get("io");
+      if (io) {
+        io.to("role:Admin").emit("notification:new", adminNotif);
+      }
+    }
+
+    res.status(201).json({ success: true, message: newMessage });
   } catch (error) {
     next(error);
   }

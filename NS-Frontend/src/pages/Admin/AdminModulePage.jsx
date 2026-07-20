@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react"; // 👈 Ensure useRef is here
+import { useEffect, useState, useRef, useMemo,useContext } from "react"; // 👈 Ensure useRef is here
 import {
   BarChart3,
   CalendarDays,
@@ -12,7 +12,8 @@ import {
   UserCheck,
 } from "lucide-react";
 import api, { getApiErrorMessage } from "../../services/api";
-
+import { io } from 'socket.io-client';
+import AuthContext from "../../context/AuthContext";
 // --- REUSABLE STRUCTURAL SHELLS (DYNAMIC WORKSPACE EXTENSION) ---
 
 export const PageShell = ({ title, subtitle, children, action, loading, error }) => (
@@ -959,19 +960,55 @@ export const MessagesPage = () => {
 };
 
 // --- 8. NOTIFICATIONS MODULE (ADMIN WORKSPACE ALERTS) ---
+// --- 8. NOTIFICATIONS MODULE (ADMIN WORKSPACE ALERTS) ---
 export const NotificationsPage = () => {
+  const { token } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState("All"); // Options: "All", "Unread", "Read"
+  const [filter, setFilter] = useState("All");
+
+  const socketRef = useRef(null);
 
   useEffect(() => {
     fetchNotifications();
   }, []);
 
+  // 1. Real-time Socket.io Listener for Admin Notifications
+  useEffect(() => {
+    if (!token) return undefined;
+
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+    
+    // 👑 FIX 1: Use 'polling' first to stabilize initial handshake before upgrading to WebSockets
+    const socket = io(socketUrl, {
+      auth: { token },
+      transports: ['polling', 'websocket'],
+      reconnectionAttempts: 5,
+      timeout: 10000,
+    });
+    socketRef.current = socket;
+
+    // Join Admin Role Socket Room
+    socket.emit('room:join', 'role:Admin');
+
+    // Listen for live admin notifications
+    socket.on('notification:new', (newNotif) => {
+      setNotifications(prev => [newNotif, ...prev]);
+    });
+
+    // 👑 FIX 2: Explicitly remove listeners before disconnecting to prevent memory leaks
+    return () => {
+      socket.off('notification:new');
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [token]);
+
   const fetchNotifications = async () => {
     try {
       setLoading(true);
+      setError("");
       const { data } = await api.get("/admin/notifications");
       setNotifications(data.notifications || []);
     } catch (err) {
@@ -982,13 +1019,11 @@ export const NotificationsPage = () => {
   };
 
   const handleMarkAsRead = async (id) => {
-    // Optimistic UI state update
     setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
     try {
       await api.patch(`/admin/notifications/${id}/read`);
     } catch (err) {
       console.error("Failed to mark alert as read:", err);
-      // Revert if API fails
       fetchNotifications();
     }
   };
@@ -1098,7 +1133,7 @@ export const NotificationsPage = () => {
                     {notif.message}
                   </p>
                   <span style={{ fontSize: "0.72rem", color: "#8b949e", display: "block", marginTop: "6px" }}>
-                    {new Date(notif.createdAt).toLocaleString()}
+                    {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
                   </span>
                 </div>
 

@@ -109,6 +109,7 @@ router.get("/requirements", async (req, res) => {
   res.json({ success: true, requirements: requirements.map(normalizeRequirement) });
 });
 
+// Inside router.post("/requirements") in clientRoutes.js
 router.post("/requirements", async (req, res) => {
   const userId = req.user._id || req.user.id;
   const status = req.body.status === "Draft" ? "Draft" : "Pending";
@@ -128,18 +129,33 @@ router.post("/requirements", async (req, res) => {
     deadline: req.body.deadline,
     priority: req.body.priority || "Medium",
     projectType: req.body.projectType,
-    experienceRequired: req.body.experienceRequired,
-    attachments: splitList(req.body.attachments),
-    additionalNotes: req.body.additionalNotes,
     status,
   });
 
+  // 1. Notification strictly for the Client
   await Notification.create({
     user: userId,
     type: "Project Updates",
-    title: status === "Draft" ? "Requirement draft saved" : "Requirement submitted",
+    title: status === "Draft" ? "Requirement Draft Saved" : "Requirement Submitted",
     message: requirement.projectTitle,
+    link: "/client/dashboard/projects"
   });
+
+  // 2. Notification strictly for the Admin
+  if (status !== "Draft") {
+    const adminNotif = await Notification.create({
+      targetRole: "Admin", // 👈 Clean role assignment without user ID restriction
+      type: "Project Updates",
+      title: "New Project Request Received",
+      message: `New requirement submitted: "${requirement.projectTitle}" by ${req.user.name || "Client"}.`,
+      read: false,
+    });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to("role:Admin").emit("notification:new", adminNotif);
+    }
+  }
 
   res.status(201).json({ success: true, requirement: normalizeRequirement(requirement) });
 });
@@ -159,47 +175,44 @@ router.get("/messages", async (req, res) => {
 });
 
 // SYNCED CHAT ROUTE DISPATCH SYSTEM
+// Inside router.post("/messages") in clientRoutes.js
 router.post("/messages", async (req, res) => {
   const userId = req.user._id || req.user.id;
+  const developerId = req.body.developerId || null;
+
   if (!req.body.text && !req.body.emoji && !req.body.attachments?.length) {
     return res.status(400).json({ success: false, message: "Message cannot be empty." });
   }
 
-  const developerId = req.body.developerId || null;
   const message = await Message.create({
     conversationKey: `${userId}:${developerId || "general"}`,
     client: userId,
     developer: developerId,
     sender: userId,
     text: req.body.text || "",
-    emoji: req.body.emoji || "",
-    attachments: req.body.attachments || [],
     seenBy: [userId],
   });
 
-  await Notification.create({
-    user: userId,
-    type: "New Message",
-    title: "Message sent",
-    message: message.text || "Attachment shared",
-    read: true,
-  });
+  // 🔔 CREATE NOTIFICATION FOR THE DEVELOPER
+  if (developerId) {
+    const devNotification = await Notification.create({
+      user: developerId,
+      type: "New Message",
+      title: `New Message from ${req.user.name || "Client"}`,
+      message: message.text || "Shared an attachment",
+      read: false,
+    });
 
-  // Populate message sender info cleanly before sending out down the socket line
+    const io = req.app.get("io");
+    if (io) {
+      // Direct emit to the developer's socket room
+      io.to(`user:${developerId}`).emit("notification:new", devNotification);
+    }
+  }
+
   const populatedMessage = await Message.findById(message._id)
     .populate("sender", "name role")
     .lean();
-
-  const io = req.app.get("io");
-  if (io) {
-    // 1. Emit directly to focused window channel room 
-    io.to(`conversation:${message.conversationKey}`).emit("message:new", populatedMessage);
-
-    // 2. WHATSAPP STYLE SYNC LAYER: Send to developer's explicit background room channel
-    if (developerId) {
-      io.to(`user:${developerId}`).emit("message:new", populatedMessage);
-    }
-  }
 
   res.status(201).json({ success: true, message: populatedMessage });
 });
@@ -211,29 +224,49 @@ router.get("/meetings", async (req, res) => {
 });
 
 router.post("/meetings", async (req, res) => {
-  const userId = req.user._id || req.user.id;
-  if (!req.body.date || !req.body.time) {
+  const userId = req.user._id || req.user.id; // Client
+  const { date, time, developer, developerName, description } = req.body;
+
+  if (!date || !time) {
     return res.status(400).json({ success: false, message: "Date and time are required." });
   }
 
   const meeting = await ClientMeeting.create({
     client: userId,
-    developer: req.body.developer || undefined,
-    developerName: req.body.developerName || "",
-    date: req.body.date,
-    time: req.body.time,
+    developer: developer || undefined,
+    developerName: developerName || "",
+    date,
+    time,
     duration: Number(req.body.duration || 30),
     meetingLink: req.body.meetingLink || "",
-    meetingType: req.body.meetingType || "Google Meet",
-    description: req.body.description || "",
+    description: description || "",
   });
 
+  const io = req.app.get("io");
+
+  // 🔔 1. Notification for the Client (Sender)
   await Notification.create({
     user: userId,
     type: "Meeting Reminder",
-    title: "Meeting scheduled",
-    message: `${meeting.date} at ${meeting.time}`,
+    title: "Meeting Scheduled",
+    message: `Your meeting is set for ${date} at ${time}.`,
+    read: false,
   });
+
+  // 🔔 2. Notification for the Developer (Recipient)
+  if (developer) {
+    const devNotif = await Notification.create({
+      user: developer,
+      type: "Meeting Reminder",
+      title: "New Meeting Invitation Received",
+      message: `You have a new meeting request for ${date} at ${time}.`,
+      read: false,
+    });
+
+    if (io) {
+      io.to(`user:${developer}`).emit("notification:new", devNotif);
+    }
+  }
 
   res.status(201).json({ success: true, meeting: normalizeMeeting(meeting) });
 });
@@ -358,6 +391,20 @@ router.post("/messages/:userId", async (req, res) => {
   } catch (error) {
     console.error("Post message route error:", error);
     res.status(500).json({ success: false, message: "Failed to persist outgoing conversation entry context." });
+  }
+});
+
+// POST /api/client/notifications/mark-all-read
+router.post("/notifications/mark-all-read", async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    await Notification.updateMany(
+      { user: userId, read: false },
+      { $set: { read: true } }
+    );
+    res.json({ success: true, message: "All notifications marked as read." });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error updating notification states." });
   }
 });
 

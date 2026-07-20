@@ -4,6 +4,7 @@ const Message = require("../models/Message");
 const ClientMeeting = require("../models/ClientMeeting");
 const User = require("../models/user"); // Ensure case-sensitivity matches your file system ("user" vs "User")
 const { requireAuth, requireRole } = require("../middleware/authMiddleware");
+const Notification = require("../models/Notification");
 
 const router = express.Router();
 
@@ -208,6 +209,35 @@ router.get("/projects", async (req, res) => {
   } catch (error) {
     console.error("Developer projects query sequence fault:", error.message);
     res.status(500).json({ success: false, message: "Error compiling assigned team project matrices." });
+  }
+});
+
+router.get("/notifications", async (req, res) => {
+  try {
+    const developerId = req.user._id || req.user.id;
+    const notifications = await Notification.find({ user: developerId })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .lean();
+
+    res.json({ success: true, notifications: notifications || [] });
+  } catch (error) {
+    console.error("Developer notifications fetch error:", error);
+    res.status(500).json({ success: false, message: "Error loading notifications." });
+  }
+});
+
+// PATCH /api/developer/notifications/mark-all-read -> Marks all as read
+router.patch("/notifications/mark-all-read", async (req, res) => {
+  try {
+    const developerId = req.user._id || req.user.id;
+    await Notification.updateMany(
+      { user: developerId, read: false },
+      { $set: { read: true } }
+    );
+    res.json({ success: true, message: "All notifications marked as read." });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to mark notifications read." });
   }
 });
 

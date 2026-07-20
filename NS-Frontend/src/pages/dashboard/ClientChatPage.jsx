@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CalendarDays, ListPlus, Send } from 'lucide-react'
 import { io } from 'socket.io-client'
 import AuthContext from '../../context/AuthContext'
@@ -6,6 +7,9 @@ import api, { getApiErrorMessage } from '../../services/api'
 
 function ClientChatPage() {
   const { token, user } = useContext(AuthContext)
+  const [searchParams] = useSearchParams()
+  const targetClientId = searchParams.get('clientId')
+
   const [clients, setClients] = useState([])
   const [selectedClient, setSelectedClient] = useState('')
   const [messages, setMessages] = useState([])
@@ -44,12 +48,35 @@ function ClientChatPage() {
       .then(({ data }) => {
         const list = data.clients || []
         setClients(list)
-        setSelectedClient(list[0]?._id || '')
+
+        // Priority 1: If URL has a targetClientId from a notification click, select that client
+        if (targetClientId) {
+          const matchedClient = list.find((c) => String(c._id || c.id) === String(targetClientId))
+          if (matchedClient) {
+            setSelectedClient(matchedClient._id || matchedClient.id)
+            return
+          }
+        }
+
+        // Priority 2: Fallback to the first available client in the list
+        if (list.length > 0) {
+          setSelectedClient(list[0]?._id || list[0]?.id || '')
+        }
       })
       .catch(() => setClients([]))
-  }, [token])
+  }, [token, targetClientId])
 
-  // 2. Load historical chat conversations via the dynamic conversationKey path
+  // 2. Auto-switch selected client when targetClientId in searchParams updates dynamically
+  useEffect(() => {
+    if (targetClientId && clients.length > 0) {
+      const matchedClient = clients.find((c) => String(c._id || c.id) === String(targetClientId))
+      if (matchedClient) {
+        setSelectedClient(matchedClient._id || matchedClient.id)
+      }
+    }
+  }, [targetClientId, clients])
+
+  // 3. Load historical chat conversations via the dynamic conversationKey path
   useEffect(() => {
     if (!token || !selectedClient) return
 
@@ -62,7 +89,7 @@ function ClientChatPage() {
       .catch(() => setMessages([]))
   }, [selectedClient, conversationKey, token])
 
-  // 3. Setup Authenticated Socket Connections
+  // 4. Setup Authenticated Socket Connections
   useEffect(() => {
     if (!token) return undefined
 
@@ -131,7 +158,7 @@ function ClientChatPage() {
     }
   }, [token, currentUserId, selectedClient])
 
-  // 4. Handle Room Channels Switching
+  // 5. Handle Room Channels Switching
   useEffect(() => {
     const socket = socketRef.current
     if (!socket || !selectedClient) return undefined
@@ -144,7 +171,7 @@ function ClientChatPage() {
     }
   }, [conversationKey, selectedClient])
 
-  // 5. Typing metrics broadcast
+  // 6. Typing metrics broadcast
   useEffect(() => {
     const socket = socketRef.current
     if (!socket || !selectedClient) return undefined
@@ -165,9 +192,9 @@ function ClientChatPage() {
     }
   }, [conversationKey, input, selectedClient])
 
-  const activeClient = clients.find((c) => c._id === selectedClient)
+  const activeClient = clients.find((c) => (c._id || c.id) === selectedClient)
 
-  // 6. API Post Request Delivery Transaction
+  // 7. API Post Request Delivery Transaction
   async function sendMessage(event) {
     event.preventDefault()
     if (!input.trim() || !token) return
@@ -199,21 +226,22 @@ function ClientChatPage() {
       <div className="chat-workspace client-chat-layout">
         <aside className="chat-side-panel">
           {clients.map((client) => {
-            const targetClientIdStr = String(client._id || client.id || '').trim().toLowerCase();
+            const clientIdVal = client._id || client.id
+            const targetClientIdStr = String(clientIdVal || '').trim().toLowerCase()
             
             // Robust lowercased item validation prevents type mapping status discrepancies
             const isOnline = onlineDeveloperIds.some(
               (onlineId) => String(onlineId).trim().toLowerCase() === targetClientIdStr
-            );
+            )
             
-            const badgeCount = unreadCounts[client._id] || 0;
+            const badgeCount = unreadCounts[clientIdVal] || 0
 
             return (
               <button 
-                className={`${selectedClient === client._id ? 'active' : ''} ${isOnline ? 'online-user' : 'offline-user'}`} 
+                className={`${selectedClient === clientIdVal ? 'active' : ''} ${isOnline ? 'online-user' : 'offline-user'}`} 
                 type="button" 
-                key={client._id} 
-                onClick={() => setSelectedClient(client._id)}
+                key={clientIdVal} 
+                onClick={() => setSelectedClient(clientIdVal)}
                 style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', textAlign: 'left' }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
@@ -262,25 +290,25 @@ function ClientChatPage() {
           
           <div className="dashboard-chat-messages">
             {(() => {
-              let lastDateStr = '';
+              let lastDateStr = ''
 
               return messages.map((message) => {
                 const messageSenderId = typeof message.sender === 'object' 
                   ? message.sender?._id || message.sender?.id 
-                  : message.sender;
-                const isOwnMessage = messageSenderId === currentUserId;
-                const senderDisplayName = isOwnMessage ? 'You' : (activeClient?.name || 'Client');
+                  : message.sender
+                const isOwnMessage = messageSenderId === currentUserId
+                const senderDisplayName = isOwnMessage ? 'You' : (activeClient?.name || 'Client')
 
-                const messageDate = new Date(message.createdAt || Date.now());
+                const messageDate = new Date(message.createdAt || Date.now())
                 const currentDateStr = messageDate.toLocaleDateString([], { 
                   weekday: 'long', 
                   year: 'numeric', 
                   month: 'long', 
                   day: 'numeric' 
-                });
+                })
 
-                const showDateDivider = currentDateStr !== lastDateStr;
-                lastDateStr = currentDateStr;
+                const showDateDivider = currentDateStr !== lastDateStr
+                lastDateStr = currentDateStr
 
                 return (
                   <div key={message._id || message.id || Math.random()}>
@@ -303,8 +331,8 @@ function ClientChatPage() {
                       </div>
                     </article>
                   </div>
-                );
-              });
+                )
+              })
             })()}
             <div ref={messagesEndRef} />
           </div>
@@ -327,4 +355,4 @@ function ClientChatPage() {
   )
 }
 
-export default ClientChatPage;
+export default ClientChatPage

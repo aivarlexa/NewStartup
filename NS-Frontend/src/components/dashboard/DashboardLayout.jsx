@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -15,6 +15,7 @@ import {
   User,
   X,
 } from 'lucide-react';
+import { io } from 'socket.io-client';
 import BrandWordmark from '../BrandWordmark';
 import './Dashboard.css';
 import AuthContext from '../../context/AuthContext';
@@ -28,10 +29,10 @@ const dashboardNav = [
   { label: 'Meetings', to: '/developer/dashboard/meetings', icon: CalendarDays },
   { label: 'AI Developer', to: '/developer/dashboard/ai-assistant', icon: Bot },
   { label: 'Profile', to: '/developer/dashboard/profile', icon: User },
-]
+];
 
 function DashboardLayout() {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, token } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -39,20 +40,61 @@ function DashboardLayout() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const socketRef = useRef(null);
+  const currentUserId = user?.id || user?._id || '';
+
+  // 1. Initial Notification Fetch
   useEffect(() => {
     document.body.classList.add('dashboard-mode');
 
-    // Fetch notifications from the backend
-    api.get('/notifications')
-      .then(({ data }) => {
-        const nextNotifications = Array.isArray(data) ? data : [];
-        setNotifications(nextNotifications);
-        setUnreadCount(nextNotifications.length);
-      })
-      .catch(err => console.error("Failed to fetch notifications:", err));
+    if (token) {
+      api.get('/developer/notifications')
+        .then(({ data }) => {
+          const list = data.notifications || [];
+          setNotifications(list);
+          setUnreadCount(list.filter((n) => !n.read).length);
+        })
+        .catch((err) => console.error("Failed to fetch developer notifications:", err));
+    }
 
     return () => document.body.classList.remove('dashboard-mode');
-  }, []); // Empty dependency array ensures this runs once on mount
+  }, [token]);
+
+  // 2. Real-Time Socket Connection for Instant Developer Notifications
+useEffect(() => {
+  // Gate check: ensure both token and currentUserId exist before connecting
+  if (!token || !currentUserId) return undefined;
+
+  const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+
+  // 1. Create a single, stable Socket instance
+  const socket = io(socketUrl, {
+    auth: { token },
+    transports: ['polling', 'websocket'], // 👑 FIX: Polling first prevents handshake drops
+    reconnectionAttempts: 5,
+    timeout: 10000,
+  });
+
+  socketRef.current = socket;
+
+  // 2. Join required rooms (e.g. Admin room if user is Admin)
+  socket.emit('room:join', 'role:Admin');
+
+  // 3. Attach event listeners
+  socket.on('notification:new', (newNotif) => {
+    setNotifications((prev) => [newNotif, ...prev]);
+    if (typeof setUnreadCount === 'function') {
+      setUnreadCount((prev) => prev + 1);
+    }
+  });
+
+  // 4. Clean up listeners and disconnect on unmount
+  return () => {
+    socket.off('notification:new'); // Remove listener first
+    socket.disconnect();
+    socketRef.current = null;
+  };
+}, [token, currentUserId]);
 
   const canGoBack = location.pathname !== '/developer/dashboard';
 
@@ -65,9 +107,34 @@ function DashboardLayout() {
     navigate('/developer/login');
   }
 
-  function openNotifications() {
+function handleNotificationClick(item) {
+  setShowNotifications(false);
+
+  // Navigate directly using the target link or sender ID parameter
+  if (item.link) {
+    navigate(item.link);
+  } else if (item.senderId) {
+    navigate(`/developer/dashboard/client-chat?clientId=${item.senderId}`);
+  } else if (item.type === 'New Message' || item.title?.includes('Message')) {
+    navigate('/developer/dashboard/client-chat');
+  } else if (item.type === 'Meeting Reminder' || item.title?.includes('Meeting')) {
+    navigate('/developer/dashboard/meetings');
+  }
+}
+
+  async function openNotifications() {
     setShowNotifications((isOpen) => !isOpen);
-    setUnreadCount(0);
+
+    // Mark as read when opening panel
+    if (!showNotifications && unreadCount > 0) {
+      setUnreadCount(0);
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      try {
+        await api.patch('/developer/notifications/mark-all-read');
+      } catch (err) {
+        console.error("Failed to mark notifications read:", err);
+      }
+    }
   }
 
   return (
@@ -84,7 +151,7 @@ function DashboardLayout() {
 
         <nav className="dashboard-nav" aria-label="Developer dashboard navigation">
           {dashboardNav.map((item) => {
-            const Icon = item.icon
+            const Icon = item.icon;
 
             return (
               <NavLink
@@ -97,14 +164,14 @@ function DashboardLayout() {
                 <Icon size={18} />
                 <span>{item.label}</span>
               </NavLink>
-            )
+            );
           })}
           <button
             className="dashboard-nav-link"
             type="button"
             onClick={() => {
-              openNotifications()
-              setIsSidebarOpen(false)
+              openNotifications();
+              setIsSidebarOpen(false);
             }}
           >
             <Bell size={18} />
@@ -145,17 +212,49 @@ function DashboardLayout() {
             </Link>
           </div>
 
-          {showNotifications && (
-            <div className="dashboard-notification-panel">
-              <div>
-                <strong>Notifications</strong>
-                <span>{notifications.length > 0 ? `${unreadCount} unread` : 'All caught up'}</span>
-              </div>
-              {notifications.map((notification, index) => (
-                <p key={index}>{notification}</p>
-              ))}
+{showNotifications && (
+  <div className="dashboard-notification-panel" style={{ width: '320px', maxHeight: '380px', overflowY: 'auto' }}>
+    <div style={{ padding: '10px 12px', borderBottom: '1px solid #30363d', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <strong>Notifications</strong>
+      <small style={{ color: '#8b949e' }}>{notifications.length} total</small>
+    </div>
+
+    {notifications.length === 0 ? (
+      <p style={{ padding: '12px', color: '#8b949e', fontStyle: 'italic', margin: 0 }}>No notifications yet.</p>
+    ) : (
+      notifications.map((item, index) => {
+        const timeAgo = item.createdAt 
+          ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : 'Just now';
+
+        return (
+          <div 
+            key={item._id || index} 
+            onClick={() => handleNotificationClick(item)}
+            style={{ 
+              padding: '10px 12px', 
+              borderBottom: '1px solid #21262d', 
+              cursor: 'pointer',
+              background: item.read ? 'transparent' : 'rgba(31, 111, 235, 0.08)'
+            }}
+            className="notification-item-hover"
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+              <strong style={{ fontSize: '0.82rem', color: '#f0f6fc' }}>
+                {item.senderName ? `From ${item.senderName}` : (item.title || "System Alert")}
+              </strong>
+              <small style={{ fontSize: '0.72rem', color: '#8b949e' }}>{timeAgo}</small>
             </div>
-          )}
+
+            <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: '#c9d1d9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {item.message || item}
+            </p>
+          </div>
+        );
+      })
+    )}
+  </div>
+)}
         </header>
 
         <main className="dashboard-content">
@@ -163,9 +262,7 @@ function DashboardLayout() {
         </main>
       </div>
     </section>
-  )
+  );
 }
 
-export default DashboardLayout
-
-
+export default DashboardLayout;
