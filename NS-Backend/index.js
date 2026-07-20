@@ -6,8 +6,11 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 const { Server } = require("socket.io");
+
 const User = require("./models/user");
 const Message = require("./models/Message"); 
+const Notification = require("./models/Notification");
+
 const contactRoutes = require("./routes/contactRoutes");
 const authRoutes = require("./routes/authRoutes");
 const insightsRoutes = require("./routes/insightsRoutes");
@@ -15,12 +18,11 @@ const bookingRoutes = require("./routes/bookingRoutes");
 const clientRoutes = require("./routes/clientRoutes");
 const developerRoutes = require("./routes/developerRoutes");
 const messageRoutes = require("./routes/messageRoutes");
-const errorHandler = require("./middleware/errorHandler");
-const { getClientOrigin } = require("./config/env");
-const Notification = require("./models/Notification");
-const {  requireAuth, requireRole } = require("./middleware/authMiddleware");
 const adminRoutes = require("./routes/adminRoutes");
 
+const errorHandler = require("./middleware/errorHandler");
+const { getClientOrigin } = require("./config/env");
+const { requireAuth } = require("./middleware/authMiddleware");
 
 const app = express();
 const server = http.createServer(app);
@@ -51,12 +53,12 @@ const corsOptions = {
   credentials: true,
 };
 
-// 1. GLOBAL MIDDLEWARES FIRST
+// 1. GLOBAL MIDDLEWARES
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsOptions));
 
-// 2. GLOBAL INLINE API ENTRANCES
+// 2. INLINE API ENDPOINTS
 app.get("/api/notifications", requireAuth, async (req, res) => {
   try {
     const userId = req.user._id || req.user.id;
@@ -71,9 +73,6 @@ app.get("/api/notifications", requireAuth, async (req, res) => {
   }
 });
 
-
-
-// NEW: Role-Agnostic Profile Sync Route (Resolves Cross-Role 403 Crashes)
 app.get("/api/profile/me", requireAuth, async (req, res) => {
   try {
     if (!req.user) {
@@ -89,30 +88,32 @@ app.get("/", (req, res) => {
   res.send("HI");
 });
 
-// 3. FEATURE ROUTER ROUTING MODULES
+// 3. FEATURE ROUTERS (Cleaned & Mounted at Correct Singular Paths)
 app.use("/api/contact", contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/insights", insightsRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/clients", clientRoutes);
+app.use("/api/client", clientRoutes);     // 👑 FIXED: Singular /api/client matches frontend calls perfectly!
 app.use("/api/developer", developerRoutes);
 app.use("/api/messages", messageRoutes); 
 app.use("/api/admin", adminRoutes);
 
-// 4. ERROR LOGGER LEAVES LAST
+// 4. ERROR HANDLER MIDDLEWARE
 app.use(errorHandler);
 
-// WEB SOCKET LAYER
+// =========================================================================
+//  ⚡ WEB SOCKET LAYER WITH ROOM & NOTIFICATION SUPPORT
+// =========================================================================
+
 const io = new Server(server, { cors: { origin: allowedOrigins, credentials: true } });
 const activeDevelopers = new Set();
-const activeClients = new Set(); // 👈 Track online clients securely
+const activeClients = new Set();
 
-// FIX: Combined broadcast engine maps all online footprints to the same event channel matrix
 function broadcastOnlineStatus(ioInstance) {
   ioInstance.emit("developers:count_update", activeDevelopers.size);
   ioInstance.emit("developers:online_list", [
     ...Array.from(activeDevelopers),
-    ...Array.from(activeClients) // 👈 Emit all online developer and client IDs together
+    ...Array.from(activeClients)
   ]);
 }
 
@@ -120,7 +121,6 @@ io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth?.token;
     if (!token) {
-      console.warn("[Socket Auth] Connection blocked: No token attached.");
       return next(new Error("Authentication required."));
     }
     
@@ -133,20 +133,17 @@ io.use(async (socket, next) => {
     const userIdToFind = decoded.userId || decoded.id;
     
     if (!userIdToFind) {
-      console.error("[Socket Auth] Token payload missing structural keys:", decoded);
       return next(new Error("Invalid token payload structure."));
     }
 
     const user = await User.findById(userIdToFind).select("name role");
     if (!user) {
-      console.warn(`[Socket Auth] Database mismatch: No user found with ID ${userIdToFind}`);
       return next(new Error("User not found."));
     }
     
     socket.user = { id: String(user._id), name: user.name, role: user.role };
     next();
   } catch (error) {
-    console.error(`[Socket Auth] JWT Verification Failure: ${error.message}`);
     next(new Error("Invalid or expired token."));
   }
 });
@@ -154,18 +151,28 @@ io.use(async (socket, next) => {
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.user.name} (${socket.user.role})`);
 
-  // FIX: Route identity records to their accurate global tracking arrays
   if (socket.user.role === "Developer") {
     activeDevelopers.add(socket.user.id);
   } else if (socket.user.role === "Client") {
-    activeClients.add(socket.user.id); // 👈 Track online clients
+    activeClients.add(socket.user.id);
   }
 
-  // Push immediate synchronization broadcast
   broadcastOnlineStatus(io);
 
-  // Join self personal notification room pipeline channel
+  // Join Personal User Notification Room
   socket.join(`user:${socket.user.id}`);
+
+  // Automatically Join Role-Based Room (e.g., "role:Admin", "role:Developer")
+  if (socket.user.role) {
+    socket.join(`role:${socket.user.role}`);
+  }
+
+  // 👑 FIXED: Listen for explicit room join requests (e.g. Admin Notifications Room)
+  socket.on("room:join", (roomName) => {
+    if (roomName) {
+      socket.join(roomName);
+    }
+  });
 
   socket.on("conversation:join", (conversationKey) => {
     if (conversationKey) {
@@ -200,13 +207,18 @@ io.on("connection", (socket) => {
       const populatedMessage = await Message.findById(newMessage._id)
         .populate("sender", "name role");
 
-      // 1. Emit to active chat room window view channel
+      // 1. Broadcast to active chat room
       io.to(`conversation:${conversationKey}`).emit("message:new", populatedMessage);
 
-      // 2. WHATSAPP BACKGROUND NOTIFICATION BADGE PUMP:
+      // 2. Broadcast to recipient user room
       const recipientId = socket.user.role === "Client" ? developer : client;
       if (recipientId) {
         io.to(`user:${recipientId}`).emit("message:new", populatedMessage);
+      }
+
+      // 3. Broadcast to Admin role room if sent to Admin
+      if (socket.user.role !== "Admin") {
+        io.to("role:Admin").emit("message:new", populatedMessage);
       }
       
     } catch (error) {
@@ -216,26 +228,18 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    // FIX: Symmetrical teardown of active developer and client connections on socket drop
     if (socket.user.role === "Developer") {
       const matchingSockets = Array.from(io.sockets.sockets.values()).filter(
         (s) => s.user?.id === socket.user.id
       );
-      
-      if (matchingSockets.length === 0) {
-        activeDevelopers.delete(socket.user.id);
-      }
+      if (matchingSockets.length === 0) activeDevelopers.delete(socket.user.id);
     } else if (socket.user.role === "Client") {
       const matchingSockets = Array.from(io.sockets.sockets.values()).filter(
         (s) => s.user?.id === socket.user.id
       );
-      
-      if (matchingSockets.length === 0) {
-        activeClients.delete(socket.user.id); // 👈 Remove client on true disconnect
-      }
+      if (matchingSockets.length === 0) activeClients.delete(socket.user.id);
     }
 
-    // Refresh active status indicators down to the layout templates
     broadcastOnlineStatus(io);
     console.log(`User disconnected: ${socket.user.name}`);
   });
