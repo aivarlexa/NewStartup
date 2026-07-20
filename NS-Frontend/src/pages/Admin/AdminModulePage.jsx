@@ -26,7 +26,7 @@ export const PageShell = ({ title, subtitle, children, action, loading, error })
       </div>
       {!loading && !error && action}
     </div>
-    
+
     {/* Centralized Dynamic State Handling */}
     {loading ? (
       <div className="admin-module-card state-placeholder" style={{ padding: "3rem", textAlign: "center", color: "#888" }}>
@@ -58,7 +58,7 @@ export const Pill = ({ children, tone = "cyan" }) => {
   const currentStyle = toneMap[tone] || toneMap.cyan;
 
   return (
-    <span 
+    <span
       className={`admin-pill admin-pill-${tone}`}
       style={{
         padding: "2px 8px",
@@ -77,9 +77,9 @@ export const Pill = ({ children, tone = "cyan" }) => {
 };
 
 export const ActionButton = ({ children, tone = "primary", onClick, disabled }) => (
-  <button 
-    className={`admin-action-button admin-action-${tone}`} 
-    type="button" 
+  <button
+    className={`admin-action-button admin-action-${tone}`}
+    type="button"
     onClick={onClick}
     disabled={disabled}
     style={{
@@ -108,6 +108,15 @@ export const ClientsPage = () => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    _id: "",
+    name: "",
+    email: "",
+    phone: "",
+    companyName: "",
+    address: ""
+  });
 
   // Modal & Form States
   const [showAddModal, setShowAddModal] = useState(false);
@@ -171,6 +180,17 @@ export const ClientsPage = () => {
       alert(getApiErrorMessage(err, "Could not sync status alteration with server."));
     }
   };
+ const handleEditSubmit = async () => {
+  try {
+    await api.put(`/admin/clients/${editForm._id}`, editForm);
+
+    await fetchClients(); // Refresh from server
+
+    setShowEditModal(false);
+  } catch (err) {
+    alert(getApiErrorMessage(err, "Unable to update client."));
+  }
+};
 
   const handleClientDeletion = async (clientId, clientName) => {
     if (!window.confirm(`Are you absolutely sure you want to completely remove ${clientName}?`)) return;
@@ -188,13 +208,13 @@ export const ClientsPage = () => {
   if (error) return <PageShell title="Clients Module"><p className="chat-error-banner">{error}</p></PageShell>;
 
   return (
-    <PageShell 
-      title="Clients Module" 
-      subtitle="View, add, edit, suspend, and manage account ownership." 
-      action={<ActionButton onClick={() => setShowAddModal(true)}><Plus size={16} />Add Client</ActionButton>}
+    <PageShell
+      title="Clients Module"
+      subtitle="View,  edit, suspend, and manage account ownership."
+    // action={<ActionButton onClick={() => setShowAddModal(true)}><Plus size={16} />Add Client</ActionButton>}
     >
       {/* ADD CLIENT POPUP OVERLAY MODAL */}
-      {showAddModal && (
+      {/* {showAddModal && (
         <div className="admin-modal-overlay" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
           <div className="admin-module-card" style={{ width: "450px", padding: "2rem", background: "#111", borderRadius: "8px", border: "1px solid #333" }}>
             <h2 style={{ marginBottom: "1rem" }}>Register New Client Account</h2>
@@ -213,7 +233,83 @@ export const ClientsPage = () => {
             </form>
           </div>
         </div>
-      )}
+      )} */}
+      {showEditModal && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,.7)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000,
+    }}
+  >
+    <div
+      style={{
+        background: "#111",
+        width: "400px",
+        padding: "25px",
+        borderRadius: "8px",
+      }}
+    >
+      <h2>Edit Client</h2>
+
+      <input
+        type="text"
+        placeholder="Name"
+        value={editForm.name}
+        onChange={(e) =>
+          setEditForm({ ...editForm, name: e.target.value })
+        }
+      />
+
+      <br /><br />
+
+      <input
+        type="email"
+        placeholder="Email"
+        value={editForm.email}
+        onChange={(e) =>
+          setEditForm({ ...editForm, email: e.target.value })
+        }
+      />
+
+      <br /><br />
+
+      <input
+        type="text"
+        placeholder="Contact Number"
+        value={editForm.phone}
+        onChange={(e) =>
+          setEditForm({ ...editForm, phone: e.target.value })
+        }
+      />
+
+      <br /><br />
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "10px",
+        }}
+      >
+        <ActionButton
+          tone="ghost"
+          onClick={() => setShowEditModal(false)}
+        >
+          Cancel
+        </ActionButton>
+
+      <ActionButton onClick={handleEditSubmit}>
+  Save
+</ActionButton>
+      </div>
+    </div>
+  </div>
+)}
 
       <div className="admin-card-grid three">
         {clients.map((client) => (
@@ -225,15 +321,29 @@ export const ClientsPage = () => {
               </div>
               <Pill tone={client.status === "Active" ? "green" : "red"}>{client.status}</Pill>
             </div>
-            
+
             <div className="admin-info-list">
               <p>Contact Phone: <b>{client.phone || "Not Verified"}</b></p>
               <p>Project History Count: {client.projectsCount || 0} active</p>
               <p>Office Location: {client.address || "Remote Context"}</p>
             </div>
-            
+
             <div className="admin-button-row" style={{ marginTop: "1rem", display: "flex", gap: "8px" }}>
-              <ActionButton tone="ghost">Edit</ActionButton>
+              <ActionButton
+                tone="ghost"
+                onClick={() => {
+                  setEditForm({
+                    _id: client._id,
+                    name: client.name,
+                    email: client.email,
+                    phone: client.phone || "",
+                  });
+
+                  setShowEditModal(true);
+                }}
+              >
+                Edit
+              </ActionButton>
               <ActionButton tone="ghost" onClick={() => handleStatusChange(client._id, client.status)}>
                 {client.status === "Active" ? "Suspend" : "Activate"}
               </ActionButton>
@@ -295,7 +405,7 @@ export const ProjectsPage = () => {
   const [projects, setProjects] = useState([]);
   const [developers, setDevelopers] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Sidebar State Form
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [checkedDevs, setCheckedDevs] = useState([]);
@@ -356,7 +466,7 @@ export const ProjectsPage = () => {
   };
 
   const handleDragOver = (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
   };
 
   const handleDrop = async (e, targetLane) => {
@@ -383,18 +493,18 @@ export const ProjectsPage = () => {
   return (
     <PageShell title="Projects Module" subtitle="Kanban pipeline, assignment modal, milestones, files, comments, meetings, and invoices.">
       <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "1.75rem", alignItems: "start", marginTop: "1rem" }}>
-        
+
         {/* KANBAN BOARD SYSTEM */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.25rem" }}>
           {lanes.map((lane) => (
-            <section 
-              key={lane} 
+            <section
+              key={lane}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, lane)}
-              style={{ 
-                background: "#0d1117", 
+              style={{
+                background: "#0d1117",
                 border: "1px solid #21262d",
-                borderRadius: "8px", 
+                borderRadius: "8px",
                 padding: "1rem",
                 minHeight: "650px",
                 display: "flex",
@@ -416,14 +526,14 @@ export const ProjectsPage = () => {
                     return currentStatus === lane;
                   })
                   .map((project) => (
-                    <article 
-                      key={project._id} 
+                    <article
+                      key={project._id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, project._id)}
-                      style={{ 
-                        background: "#161b22", 
-                        border: "1px solid #30363d", 
-                        padding: "1rem", 
+                      style={{
+                        background: "#161b22",
+                        border: "1px solid #30363d",
+                        padding: "1rem",
                         borderRadius: "6px",
                         cursor: "grab",
                         transition: "transform 0.2s, box-shadow 0.2s",
@@ -444,7 +554,7 @@ export const ProjectsPage = () => {
                       <p style={{ fontSize: "0.75rem", color: "#8b949e", margin: "0 0 12px 0" }}>
                         Client: <span style={{ color: "#c9d1d9" }}>{project.client?.name || "Independent"}</span>
                       </p>
-                      
+
                       {/* Smooth Progress Tracking Bar */}
                       <div style={{ background: "#21262d", height: "6px", borderRadius: "4px", margin: "8px 0", overflow: "hidden" }}>
                         <div style={{ width: `${project.progress || 15}%`, background: "#1f6feb", height: "100%", borderRadius: "4px" }} />
@@ -464,13 +574,13 @@ export const ProjectsPage = () => {
         {/* SIDEBAR DYNAMIC WORKSPACE TEAM MANAGEMENT */}
         <aside style={{ background: "#0d1117", border: "1px solid #21262d", padding: "1.25rem", borderRadius: "8px", position: "sticky", top: "1.5rem" }}>
           <h3 style={{ fontSize: "1.05rem", fontWeight: "600", color: "#f0f6fc", margin: "0 0 1rem 0" }}>Assign Workspace Team</h3>
-          
+
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.85rem", color: "#8b949e" }}>
               Target Project Reference
-              <select 
-                value={selectedProjectId} 
-                onChange={(e) => setSelectedProjectId(e.target.value)} 
+              <select
+                value={selectedProjectId}
+                onChange={(e) => setSelectedProjectId(e.target.value)}
                 style={{ width: "100%", padding: "8px", background: "#161b22", border: "1px solid #30363d", color: "#f0f6fc", borderRadius: "6px", outline: "none" }}
               >
                 {projects.map(p => <option key={p._id} value={p._id}>{p.projectTitle || p.name}</option>)}
@@ -482,11 +592,11 @@ export const ProjectsPage = () => {
               <div style={{ maxHeight: "200px", overflowY: "auto", border: "1px solid #30363d", background: "#161b22", padding: "8px", borderRadius: "6px", display: "flex", flexDirection: "column", gap: "6px" }}>
                 {developers.map((dev) => (
                   <label key={dev._id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", color: "#c9d1d9", cursor: "pointer", padding: "4px", borderRadius: "4px" }}>
-                    <input 
-                      type="checkbox" 
-                      checked={checkedDevs.includes(dev._id)} 
+                    <input
+                      type="checkbox"
+                      checked={checkedDevs.includes(dev._id)}
                       onChange={() => handleCheckboxToggle(dev._id)}
-                      style={{ cursor: "pointer" }} 
+                      style={{ cursor: "pointer" }}
                     />
                     {dev.name}
                   </label>
@@ -496,9 +606,9 @@ export const ProjectsPage = () => {
 
             <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.85rem", color: "#8b949e" }}>
               Designated Project Lead
-              <select 
-                value={leadDev} 
-                onChange={(e) => setLeadDev(e.target.value)} 
+              <select
+                value={leadDev}
+                onChange={(e) => setLeadDev(e.target.value)}
                 style={{ width: "100%", padding: "8px", background: "#161b22", border: "1px solid #30363d", color: "#f0f6fc", borderRadius: "6px", outline: "none" }}
               >
                 <option value="">Choose Lead</option>
@@ -572,7 +682,7 @@ export const ProjectRequestsPage = () => {
       setLoading(true);
       // Fetches all incoming client marketplace submissions/requirements
       const { data } = await api.get("/admin/projects");
-      
+
       // Filter out items that are pending admin validation or approval if needed,
       // or display all requirements submitted by clients.
       // Assumes new requests have a status like "Pending" or "Open"
@@ -614,15 +724,15 @@ export const ProjectRequestsPage = () => {
             <article key={request._id} className="admin-module-card" style={{ border: "1px solid var(--border-color)", borderRadius: "6px", padding: "1rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
                 <Pill tone={
-                  request.status === "Open" ? "green" : 
-                  request.status === "Pending" ? "amber" : "slate"
+                  request.status === "Open" ? "green" :
+                    request.status === "Pending" ? "amber" : "slate"
                 }>
                   {request.status || "Pending Review"}
                 </Pill>
               </div>
-              
+
               <h3 style={{ fontSize: "1.1rem", margin: "0.5rem 0" }}>{request.projectTitle || request.name || "Untitled Requirement"}</h3>
-              
+
               <div className="admin-info-list" style={{ margin: "1rem 0", fontSize: "0.85rem", display: "flex", flexDirection: "column", gap: "4px" }}>
                 <p>Client Owner: <b>{request.client?.name || "Unknown Corporate User"}</b></p>
                 <p>Company Ref: <span>{request.client?.companyName || "N/A"}</span></p>
@@ -633,7 +743,7 @@ export const ProjectRequestsPage = () => {
                   </p>
                 )}
               </div>
-              
+
               <div className="admin-button-row" style={{ marginTop: "1rem", display: "flex", gap: "8px" }}>
                 {request.status !== "Assigned" && request.status !== "Completed" && (
                   <>
@@ -675,8 +785,8 @@ export const TeamsPage = () => {
   }, []);
 
   return (
-    <PageShell 
-      title="Teams Module" 
+    <PageShell
+      title="Teams Module"
       subtitle="View operational development squads allocated to approved client projects."
       loading={loading}
       error={error}
@@ -688,12 +798,12 @@ export const TeamsPage = () => {
       ) : (
         <div className="admin-card-grid two" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1.25rem", marginTop: "1rem" }}>
           {teams.map((project) => (
-            <article 
-              key={project._id} 
-              style={{ 
-                background: "#0d1117", 
-                border: "1px solid #21262d", 
-                borderRadius: "8px", 
+            <article
+              key={project._id}
+              style={{
+                background: "#0d1117",
+                border: "1px solid #21262d",
+                borderRadius: "8px",
                 padding: "1.5rem",
                 boxShadow: "0 4px 6px rgba(0,0,0,0.15)"
               }}
@@ -719,9 +829,9 @@ export const TeamsPage = () => {
                     // Check if member is populated as an object or fallback to ID string
                     const isLead = project.lead && (project.lead._id || project.lead) === (member._id || member);
                     const memberName = member.name || "Engineer Reference";
-                    
+
                     return (
-                      <span 
+                      <span
                         key={member._id || member}
                         style={{
                           background: isLead ? "rgba(31, 111, 235, 0.15)" : "#161b22",
@@ -778,7 +888,7 @@ export const MessagesPage = () => {
           api.get("/admin/clients"),
           api.get("/admin/developers")
         ]);
-        
+
         const combined = [
           ...(clientData.clients || []).map(u => ({ ...u, type: "Client" })),
           ...(devData.developers || []).map(u => ({ ...u, type: "Developer" }))
@@ -830,14 +940,14 @@ export const MessagesPage = () => {
 
 
   return (
-    <PageShell 
-      title="Messaging Board" 
+    <PageShell
+      title="Messaging Board"
       subtitle="Secure communication pipeline routing matrix logs across active ecosystem user instances."
       loading={loadingUsers}
       error={error}
     >
       <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "1.25rem", height: "600px", marginTop: "1rem" }}>
-        
+
         {/* LEFT DIRECTORY COLUMN */}
         <div style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: "8px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div style={{ padding: "1rem", borderBottom: "1px solid #21262d" }}>
@@ -845,7 +955,7 @@ export const MessagesPage = () => {
           </div>
           <div style={{ flexGrow: 1, overflowY: "auto", padding: "0.5rem" }}>
             {users.map(u => (
-              <div 
+              <div
                 key={u._id}
                 onClick={() => setSelectedUser(u)}
                 style={{
@@ -883,62 +993,62 @@ export const MessagesPage = () => {
                 <Pill tone={selectedUser.type === "Client" ? "amber" : "cyan"}>{selectedUser.type}</Pill>
               </div>
 
-{/* Chat Messages Scrolling Context */}
-<div style={{ flexGrow: 1, overflowY: "auto", padding: "1.25rem", display: "flex", flexDirection: "column", gap: "10px", background: "#090d13" }}>
-  {loadingChat ? (
-    <p style={{ color: "#8b949e", fontStyle: "italic", textAlign: "center" }}>Loading communication logs...</p>
-  ) : messages.length === 0 ? (
-    <p style={{ color: "#8b949e", fontStyle: "italic", textAlign: "center", marginTop: "2rem" }}>No structural message thread recorded. Start a new interaction line below.</p>
-  ) : (
-    <>
-      {messages.map((m) => {
-        // Extract the raw sender ID string regardless of whether it's populated or an object ID
-        const senderIdStr = String(m.sender?._id || m.sender || "");
-        const targetUserIdStr = String(selectedUser?._id || selectedUser?.id || "");
+              {/* Chat Messages Scrolling Context */}
+              <div style={{ flexGrow: 1, overflowY: "auto", padding: "1.25rem", display: "flex", flexDirection: "column", gap: "10px", background: "#090d13" }}>
+                {loadingChat ? (
+                  <p style={{ color: "#8b949e", fontStyle: "italic", textAlign: "center" }}>Loading communication logs...</p>
+                ) : messages.length === 0 ? (
+                  <p style={{ color: "#8b949e", fontStyle: "italic", textAlign: "center", marginTop: "2rem" }}>No structural message thread recorded. Start a new interaction line below.</p>
+                ) : (
+                  <>
+                    {messages.map((m) => {
+                      // Extract the raw sender ID string regardless of whether it's populated or an object ID
+                      const senderIdStr = String(m.sender?._id || m.sender || "");
+                      const targetUserIdStr = String(selectedUser?._id || selectedUser?.id || "");
 
-        // 👑 CORRECT CHECK: If the sender ID matches the active Client/Developer ID, it's incoming (left). 
-        // Otherwise, it was sent by You/Admin (right).
-        const isAdminSender = senderIdStr !== targetUserIdStr; 
-        
-        return (
-          <div 
-            key={m._id || m.id || Math.random()} 
-            style={{
-              alignSelf: isAdminSender ? "flex-end" : "flex-start",
-              background: isAdminSender ? "#1f6feb" : "#21262d",
-              color: "#f0f6fc",
-              padding: "8px 12px",
-              borderRadius: isAdminSender ? "12px 12px 0 12px" : "12px 12px 12px 0",
-              maxWidth: "65%",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              transition: "transform 0.2s ease"
-            }}
-          >
-            <p style={{ margin: 0, fontSize: "0.85rem", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.text}</p>
-            <small style={{ fontSize: "0.65rem", display: "block", textAlign: "right", marginTop: "4px", opacity: 0.7 }}>
-              {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just Now"}
-            </small>
-          </div>
-        );
-      })}
-      
-      <div ref={messagesEndRef} />
-    </>
-  )}
-</div>
+                      // 👑 CORRECT CHECK: If the sender ID matches the active Client/Developer ID, it's incoming (left). 
+                      // Otherwise, it was sent by You/Admin (right).
+                      const isAdminSender = senderIdStr !== targetUserIdStr;
+
+                      return (
+                        <div
+                          key={m._id || m.id || Math.random()}
+                          style={{
+                            alignSelf: isAdminSender ? "flex-end" : "flex-start",
+                            background: isAdminSender ? "#1f6feb" : "#21262d",
+                            color: "#f0f6fc",
+                            padding: "8px 12px",
+                            borderRadius: isAdminSender ? "12px 12px 0 12px" : "12px 12px 12px 0",
+                            maxWidth: "65%",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                            transition: "transform 0.2s ease"
+                          }}
+                        >
+                          <p style={{ margin: 0, fontSize: "0.85rem", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.text}</p>
+                          <small style={{ fontSize: "0.65rem", display: "block", textAlign: "right", marginTop: "4px", opacity: 0.7 }}>
+                            {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just Now"}
+                          </small>
+                        </div>
+                      );
+                    })}
+
+                    <div ref={messagesEndRef} />
+                  </>
+                )}
+              </div>
 
               {/* Input Action Form Tray */}
               <form onSubmit={handleSendMessage} style={{ padding: "1rem", background: "#161b22", borderTop: "1px solid #21262d", display: "flex", gap: "10px" }}>
-                <input 
+                <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder={`Type an analytical response tracking line to ${selectedUser.name}...`}
                   style={{ flexGrow: 1, padding: "10px", background: "#0d1117", border: "1px solid #30363d", color: "#f0f6fc", borderRadius: "6px", outline: "none" }}
                 />
-                <button 
-                  type="submit" 
-                  className="admin-action-button admin-action-primary" 
+                <button
+                  type="submit"
+                  className="admin-action-button admin-action-primary"
                   style={{ padding: "0 1.25rem", cursor: "pointer" }}
                   disabled={!newMessage.trim()}
                 >

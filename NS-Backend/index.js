@@ -94,7 +94,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/insights", insightsRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/client", clientRoutes);
+app.use("/api/clients", clientRoutes);
 app.use("/api/developer", developerRoutes);
 app.use("/api/messages", messageRoutes); 
 app.use("/api/admin", adminRoutes);
