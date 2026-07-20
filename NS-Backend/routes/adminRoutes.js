@@ -108,6 +108,14 @@ router.delete("/clients/:clientId", requireRole("Admin"), async (req, res) => {
     res.status(500).json({ success: false, message: "Removal fault." });
   }
 });
+router.put("/clients/:clientId", requireRole("Admin"), async (req, res) => {
+  try {
+    const updatedClient = await User.findByIdAndUpdate(req.params.clientId, { $set: req.body }, { new: true });
+    res.json({ success: true, client: updatedClient });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error updating client." });
+  }
+});
 
 router.put("/projects/:id/assign", requireRole("Admin"), async (req, res) => {
   try {
