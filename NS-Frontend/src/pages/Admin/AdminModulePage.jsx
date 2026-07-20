@@ -1162,7 +1162,372 @@ export const NotificationsPage = () => {
   );
 };
 
-export const TasksPage = () => <PageShell title="Task Management"><p>Task assignments mapping available...</p></PageShell>;
+export const TasksPage = () => {
+  const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [developers, setDevelopers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [filter, setFilter] = useState("All");
+
+  // Add Task Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    project: "",
+    assignedTo: "",
+    priority: "Medium",
+    deadline: "",
+  });
+
+  useEffect(() => {
+    fetchTasksData();
+  }, []);
+
+  const fetchTasksData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const [{ data: tasksRes }, { data: projectsRes }, { data: devsRes }] = await Promise.all([
+        api.get("/admin/tasks").catch(() => ({ data: { tasks: [] } })),
+        api.get("/admin/projects"),
+        api.get("/admin/developers"),
+      ]);
+
+      setTasks(tasksRes.tasks || []);
+      setProjects(projectsRes.projects || []);
+      setDevelopers(devsRes.developers || []);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Failed to load task management matrix."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // 1. CREATE TASK SUBMIT HANDLER
+  const handleCreateTaskSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.title.trim()) return;
+
+    try {
+      const { data } = await api.post("/admin/tasks", formData);
+      if (data.success) {
+        alert("Task created and assigned successfully.");
+        setTasks((prev) => [data.task, ...prev]);
+        setShowAddModal(false);
+        setFormData({
+          title: "",
+          description: "",
+          project: "",
+          assignedTo: "",
+          priority: "Medium",
+          deadline: "",
+        });
+      }
+    } catch (err) {
+      alert(getApiErrorMessage(err, "Could not create new task."));
+    }
+  };
+
+  // 2. UPDATE TASK STATUS HANDLER
+  const handleStatusChange = async (taskId, newStatus) => {
+    const originalTasks = [...tasks];
+
+    // Optimistic UI update
+    setTasks((prev) =>
+      prev.map((t) => (t._id === taskId ? { ...t, status: newStatus } : t))
+    );
+
+    try {
+      await api.patch(`/admin/tasks/${taskId}/status`, { status: newStatus });
+    } catch (err) {
+      setTasks(originalTasks);
+      alert(getApiErrorMessage(err, "Failed to update task status."));
+    }
+  };
+
+  // 3. DELETE TASK HANDLER
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm("Are you sure you want to delete this task?")) return;
+
+    setTasks((prev) => prev.filter((t) => t._id !== taskId));
+
+    try {
+      await api.delete(`/admin/tasks/${taskId}`);
+    } catch (err) {
+      fetchTasksData();
+      alert(getApiErrorMessage(err, "Failed to delete task."));
+    }
+  };
+
+  // Filter tasks based on selected tab status
+  const filteredTasks = useMemo(() => {
+    if (filter === "All") return tasks;
+    return tasks.filter((t) => t.status === filter);
+  }, [tasks, filter]);
+
+  return (
+    <PageShell
+      title="Task Management"
+      subtitle="Create, assign, track, and manage workspace task workflows across project squads."
+      loading={loading}
+      error={error}
+      action={
+        <ActionButton onClick={() => setShowAddModal(true)}>
+          <Plus size={16} />
+          Create Task
+        </ActionButton>
+      }
+    >
+      {/* ADD TASK MODAL OVERLAY */}
+      {showAddModal && (
+        <div
+          className="admin-modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="admin-module-card"
+            style={{
+              width: "480px",
+              padding: "2rem",
+              background: "#111",
+              borderRadius: "8px",
+              border: "1px solid #333",
+            }}
+          >
+            <h2 style={{ marginBottom: "1rem", color: "#f0f6fc" }}>Create New Task</h2>
+            <form onSubmit={handleCreateTaskSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <label style={{ fontSize: "0.85rem", color: "#c9d1d9" }}>
+                Task Title *
+                <input
+                  required
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  style={{ width: "100%", padding: "8px", background: "#222", border: "1px solid #444", color: "#fff", borderRadius: "4px", marginTop: "4px" }}
+                />
+              </label>
+
+              <label style={{ fontSize: "0.85rem", color: "#c9d1d9" }}>
+                Target Project
+                <select
+                  name="project"
+                  value={formData.project}
+                  onChange={handleInputChange}
+                  style={{ width: "100%", padding: "8px", background: "#222", border: "1px solid #444", color: "#fff", borderRadius: "4px", marginTop: "4px" }}
+                >
+                  <option value="">Select Project</option>
+                  {projects.map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {p.projectTitle || p.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label style={{ fontSize: "0.85rem", color: "#c9d1d9" }}>
+                Assign Developer
+                <select
+                  name="assignedTo"
+                  value={formData.assignedTo}
+                  onChange={handleInputChange}
+                  style={{ width: "100%", padding: "8px", background: "#222", border: "1px solid #444", color: "#fff", borderRadius: "4px", marginTop: "4px" }}
+                >
+                  <option value="">Select Engineer</option>
+                  {developers.map((d) => (
+                    <option key={d._id} value={d._id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <label style={{ fontSize: "0.85rem", color: "#c9d1d9" }}>
+                  Priority
+                  <select
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleInputChange}
+                    style={{ width: "100%", padding: "8px", background: "#222", border: "1px solid #444", color: "#fff", borderRadius: "4px", marginTop: "4px" }}
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
+                </label>
+
+                <label style={{ fontSize: "0.85rem", color: "#c9d1d9" }}>
+                  Deadline Date
+                  <input
+                    type="date"
+                    name="deadline"
+                    value={formData.deadline}
+                    onChange={handleInputChange}
+                    style={{ width: "100%", padding: "8px", background: "#222", border: "1px solid #444", color: "#fff", borderRadius: "4px", marginTop: "4px" }}
+                  />
+                </label>
+              </div>
+
+              <label style={{ fontSize: "0.85rem", color: "#c9d1d9" }}>
+                Description
+                <textarea
+                  name="description"
+                  rows={3}
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  style={{ width: "100%", padding: "8px", background: "#222", border: "1px solid #444", color: "#fff", borderRadius: "4px", marginTop: "4px" }}
+                />
+              </label>
+
+              <div style={{ display: "flex", gap: "10px", marginTop: "10px", justifyContent: "flex-end" }}>
+                <ActionButton tone="ghost" onClick={() => setShowAddModal(false)}>
+                  Cancel
+                </ActionButton>
+                <button type="submit" className="admin-action-button admin-action-primary">
+                  Create Task
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* FILTER TABS */}
+      <div style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: "8px", overflow: "hidden", marginTop: "1rem" }}>
+        <div style={{ padding: "1rem", borderBottom: "1px solid #21262d", background: "#161b22", display: "flex", gap: "8px" }}>
+          {["All", "To Do", "In Progress", "Review", "Completed"].map((status) => (
+            <button
+              key={status}
+              onClick={() => setFilter(status)}
+              style={{
+                background: filter === status ? "#1f6feb" : "#21262d",
+                color: "#f0f6fc",
+                border: "1px solid #30363d",
+                padding: "6px 14px",
+                borderRadius: "4px",
+                fontSize: "0.8rem",
+                cursor: "pointer",
+                fontWeight: "600",
+                transition: "background 0.2s",
+              }}
+            >
+              {status} ({status === "All" ? tasks.length : tasks.filter((t) => t.status === status).length})
+            </button>
+          ))}
+        </div>
+
+        {/* TASK GRID / LIST */}
+        <div style={{ padding: "1.25rem" }}>
+          {filteredTasks.length === 0 ? (
+            <div style={{ padding: "3rem", textAlign: "center", color: "#8b949e", fontStyle: "italic" }}>
+              No tasks found for the selected filter option.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1rem" }}>
+              {filteredTasks.map((task) => (
+                <div
+                  key={task._id}
+                  style={{
+                    background: "#161b22",
+                    border: "1px solid #30363d",
+                    borderRadius: "6px",
+                    padding: "1rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <h4 style={{ margin: 0, color: "#f0f6fc", fontSize: "0.95rem" }}>{task.title}</h4>
+                      <Pill
+                        tone={
+                          task.priority === "High" ? "red" : task.priority === "Medium" ? "amber" : "slate"
+                        }
+                      >
+                        {task.priority || "Medium"}
+                      </Pill>
+                    </div>
+
+                    {task.description && (
+                      <p style={{ fontSize: "0.82rem", color: "#c9d1d9", margin: "8px 0" }}>{task.description}</p>
+                    )}
+
+                    <div style={{ fontSize: "0.78rem", color: "#8b949e", marginTop: "10px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div>
+                        Project: <span style={{ color: "#58a6ff" }}>{task.project?.projectTitle || task.project?.name || "General"}</span>
+                      </div>
+                      <div>
+                        Assigned To: <span style={{ color: "#c9d1d9" }}>{task.assignedTo?.name || "Unassigned"}</span>
+                      </div>
+                      {task.deadline && (
+                        <div>
+                          Deadline: <span>{new Date(task.deadline).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid #21262d", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <select
+                      value={task.status || "To Do"}
+                      onChange={(e) => handleStatusChange(task._id, e.target.value)}
+                      style={{
+                        background: "#0d1117",
+                        border: "1px solid #30363d",
+                        color: "#f0f6fc",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        fontSize: "0.78rem",
+                      }}
+                    >
+                      <option value="To Do">To Do</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Review">Review</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+
+                    <button
+                      onClick={() => handleDeleteTask(task._id)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#f85149",
+                        cursor: "pointer",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </PageShell>
+  );
+};
 export const CalendarPage = () => <PageShell title="Calendar View"><p>Loading tracking timeline grid engine...</p></PageShell>;
 
 

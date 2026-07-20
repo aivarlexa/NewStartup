@@ -4,6 +4,7 @@ const User = require("../models/user");
 const Requirement = require("../models/Requirement");
 const Message = require("../models/Message");
 const Notification = require("../models/Notification");
+const Task = require("../models/Task");
 
 const buildConversationKey = (userId) => `admin_${userId}`;
 
@@ -265,6 +266,69 @@ router.delete("/notifications/:id", requireRole("Admin"), async (req, res) => {
     return res.json({ success: true, message: "Notification context discarded clean." });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Failed to delete target alert registry node." });
+  }
+});
+
+// GET /api/admin/tasks
+router.get("/tasks", async (req, res) => {
+  try {
+    const tasks = await Task.find({})
+      .populate("project", "projectTitle name")
+      .populate("assignedTo", "name email")
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json({ success: true, tasks: tasks || [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error loading task list." });
+  }
+});
+
+// POST /api/admin/tasks
+router.post("/tasks", async (req, res) => {
+  try {
+    const task = await Task.create(req.body);
+    const populated = await Task.findById(task._id)
+      .populate("project", "projectTitle name")
+      .populate("assignedTo", "name email")
+      .lean();
+
+    // Notify developer if assigned
+    if (req.body.assignedTo) {
+      await Notification.create({
+        user: req.body.assignedTo,
+        type: "Project Updates",
+        title: "New Task Assigned",
+        message: `Task: "${task.title}" has been assigned to you.`,
+      });
+    }
+
+    res.status(201).json({ success: true, task: populated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error creating task." });
+  }
+});
+
+// PATCH /api/admin/tasks/:id/status
+router.patch("/tasks/:id/status", async (req, res) => {
+  try {
+    const updated = await Task.findByIdAndUpdate(
+      req.params.id,
+      { $set: { status: req.body.status } },
+      { new: true }
+    );
+    res.json({ success: true, task: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error updating task status." });
+  }
+});
+
+// DELETE /api/admin/tasks/:id
+router.delete("/tasks/:id", async (req, res) => {
+  try {
+    await Task.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: "Task deleted." });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error deleting task." });
   }
 });
 
