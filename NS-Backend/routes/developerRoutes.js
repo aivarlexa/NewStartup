@@ -4,6 +4,7 @@ const Message = require("../models/Message");
 const ClientMeeting = require("../models/ClientMeeting");
 const User = require("../models/user"); // Ensure case-sensitivity matches your file system ("user" vs "User")
 const { requireAuth, requireRole } = require("../middleware/authMiddleware");
+const Notification = require("../models/Notification");
 
 const router = express.Router();
 
@@ -173,6 +174,70 @@ router.put("/profile", async (req, res) => {
   } catch (error) {
     console.error("Profile update processing failure:", error.message);
     res.status(500).json({ success: false, message: "Server error saving profile updates." });
+  }
+});
+
+// =========================================================================
+//  🛠️ DEVELOPER ASSIGNED PROJECTS CHANNEL (Fixes Team Chat 404)
+// =========================================================================
+
+// GET /api/developer/projects -> Fetches all active project channels a developer belongs to
+router.get("/projects", async (req, res) => {
+  try {
+    const developerId = req.user._id || req.user.id;
+
+    // Find all projects where this developer is part of the team array OR is designated as the lead
+    const assignedProjects = await Requirement.find({
+      $or: [
+        { team: developerId },
+        { lead: developerId }
+      ]
+    })
+    .populate({
+      path: "client",
+      select: "name companyName email",
+      model: "User"
+    })
+    .populate({
+      path: "lead",
+      select: "name email",
+      model: "User"
+    })
+    .lean();
+
+    res.json({ success: true, projects: assignedProjects || [] });
+  } catch (error) {
+    console.error("Developer projects query sequence fault:", error.message);
+    res.status(500).json({ success: false, message: "Error compiling assigned team project matrices." });
+  }
+});
+
+router.get("/notifications", async (req, res) => {
+  try {
+    const developerId = req.user._id || req.user.id;
+    const notifications = await Notification.find({ user: developerId })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .lean();
+
+    res.json({ success: true, notifications: notifications || [] });
+  } catch (error) {
+    console.error("Developer notifications fetch error:", error);
+    res.status(500).json({ success: false, message: "Error loading notifications." });
+  }
+});
+
+// PATCH /api/developer/notifications/mark-all-read -> Marks all as read
+router.patch("/notifications/mark-all-read", async (req, res) => {
+  try {
+    const developerId = req.user._id || req.user.id;
+    await Notification.updateMany(
+      { user: developerId, read: false },
+      { $set: { read: true } }
+    );
+    res.json({ success: true, message: "All notifications marked as read." });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to mark notifications read." });
   }
 });
 

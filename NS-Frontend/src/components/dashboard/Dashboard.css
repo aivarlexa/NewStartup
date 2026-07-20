@@ -306,6 +306,10 @@
   margin-bottom: 10px;
 }
 
+.notification-item-hover:hover {
+  background-color: rgba(31, 111, 235, 0.12) !important;
+}
+
 .dashboard-notification-panel p {
   margin: 0;
   padding: 12px 0;
