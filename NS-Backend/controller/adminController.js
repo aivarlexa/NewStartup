@@ -30,19 +30,23 @@ const getDashboard = async (req, res) => {
       .limit(5)
       .lean();
 
-    res.status(200).json({
-      success: true,
+  const recentProjects = await Requirement.find()
+  .select("projectTitle progress status")
+  .sort({ createdAt: -1 })
+  .limit(4);
 
-      stats: {
-        totalClients,
-        totalDevelopers,
-        totalProjects,
-        activeProjects,
-        completedProjects,
-      },
-
-      recentClients,
-    });
+res.status(200).json({
+  success: true,
+  stats: {
+    totalClients,
+    totalDevelopers,
+    totalProjects,
+    activeProjects,
+    completedProjects,
+  },
+  recentClients,
+  recentProjects,
+});
 
   } catch (error) {
 
