@@ -7481,8 +7481,15 @@ h3 {
   cursor: pointer;
 }
 
+.role-modal-back-button {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
+}
+
 .role-modal-heading {
-  margin-bottom: 22px;
+  margin: 34px 0 22px;
 }
 
 .role-modal-heading span {
