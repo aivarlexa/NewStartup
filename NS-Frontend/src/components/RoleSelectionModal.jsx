@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { BriefcaseBusiness, Code2, ShieldCheck, X } from 'lucide-react'
+import { ArrowLeft, BriefcaseBusiness, Code2, ShieldCheck, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const ROLE_CARDS = [
   {
@@ -26,6 +27,7 @@ const ROLE_CARDS = [
 ]
 
 function RoleSelectionModal({ isOpen, onClose, onSelect }) {
+  const navigate = useNavigate()
   const dialogRef = useRef(null)
 
   useEffect(() => {
@@ -48,6 +50,11 @@ function RoleSelectionModal({ isOpen, onClose, onSelect }) {
 
   if (!isOpen) return null
 
+  function handleBack() {
+    onClose()
+    navigate('/')
+  }
+
   return (
     <div className="role-modal-backdrop" onMouseDown={onClose}>
       <section
@@ -60,6 +67,10 @@ function RoleSelectionModal({ isOpen, onClose, onSelect }) {
       >
         <button className="role-modal-close" type="button" onClick={onClose} aria-label="Close role selection">
           <X size={18} />
+        </button>
+        <button className="login-back-button role-modal-back-button" type="button" onClick={handleBack}>
+          <ArrowLeft size={18} />
+          <span>Back</span>
         </button>
         <div className="role-modal-heading">
           <span>Choose workspace</span>
