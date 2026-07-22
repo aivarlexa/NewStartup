@@ -92,7 +92,7 @@ const INTRO_PARTICLES = [
 const DIAL_VIDEO_SRC = '/media/dial-video.mp4'
 const DIAL_VIDEO_START_TIME = 0
 const DIAL_VIDEO_PLAYBACK_RATE = 1
-const DIAL_STAGE_DURATION = 1500
+const DIAL_STAGE_DURATION = 2500
 
 let hasPlayedIntro = false
 
