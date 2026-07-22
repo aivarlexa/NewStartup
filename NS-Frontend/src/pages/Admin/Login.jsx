@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../../context/AuthContext";
 import axios from "axios";
-import { ArrowRight, BarChart3, Lock, Mail, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, BarChart3, Lock, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import "./Login.css";
 
 const Login = () => {
@@ -67,9 +67,17 @@ const Login = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate("/");
+  };
+
   return (
     <div className="admin-login-page">
       <div className="admin-login-glow" />
+      <button className="admin-login-back-button" type="button" onClick={handleBack}>
+        <ArrowLeft size={18} />
+        <span>Back</span>
+      </button>
       <div className="admin-login-shell">
         <section className="admin-login-showcase">
           <div className="admin-login-showcase-top">
