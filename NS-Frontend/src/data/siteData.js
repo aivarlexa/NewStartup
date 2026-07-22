@@ -1,13 +1,13 @@
 export const capabilities = [
   {
     title: 'AI Development',
-    text: 'Custom AI systems, intelligent chatbots, machine learning solutions, business automation, and AI-powered data analysis built around real business needs.',
+    text: 'Custom AI systems, intelligent AI chatbots, machine learning solutions, AI-powered business automation, and intelligent data analysis built around real business needs.',
     tags: ['AI Systems', 'Chatbots', 'ML'],
     accent: 'ai',
   },
   {
     title: 'Software Development',
-    text: 'Custom web applications, SaaS platforms, enterprise software, CRM and ERP systems, API development, and seamless integrations.',
+    text: 'Custom web applications, AI-powered SaaS platforms, enterprise software, CRM & ERP systems, API development, seamless integrations, and intelligent automation.',
     tags: ['SaaS', 'Enterprise', 'API'],
     accent: 'software',
   },
