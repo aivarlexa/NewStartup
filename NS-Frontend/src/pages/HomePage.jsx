@@ -72,12 +72,12 @@ function HomePage() {
     sendMessage(input)
   }
 
-  return (
+return (
     <>
       <Hero />
 
       <section className="logo-band" aria-label="Customer segments">
-       
+        {/* Customer logos */}
       </section>
 
       <Services />
@@ -101,26 +101,34 @@ function HomePage() {
                 <span>CORE</span>
               </span>
             </div>
-            <span>ONLINE</span>
+            <span>{isSending ? 'THINKING...' : 'ONLINE'}</span>
           </div>
+
           <div className="chat-messages" aria-live="polite" ref={messagesContainerRef}>
             {messages.map((message, index) => (
               <div className={`message ${message.role}`} key={`${message.role}-${index}`}>
                 {message.text}
               </div>
             ))}
+            {isSending && (
+              <div className="message assistant thinking">
+                <span>VARLEXA AI CORE is generating a response...</span>
+              </div>
+            )}
           </div>
+
           <form className="chat-form" onSubmit={handleSubmit}>
             <input
               aria-label="Message VARLEXA AI CORE"
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Ask about rollout, ROI, or security..."
+              disabled={isSending}
             />
-            <button type="submit" aria-label="Send message" disabled={isSending}>
+            <button type="submit" aria-label="Send message" disabled={isSending || !input.trim()}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 12H19M13 6L19 12L13 18" />
-              </svg>
+              </svg>s
             </button>
           </form>
         </div>
@@ -130,5 +138,3 @@ function HomePage() {
 }
 
 export default HomePage
-
-

@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Send } from 'lucide-react'
+import { Send, Loader2 } from 'lucide-react'
 import { aiQuickActions, dashboardProjects, recentActivities } from '../../data/dashboardData'
+import api, { getApiErrorMessage } from '../../services/api'
 
 function AIAssistantPage() {
   const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
   const [messages, setMessages] = useState([
     { role: 'assistant', text: 'Select a quick action or ask me to turn project context into a development plan.' },
   ])
@@ -13,20 +15,50 @@ function AIAssistantPage() {
     setInput(`${action} for ${selectedProject.name}.`)
   }
 
-  function sendPrompt(event) {
+  async function sendPrompt(event) {
     event.preventDefault()
 
-    if (!input.trim()) return
+    const trimmedInput = input.trim()
+    if (!trimmedInput || loading) return
 
-    setMessages((current) => [
-      ...current,
-      { role: 'user', text: input.trim() },
-      {
-        role: 'assistant',
-        text: 'Mock AI response: I would break this into discovery, architecture, implementation, QA, security review, and deployment milestones with clear owners and client approval checkpoints.',
-      },
-    ])
+    // 1. Add User Message
+    const userMessage = { role: 'user', text: trimmedInput }
+    setMessages((current) => [...current, userMessage])
     setInput('')
+    setLoading(true)
+
+    try {
+      // 2. Call Backend Gemini API Endpoint
+      const { data } = await api.post('/insights', {
+        input: trimmedInput,
+        context: {
+          name: selectedProject.name,
+          client: selectedProject.client,
+          progress: selectedProject.progress,
+          developers: selectedProject.developers,
+          requirements: selectedProject.requirements,
+        },
+      })
+
+      // 3. Append Real AI Response
+      setMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          text: data.answer || 'No response received from AI assistant.',
+        },
+      ])
+    } catch (error) {
+      setMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          text: getApiErrorMessage(error, 'Error connecting to AI service. Please try again.'),
+        },
+      ])
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -41,17 +73,40 @@ function AIAssistantPage() {
         <section className="dashboard-panel ai-chat-panel">
           <div className="quick-action-grid">
             {aiQuickActions.map((action) => (
-              <button type="button" key={action} onClick={() => promptFromAction(action)}>{action}</button>
+              <button 
+                type="button" 
+                key={action} 
+                onClick={() => promptFromAction(action)}
+                disabled={loading}
+              >
+                {action}
+              </button>
             ))}
           </div>
+
           <div className="dashboard-chat-messages">
             {messages.map((message, index) => (
-              <article className={`ai-message ${message.role}`} key={`${message.role}-${index}`}>{message.text}</article>
+              <article className={`ai-message ${message.role}`} key={`${message.role}-${index}`}>
+                {message.text}
+              </article>
             ))}
+            {loading && (
+              <article className="ai-message assistant loading">
+                <Loader2 className="animate-spin" size={18} /> Generating response...
+              </article>
+            )}
           </div>
+
           <form className="dashboard-chat-form" onSubmit={sendPrompt}>
-            <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask the AI developer assistant..." />
-            <button type="submit" aria-label="Send prompt"><Send size={18} /></button>
+            <input 
+              value={input} 
+              onChange={(event) => setInput(event.target.value)} 
+              placeholder="Ask the AI developer assistant..." 
+              disabled={loading}
+            />
+            <button type="submit" aria-label="Send prompt" disabled={loading || !input.trim()}>
+              <Send size={18} />
+            </button>
           </form>
         </section>
 

@@ -1,73 +1,72 @@
 const express = require("express");
-const axios = require("axios");
+const { GoogleGenAI } = require("@google/genai");
 
 const router = express.Router();
 
-function getOutputText(responseData) {
-  if (responseData?.output_text) {
-    return responseData.output_text;
-  }
-
-  const outputContent = responseData?.output?.flatMap((item) => item.content || []) || [];
-  const textParts = outputContent
-    .map((content) => content.text || content.value || "")
-    .filter(Boolean);
-
-  return textParts.join("\n").trim();
-}
+// Initialize Google Gen AI client with API key from environment variables
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 router.post("/", async (req, res) => {
-  const input = typeof req.body?.input === "string" ? req.body.input.trim() : "";
-
-  if (!input) {
-    return res.status(400).json({ message: "Input is required." });
-  }
-
-  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-  const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-4.1-mini";
-  const apiKey = process.env.AZURE_OPENAI_API_KEY;
-  const bearerToken = process.env.AZURE_OPENAI_BEARER_TOKEN;
-
-  if (!endpoint || (!apiKey && !bearerToken)) {
-    return res.status(500).json({
-      message: "Azure OpenAI is not configured. Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY or AZURE_OPENAI_BEARER_TOKEN.",
-    });
-  }
-
   try {
-    const headers = {
-      "Content-Type": "application/json",
-    };
+    const input = typeof req.body?.input === "string" ? req.body.input.trim() : "";
+    const context = req.body?.context;
 
-    if (apiKey) {
-      headers["api-key"] = apiKey;
-    } else {
-      headers.Authorization = `Bearer ${bearerToken}`;
+    if (!input) {
+      return res.status(400).json({ success: false, message: "Input prompt is required." });
     }
 
-    const normalizedEndpoint = endpoint.replace(/\/$/, "");
-    const url = `${normalizedEndpoint}/responses`;
+    // 🚀 Varlexa AI Business Identity & Core Principles System Prompt
+    const systemInstruction = `
+You are the official Varlexa AI Developer Assistant built into the Varlexa Workspace.
 
-    const response = await axios.post(
-      url,
-      {
-        model: deploymentName,
-        input,
+About Varlexa AI:
+Varlexa AI helps businesses design, build, secure, automate, and scale digital products with practical AI, software engineering, cloud infrastructure, and data intelligence into solutions that create measurable outcomes.
+
+Varlexa Core Principles:
+1. Clarity over complexity: We simplify technical decisions and build systems teams can confidently operate.
+2. Security by design: Security, privacy, governance, and reliability are built into every layer.
+3. Outcomes that matter: We focus on measurable improvements, not technology for its own sake.
+4. Built to evolve: Our systems are designed to adapt as products, teams, and markets change.
+
+Your Role:
+- Provide clear, actionable software development plans, requirement breakdowns, task reviews, cloud architecture advice, and security guidance.
+- Align all technical advice with Varlexa's four core principles.
+- Be direct, structured, practical, and professional.
+`;
+
+    // Construct full prompt context if provided by frontend
+    let fullPrompt = input;
+    if (context) {
+      fullPrompt = `[Project Context]
+Project Name: ${context.name || "N/A"}
+Client: ${context.client || "N/A"}
+Progress: ${context.progress || 0}%
+Team Developers: ${Array.isArray(context.developers) ? context.developers.join(", ") : "N/A"}
+Requirements Preview: ${context.requirements || "N/A"}
+
+[User Request]
+${input}`;
+    }
+
+    // 👑 FIX: Updated model string to 'gemini-3.5-flash' to resolve the 404 NOT_FOUND error for new API keys
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: fullPrompt,
+      config: {
+        systemInstruction,
+        temperature: 0.7,
       },
-      { headers }
-    );
-
-    const answer = getOutputText(response.data);
-
-    return res.json({
-      answer: answer || "I received a response, but could not read the answer text.",
-      raw: process.env.NODE_ENV === "development" ? response.data : undefined,
     });
-  } catch (error) {
-    const status = error.response?.status || 500;
-    const message = error.response?.data?.error?.message || error.response?.data?.message || error.message;
 
-    return res.status(status).json({ message });
+    const answer = response.text || "Varlexa AI processed your request, but could not generate a response body.";
+
+    return res.json({ success: true, answer });
+  } catch (error) {
+    console.error("Varlexa AI Engine Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to generate AI insight from Varlexa engine.",
+    });
   }
 });
 
