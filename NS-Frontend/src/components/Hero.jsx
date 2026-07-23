@@ -93,11 +93,38 @@ const DIAL_VIDEO_SRC = '/media/dial-video.mp4'
 const DIAL_VIDEO_START_TIME = 0
 const DIAL_VIDEO_PLAYBACK_RATE = 1
 const DIAL_STAGE_DURATION = 2500
+const HERO_INTRO_STORAGE_KEY = 'varlexaHeroIntroSeen'
 
 let hasPlayedIntro = false
 
+function hasSeenIntro() {
+  if (hasPlayedIntro) {
+    return true
+  }
+
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  try {
+    return window.localStorage.getItem(HERO_INTRO_STORAGE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
 function markIntroSeen() {
   hasPlayedIntro = true
+
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(HERO_INTRO_STORAGE_KEY, 'true')
+  } catch {
+    // If storage is unavailable, the in-memory flag still prevents replay in this session.
+  }
 }
 
 function getInitialIntroStage() {
@@ -108,7 +135,7 @@ function getInitialIntroStage() {
   const isSectionNavigation = Boolean(window.location.hash && window.location.hash !== '#top')
   const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-  if (prefersReducedMotion || isSectionNavigation || hasPlayedIntro) {
+  if (prefersReducedMotion || isSectionNavigation || hasSeenIntro()) {
     return 'done'
   }
 
