@@ -2253,12 +2253,15 @@ h3 {
 }
 
 .footer-wordmark {
-  width: 150px;
+  width: 250px;
   max-height: 64px;
+  transform: translateX(-230px) scale(2.36);
+  transform-origin: left center;
 }
 
 .footer-brand a {
   display: inline-flex;
+  margin-bottom: 22px;
 }
 
 .footer-brand p,
