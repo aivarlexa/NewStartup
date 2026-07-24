@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { footerNavLinks, socialLinks } from '../data/siteData'
-import BrandWordmark from './BrandWordmark'
+import Brandwordmarkk from './Brandwordmarkk'
 import SocialIcon from './SocialIcon'
 
 function Footer() {
@@ -34,7 +34,7 @@ function Footer() {
       <div className="footer-inner">
         <div className="footer-brand footer-reveal">
           <Link to="/#top" aria-label="Varlexa AI home">
-            <BrandWordmark className="footer-wordmark" alt="VARLEXA AI" />
+            <Brandwordmarkk className="footer-wordmark" alt="VARLEXA AI" />
           </Link>
           <span className="footer-glow-line"></span>
           <p>AI solutions, software engineering, cloud systems, and secure digital infrastructure for modern businesses.</p>
